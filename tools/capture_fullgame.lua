@@ -728,6 +728,13 @@ emu.register_frame_done(function()
  if load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1 and os.getenv('MSX_FULL_LOAD_SECTION')=='1' then
   blocked=tonumber(os.getenv('MSX_FULL_LOAD_BLOCKED') or '0');last_px=cpu:read_i16(0x1014ec)
  end
+ -- Capture only (B82, MSX_FULL_SET_CHARACTER=<n>, with MSX_FULL_LOAD): right after the load the player's
+ -- +6E (the character 0C961C writes at SOLDIER SELECT: 0 Marco, 1 Tarma, 2 Eri, 3 Fio) is written, as if n
+ -- had been chosen: a state of the TAS (Tarma) then rides the Slugnoid as character n (0AA760 copies +6E to
+ -- the walker's +70, the pilot's table 09649C[+70] and palette 034330[+70]).
+ if load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1 and os.getenv('MSX_FULL_SET_CHARACTER') then
+  cpu:write_u16(0x1014c4+0x6e,tonumber(os.getenv('MSX_FULL_SET_CHARACTER')));print('SET CHARACTER '..os.getenv('MSX_FULL_SET_CHARACTER')..' frame='..frame)
+ end
  if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 or (load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1) then probes() end end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
  if character>=0 then

@@ -531,6 +531,11 @@ ROOTS=ROOTS+(0x23c0de,0x23c212,0x23c340,0x23c446,0x23c184,0x23c4ca,0x23c2ee,0x23
     0x243ad6,0x243b00,0x243b2a,0x243c36,0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,0x24451c,0x2443fe,0x244458,0x244572,0x244630)
 # 144: the debris pieces 01D00C..01D078 of the first form's wreck (neo_effects.c debris_entry), seen in SB and SJ.
 RESOURCES=RESOURCES+(0xfd,0xfe,0xff,0x100,0x101,0x248,0x144)
+# Fio's death actor 0C4C64 (0C4C28 from 0C2E74, neo_effects.c fio_cap_tick): program 253322, descriptors
+# 1A5A6A..1A5AD8, palette 5 (009EA8 d0=5). MAME 0.264 capture c3d3 (run_marco_catalog.py --character 3
+# --first 2352 --hit 400:0 --child-routines c4c64,c4cba --family-routines c4c64-c4dd6 --family-frames 2750-2940):
+# 171 frames, 11 562 pixels equal, 0 different. In the Mission 1 export (scene.pack): Fio dies in every mission.
+ROOTS=ROOTS+(0x253322,)
 DRAWN_7A=(0x29fb62,)
 # The game's ending (--ending: the private export of the credits' pack, filesystem/mission13/rest-native.json;
 # docs/MISION6.md "Los créditos"): the small pictures 0A454C (program 2A4B16, palette 845, 125 from picture 0x3E), the

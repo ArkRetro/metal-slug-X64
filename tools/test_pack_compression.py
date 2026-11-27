@@ -27,14 +27,28 @@ def main():
     host=ROOT/'build/host';old=host/'pack-old';new=host/'pack-new'
     for d in (old,new):
         shutil.rmtree(d,ignore_errors=True);d.mkdir(parents=True)
+    # The Slugnoid pilots of characters 1..3 (pack_mission.py): both loaders write each character's actors.
+    import pack_mission;from decode_level_script import Program
+    riders=host/'riders.txt';riders.write_text(''.join(f'{c} {d:06x}\n' for d,c in sorted(pack_mission.rider_descriptors(Program('/home/user/roms/mslugx.zip')).items())))
+    os.environ['MSX_RIDERS']=str(riders)
+    cc=os.environ.get('HOST_CC','cc').split()+'-std=gnu11 -Wall -Wextra -Werror -Wno-unused-function -O1'.split()
+    cc+=[f'-I{ROOT}/tools/host_n64',f'-I{ROOT}/src',str(ROOT/'tools/test_pack_loader.c')]
+    run(*cc,f'-I{ROOT}/build','-o',host/'pack-loader')
+    # Without the scene pack's sources (lost on 27-XI; romfs/ then holds the ROM 52 packs, possibly rewritten by
+    # tools/pack_add_actors.py) only the cartridge's packs are loaded below.
+    scene_sources=[ROOT/'filesystem'/n for n in ('marco.bin','soldier.bin','desert.bin','rest-native.json','mission1/map.json')]
+    if not all(f.exists() for f in scene_sources):
+        print('SKIP: old/new pack comparison (no sources of the packs: '+', '.join(str(f.relative_to(ROOT)) for f in scene_sources if not f.exists())+')')
+        missions=None
+    else:
+        missions=compare(old,new,host,cc)
+    cart_packs(host,new,missions)
+def compare(old,new,host,cc):
     run(sys.executable,ROOT/'tools/pack_scene.py','--legacy',old)
     shutil.copyfile(ROOT/'romfs/scene.pack',new/'scene.pack')
     missions=build_packs.build(old,4,quiet=True);assert build_packs.build(new,5,quiet=True)==missions
-    cc=os.environ.get('HOST_CC','cc').split()+'-std=gnu11 -Wall -Wextra -Werror -Wno-unused-function -O1'.split()
-    cc+=[f'-I{ROOT}/tools/host_n64',f'-I{ROOT}/src',str(ROOT/'tools/test_pack_loader.c')]
     # The old scene.pack has its own chunk table (scene_meta.h); the rest of the header is the same file.
     run(*cc,f'-I{old}',f'-I{ROOT}/build','-o',host/'pack-loader-old')
-    run(*cc,f'-I{ROOT}/build','-o',host/'pack-loader')
     run(host/'pack-loader-old',old,host/'pack-old.txt');run(host/'pack-loader',new,host/'pack-new.txt')
     a=(host/'pack-old.txt').read_bytes();b=(host/'pack-new.txt').read_bytes()
     if a!=b:
@@ -42,13 +56,17 @@ def main():
         sys.exit(f'FAIL: the compressed packs differ from the old ones at line {i+1} of build/host/pack-old.txt / pack-new.txt')
     sizes=lambda d:sum(f.stat().st_size for f in d.glob('*.pack'))
     print(f'PASS: scene.pack and missions {missions}: the loader gives the same {len(a)} bytes of tables, images and pages from the old packs ({sizes(old)} B) and the compressed ones ({sizes(new)} B)')
+    return missions
+def cart_packs(host,new,missions):
     # The cartridge's packs.
     cart=host/'pack-cart';shutil.rmtree(cart,ignore_errors=True);cart.mkdir()
     for f in (ROOT/'romfs').glob('*.pack'):os.symlink(f.resolve(),cart/f.name)
     run(host/'pack-loader',cart,host/'pack-cart.txt')
-    stale=[f.name for f in sorted(new.glob('mission*.pack')) if not (ROOT/'romfs'/f.name).exists() or not filecmp.cmp(f,ROOT/'romfs'/f.name,shallow=False)]
-    if stale:print('WARNING: '+', '.join(stale)+' in romfs/ are not what the sources give now: python3 tools/build_packs.py')
-    else:print('PASS: romfs/ mission packs are the ones the sources give')
-    for d in (old,new,cart):shutil.rmtree(d,ignore_errors=True)
-    for f in ('pack-old.txt','pack-new.txt','pack-cart.txt'):(host/f).unlink()
+    print('PASS: romfs/ packs load (every chunk decodes to its CRC; each version 6 stage serves only the chosen character\'s pilots)')
+    if missions is not None:
+        stale=[f.name for f in sorted(new.glob('mission*.pack')) if not (ROOT/'romfs'/f.name).exists() or not filecmp.cmp(f,ROOT/'romfs'/f.name,shallow=False)]
+        if stale:print('WARNING: '+', '.join(stale)+' in romfs/ are not what the sources give now: python3 tools/build_packs.py')
+        else:print('PASS: romfs/ mission packs are the ones the sources give')
+    for d in (host/'pack-old',new,cart):shutil.rmtree(d,ignore_errors=True)
+    for f in ('pack-old.txt','pack-new.txt','pack-cart.txt','riders.txt'):(host/f).unlink(missing_ok=True)
 if __name__=='__main__':main()

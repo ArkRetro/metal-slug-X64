@@ -46,19 +46,26 @@ def decode(stored,crc,word):
 
 class MissionPack:
     """Header, chunk table and decoded chunks of romfs/missionN.pack
-    (versions 3..5; the chunks another mission's pack holds are read from
-    the pack beside it)."""
+    (versions 3..6; the chunks another mission's pack holds are read from
+    the pack beside it; version 6 adds the riders' blocks 'MSXC' after the
+    resources: rider_first, rider_counts)."""
     def __init__(self,path):
         self.path=Path(path);self.raw=b=self.path.read_bytes();assert b[:4]==b'MSXM'
         self.version,self.mission,self.stages,self.palettes=struct.unpack_from('>HHHH',b,4)
-        assert 3<=self.version<=5,('pack version',self.version)
+        assert 3<=self.version<=6,('pack version',self.version)
         self.images,nchunk,self.cells,self.grid_bytes,self.actors,self.actor_images,self.resources=struct.unpack_from('>7I',b,12)
         self.header_bytes=48 if self.version>=4 else 40
         self.data_offset,self.data_length=struct.unpack_from('>II',b,40) if self.version>=4 else (0,0)
         o=self.header_bytes+128*self.stages
         self.cells_at=o;o+=22*self.cells;self.images_at=o;o+=8*self.images;self.palettes_at=o;o+=32*self.palettes
         self.chunks_at=o;o+=16*nchunk;self.actors_at=o;o+=8*self.actors;self.actor_images_at=o;o+=12*self.actor_images
-        self.resources_at=o;o+=4*self.resources;self.grids_at=o
+        self.resources_at=o;o+=4*self.resources
+        self.rider_first,self.rider_counts=self.actor_images,(0,0,0)
+        if self.version>=6:
+            assert b[o:o+4]==b'MSXC',('version 6 pack without its riders record',self.path)
+            self.rider_first,*rc=struct.unpack_from('>4I',b,o+4);self.rider_counts=tuple(rc);o+=20
+            assert self.rider_first+sum(self.rider_counts)==self.actor_images
+        self.grids_at=o
         self.chunks=[struct.unpack_from('>4I',b,self.chunks_at+16*i) for i in range(nchunk)]
         self._others={};self._cache={}
         self.refs=[]

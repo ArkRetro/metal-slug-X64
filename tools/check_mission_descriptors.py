@@ -32,6 +32,11 @@ def main():
                 posed.add(c['asset'])
                 if ok:ref.add(c['asset'])
     ref|={d for d in exported if d not in posed}
+    # The Slugnoid pilots of characters 1..3 (no group: programs.bin) are only in the packs of the missions with the
+    # Slugnoid (pack_mission.RIDER_MISSIONS); elsewhere no program draws them.
+    if m not in pack_mission.RIDER_MISSIONS:
+        from decode_level_script import Program
+        ref-=set(pack_mission.rider_descriptors(Program('/home/user/roms/mslugx.zip')))
     have=scene|exported
     missing=sorted(d for d in ref&have if d not in scene and d not in in_pack)
     never=sorted(ref-have-{0})

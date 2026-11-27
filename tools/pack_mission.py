@@ -62,7 +62,12 @@ and a 64-byte trailer naming those packs; --format 4 writes version 4:
   Version 5, the file's last 64 bytes: 'MSXX' u16 packs u16 0, then per pack
   whose chunks are used (at most 5): u16 mission u16 0 u32 its size in bytes
   u32 the CRC-32 of the whole pack (the runtime refuses the mission when the
-  pack on the cartridge has another size; pack_store.py checks the CRC)."""
+  pack on the cartridge has another size; pack_store.py checks the CRC).
+  Version 6 (B82) is version 5 with the Slugnoid pilots of characters 1..3
+  (rider_descriptors) as the last actor images, one block per character,
+  and after resource[] the record 'MSXC' u32 rider_first u32 count[3]: the
+  stage loader keeps the images before rider_first and the chosen
+  character's block only (src/scene_assets.c scene_assets_set_rider)."""
 import argparse,hashlib,json,struct,zlib
 from pathlib import Path
 from mission_tiles import pack_map
@@ -116,6 +121,33 @@ def mission_descriptor_rule(mission):
                 posed.add(c['asset'])
                 if ok:usable.add(c['asset'])
     return lambda d:d not in posed or d in usable
+# The Slugnoid's pilot (097830/097886) draws the program table 09649C[+70 of the
+# walker], +70 being the rider's +6E (the character, 0 Marco .. 3 Fio): Missions 2
+# and 5 make the Slugnoid (stage 3). The descriptors only the programs of one
+# table 09649C[1..3] pose go in that character's block of the pack (version 6),
+# and the stage loader keeps only the chosen character's block (scene_assets.c);
+# Marco's (09649C[0]) are common, as before. The other missions' packs leave the
+# blocks out (no Slugnoid there).
+RIDER_TABLE,RIDER_TABLE_LONGS=0x9649c,33   # 4 tables of 0x84 bytes: 17 entries, sub-tables of 6 and 10 (096508 / 0964F0 for Marco)
+RIDER_MISSIONS=(2,5)
+def rider_descriptors(rom):
+    """{descriptor: character} of the descriptors posed only by the programs of one table 09649C[c], c = 1..3
+    (POSE commands of data/soldier_programs.json; a descriptor any other program poses is common)."""
+    sp=json.loads((ROOT/'data/soldier_programs.json').read_text())
+    owner={}
+    for c in range(4):
+        t=rom.u32(RIDER_TABLE+4*c)
+        for i in range(RIDER_TABLE_LONGS):
+            v=rom.u32(t+4*i)
+            if v>=0x200000:owner[v]=c
+    assert len(owner)==4*27,('rider tables',len(owner))
+    by={}
+    for prog in sp['programs']:
+        c=owner.get(prog['root'],-1)
+        for cmd in prog['commands']:
+            if cmd['kind']=='POSE':by.setdefault(cmd['asset'],set()).add(c)
+    assert {c for s in by.values() for c in s if c>=0}=={0,1,2,3},'every rider table converted'
+    return {d:s.pop() for d,s in by.items() if len(s)==1 and min(s)>=1}
 def c_layer(patch):
     layers={c['layer'] for c in patch['cells']};assert len(layers)==1;return layers.pop()
 def anim_kinds():
@@ -215,6 +247,9 @@ def mission_data(mission,lenders=()):
     assert len(blob)==base+len(body)
     report['bytes']=len(blob)
     return blob,report,(lend[0].mission if lend else 0)
+def parts_of(f):
+    """The <=64x64 parts of an actor frame (build: one actor image each)."""
+    return [(px0,py0) for py0 in range(0,f['height'],64) for px0 in range(0,f['width'],64)]
 def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
     MISSION[0]=mission;assert fmt in (4,5) and (fmt==5 or not shared)
     pages=[];page_ids={};palettes=[];pal_ids={}
@@ -346,7 +381,13 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         key=tuple(v)+(0,)*(16-len(v))
         if key not in pal_ids:pal_ids[key]=len(palettes);palettes.append(key)
         res.append((int(k,16),pal_ids[key]))
+    riders=rider_descriptors(rom) if rom is not None else {}
+    rider_of=lambda f:riders.get(int(f['descriptor'],16),0)
+    if mission not in RIDER_MISSIONS:frames=[f for f in frames if not rider_of(f)]
+    frames=sorted(frames,key=rider_of)   # stable: the common frames in their order, then the blocks of characters 1, 2, 3
+    rider_first=len(actor_images)+sum(1 for f in frames if not rider_of(f) for _ in parts_of(f));rider_counts=[0,0,0]
     for f in frames:
+        if rider_of(f):rider_counts[rider_of(f)-1]+=len(parts_of(f))
         pens=bytes.fromhex(f['pens_hex']);w,h=f['width'],f['height'];first=len(actor_images)
         for py0 in range(0,h,64):
             for px0 in range(0,w,64):
@@ -395,7 +436,8 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
     data,data_report,lender=mission_data(mission,shared if fmt>=5 else ())
     if lender and all(m!=lender for m,_,_ in trailer):
         other=next(o for o in shared if o.mission==lender);trailer.append((other.mission,len(other.raw),zlib.crc32(other.raw)))
-    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',fmt,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
+    version=6 if fmt>=5 and any(rider_counts) else fmt
+    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',version,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
     stage_at=len(head);head+=bytes(STAGE_BYTES*len(stages))
     for layer,x,y,ph in cells:head+=struct.pack('>BBhh8H',layer,0,x,y,*ph)
     for im in images:head+=struct.pack('>4H',*im)
@@ -404,6 +446,8 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
     for a in actors:head+=struct.pack('>IHH',*a)
     for im in actor_images:head+=struct.pack('>HHhhHH',*im)
     for r in res:head+=struct.pack('>HH',*r)
+    # Version 6: the riders' blocks of actor images, right after the resources (read by the stage loader).
+    if version==6:head+=b'MSXC'+struct.pack('>IIII',rider_first,*rider_counts)
     grids_at=len(head);head+=grids
     while len(head)%4:head.append(0)
     blobs_at=len(head);head+=blobs
@@ -429,7 +473,7 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         blob+=tail+bytes(64-len(tail))
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),
                      actors=len(actors),actor_images=len(actor_images),actor_pages=len({im[0] for im in actor_images}),resources=len(res),
-                     header_bytes=len(head),mission_data=data_report,decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),version=fmt,
+                     header_bytes=len(head),mission_data=data_report,decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),version=version,rider_images=dict(first=rider_first,counts=rider_counts),
                      chunk_bytes=len(body),borrowed_chunks={m:sum(1 for _,r in borrowed if r[3]>>8==m) for m,_,_ in trailer},sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128

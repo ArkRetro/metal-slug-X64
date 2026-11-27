@@ -4,7 +4,7 @@ import argparse,json,os,subprocess,hashlib,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 # MAME 0.264+ and Xvfb: the emulator tree when present, else the system ones.
-MAME=next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')
+MAME=os.environ.get('MSX_MAME') or next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')   # MSX_MAME: a MAME 0.264 binary elsewhere
 XVFB=next((m for m in ('/workspace/emulator/root/usr/bin/Xvfb','/usr/bin/Xvfb') if os.path.exists(m)),'Xvfb')
 # Names describe input conditions only. Classify animation from actual evidence.
 CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',96,('Down','fire')),

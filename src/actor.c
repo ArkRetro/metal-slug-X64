@@ -544,7 +544,7 @@ bool actor_select_character(unsigned character) {
     if (!ok) {marco_renderer_set_character(0);character=0;}
     heap_stats_t h1;sys_get_heap_stats(&h1);
     marco_renderer_character_heap(character && h1.used>h0.used?(unsigned)(h1.used-h0.used):0);
-    msx_character_request=(uint8_t)character;
+    msx_character_request=(uint8_t)character;scene_assets_set_rider(character);   // the Slugnoid pilot's block of the mission packs (version 6)
     debugf("MSX CHARACTER %u %s heap=%u\n",character,ok?"chosen":"(no pack: Marco)",(unsigned)(h1.used>h0.used?h1.used-h0.used:0));
     return ok;
 }

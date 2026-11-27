@@ -38,7 +38,7 @@ La pausa es la de la ROM: [PAUSA.md](PAUSA.md).
 | `0C294E` | voz de muerte: 1123, 1087, 1125, 114E | `msx_character_death_voice` |
 | `0C419E` desde el programa del cuchillo | fila de ataque: Marco y Tarma `2D0AF4` (clase 2), Eri y Fio `2D0B04` (clase 3; misma caja y daño 0x1E) | `gameplay.c` |
 | `0C39C8` (tabla `0C38FC`) | reposo largo `0BFCD8`: tras 0x0C ciclos Marco/Tarma, 0x07 Eri/Fio (y 0x32 solo Eri/Fio en cuatro filas) | pendiente (tampoco Marco) |
-| `0C2E74` → `0C4C28` | solo Fio: al morir (muerte genérica `0C2DDA`) suelta un actor `0C4C64` (programa `253322`, paleta 5) | pendiente |
+| `0C2E74` → `0C4C28` | solo Fio: al morir (muerte genérica `0C2DDA`) suelta un actor `0C4C64` (programa `253322`, paleta 5) | nativo; sprites validados, fuera del cartucho (§6.2, §7) |
 | `0C359A` → `0C5064` | al dejar la forma 1: el arma que cae, programa `0C4F58` (Marco/Tarma) o `0C4FD6` (Eri/Fio), paleta `0BEDD0` | pendiente (tampoco Marco: G7) |
 | `0C35AE`, `0C48FA` | copia +6E a los hijos (disparos, granadas) | sin efecto en lo portado |
 
@@ -216,24 +216,124 @@ make check-characters && make
    (punto 5) para comparar lo que suena con el render aislado, y leer en
    el controlador Z80 qué canal y prioridad usa `1087`, antes de darle
    canal. La tabla `0C294E` de la ROM es `1123 1087 1125 114E` (comprobada).
-2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor de `253322` con su
-   física (`0C4CBA`: +30 −= +30/16, +34 hacia |2·+30| − 6.0, suelo `0143E4`,
-   15 fines de programa → parpadeo, 30 → fuera). Falta la captura de una
-   muerte de Fio con traza de familia y sus poses en el pack. No se dibuja.
+2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor ya es nativo
+   (`neo_effects.c`, familia `fio_cap`). Sus 12 descriptores
+   `1A5A6A..1A5AD8` (programa `253322`, paleta 5) están validados contra
+   MAME (captura `c3d3`, §7) y su raíz está en `export_rest_sprites.py`
+   (exportación de la M1, `scene.pack`), pero **siguen sin entrar en el
+   cartucho**: el export de la M1 (`filesystem/rest-native.json`) se perdió
+   con el reinicio del contenedor (27-XI) y `scene.pack`/`scene_meta.h`
+   salen hoy de la ROM 52. Al rehacer el export de la M1: la orden de §7.
 3. **Reposo largo** (`0C39C8`, tabla `0C38FC`, programas `0BFCD8`): no está
    para ninguno; al portarlo, el umbral es por personaje.
 4. **Arma que cae al dejar la forma 1** (`0C5064`): no está para ninguno.
 5. **Muertes por personaje sin captura**: los programas son los de la ROM,
    pero no hay prueba pose a pose de las muertes de Tarma, Eri y Fio
    (`capture_weapons.lua` no elige personaje).
-6. **Vehículos**: no se ha medido si algún vehículo dibuja al piloto por
-   personaje (el punto de observación solo cubrió juego a pie).
+6. **Vehículos**: la Camel Slug (B82, `work-fix`) y el Slugnoid (§7) dibujan
+   el piloto de cada personaje; el SV-001 de la M4 y el vehículo de la M3
+   siguen sin recorrido de ares con los cuatro.
 7. Lo que ya faltaba a Marco falta igual: programas que el original elige y
    el port no arranca (los mismos papeles en los cuatro), el contador de
    SOLDIER SELECT y el parpadeo de P1.
 8. Los registros `debug.log` de `captures-chars` están en gzip (disco):
    descomprimir antes de repetir `export_character.py --verify` o los
    fixtures.
+
+## 7. Pilotos del Slugnoid y actor de muerte de Fio (B82, carril de vehículos, 27-XI)
+
+**Lo que hace la ROM.** El Slugnoid `09692C` crea su piloto `097830`/`097886`
+con el andador; el piloto dibuja la tabla `09649C[+70 del andador]` con la
+paleta `034330[+70]`, y `0AA760` copia en `+70` el `+6E` del jinete al
+montar (antes de montar `+70` = 0: la tabla de Marco, como en MAME). Las
+tablas `09649C[1..3]` (`096530`, `0965B4`, `096638`; 27 programas cada una,
+`29E120..29ED1A`) posan 50 descriptores propios cada una (Tarma
+`197FDC..198310`, Eri `19EC0E..19EF48`, Fio `1A60CA..1A6406`), una pieza de
+64×64 como máximo cada uno.
+
+**Causa.** Los programas de esas tablas estaban en el grupo `m5` (solo en el
+pack de la M5: en la M2 el piloto paraba en `ga_anim_start`) y sus
+descriptores no estaban exportados en ningún pack (en la M5, dibujos
+ausentes): con los tres en las tablas de la M2 la caché quedaba bajo el
+suelo de 208 ranuras.
+
+**Arreglo: solo el piloto del personaje elegido.**
+- Programas: sin grupo (`extract_soldier_programs.py`): van a
+  `programs.bin`, que se lee bajo demanda; la consola solo guarda 69
+  referencias (8 bytes cada una) y lee los del personaje que monta.
+- Sprites: pack de misión **versión 6** (`pack_mission.py`
+  `rider_descriptors`, `pack_store.py`): los descriptores que solo posa una
+  tabla `09649C[c]` (c = 1..3) son las últimas imágenes de actor, un bloque
+  por personaje, con el registro `MSXC` (`rider_first`, `count[3]`) tras los
+  recursos. `scene_stage_load` (`scene_assets.c`) lee las imágenes comunes
+  y **solo el bloque del personaje elegido** (`scene_assets_set_rider`,
+  desde `actor_select_character`) y deja fuera los descriptores de los otros
+  dos bloques (la tabla sigue ordenada). Línea `MSX stage N riders:
+  character C, K of T actor images kept`. Solo las misiones 2 y 5 llevan
+  los bloques.
+- Sin las fuentes de los packs (perdidas el 27-XI), los packs de la ROM 52
+  se reescriben con `tools/pack_add_actors.py`: añade a los packs de la M2 y
+  la M5 los fotogramas validados (páginas nuevas en fragmentos nuevos; la M5
+  toma los 19 fragmentos de la M2), las paletas `377`/`4`/`5` que faltan, y
+  corrige en los demás packs las referencias a los reescritos (fragmentos
+  prestados, `MSXD` prestado, tamaño y CRC del remolque). El cargador del
+  anfitrión sobre los packs de antes y los de después
+  (`MSX_RIDERS=… build/host/pack-loader`): **idénticos** salvo las 900
+  líneas de los pilotos añadidos, las paletas nuevas y las cuentas de
+  imágenes; M3, M4, M6 y M13 sin cambios en lo servido.
+- `SCENE_MISSION_CHUNKS_MAX` 1256 → 1272 (la M5 pasa a 1269 fragmentos).
+
+```sh
+# Capturas (MAME 0.264, estado del TAS u17460: M5 etapa 3; +6E escrito tras la carga)
+MSX_FULL_SET_CHARACTER=N MSX_FULL_LOAD=u17460 MSX_FULL_LOAD_FRAME=38007 MSX_FULL_RIDE=tour \
+  MSX_FULL_VEHICLE_CHEAT=0 MSX_FULL_FAMILY_ROOTS=96a60,96c3a,3b57c,97886,97830,3527e,3533a,96b32,96b62,96c22 \
+  MSX_FULL_FAMILY_RANGE=966f0-97e08 MSX_FULL_FAMILY_FROM=38008 MSX_FULL_PERIOD=6 MSX_FULL_FIRST_DUMP=38008 \
+  MSX_FULL_LAST=41000 MSX_FULL_STATES=TAS/sync264/states tools/run_capture_fullgame.sh slugN
+# Sprites (tabla de N: 29dd22-29e11e, 29e120-29e51e, 29e51e-29e91c, 29e91c-29ed1a)
+tools/export_rest_sprites.py ZIP slugN@97830-97971 --roots-from LO-HI --only --keep NADA --output slugN.json
+# Familias: extract_family_fixture.py slugN/boss-trace.txt --output data/slugpN_fixture.json.gz $A (A de ARMAS_VEHICULOS.md, más --range 3533a-3539f)
+# Packs
+tools/pack_add_actors.py ROM52/romfs OUT --resources 377,4,5 --add 2:slug1.json,slug2.json,slug3.json --add 5:slug1.json,slug2.json,slug3.json
+```
+
+**Pruebas.**
+- MAME 0.264, 4 capturas `slug0..slug3` (dos montas, 38131..39133 y
+  39241..40309, el andador destruido con jinete): sprites del piloto contra
+  la VRAM, 197 volcados cada una: Marco 65 202, Tarma 66 857, Eri 63 950,
+  Fio 58 021 píxeles iguales, **0 distintos**.
+- Familias `slugp0..slugp3` en `make check` (43 nodos, 4575
+  actualizaciones 38008..40310 cada una): **iguales bit a bit** (también
+  `slughit` y `slugair`). Nota: en el anfitrión todas las tablas de
+  programas están compiladas, así que estas familias ya habrían pasado antes
+  del arreglo; lo que falla antes y pasa después es el cargador (packs sin
+  los bloques: el piloto no tiene descriptores) y la prueba de ares.
+- ares 146 (cartucho normal, `test_vehicle_damage_ares.py --mission m5s3
+  --character N --rider --ride forward`): **PASS los cuatro**, piloto
+  `097886` con `0964ac/376` (Marco), `096530/377` (Tarma), `0965b4/004`
+  (Eri), `096638/005` (Fio); 0 dibujos ausentes montado; línea `MSX stage 3
+  riders: character N, 10586 of 10686 actor images kept`. La prueba lee las
+  líneas del piloto desde la monta (el piloto existe antes, con `+70` = 0)
+  y, si no hay ninguna después, la última de antes (Marco: no cambia).
+- Caché de escena: 217 ranuras (suelo 208) en los dos arranques
+  (`test_logo_ares.py` normal y `--skip logo,title,entry`), 217–218 en las
+  pruebas del Slugnoid. Cartucho 66 142 208 B (límite 67 043 328).
+  `check_icache.py`: sin líneas compartidas en `mslugx-explorer` ni
+  `mslugx-m1end`.
+- Vehículo de la M3 (`--mission m3 --character 2 --rider`): el mando ciego se
+  queda en la cámara 1520 de la M3 (12 muertes en 45 min) sin llegar al
+  vehículo `0AC866`: **sin probar**; tampoco el SV-001 de la M4. Las paletas
+  `377`/`4`/`5` del piloto ya están en los packs de la M3 y la M4
+  (`pack_add_actors.py`), pero la torreta del SV-001 (`892`) sigue faltando
+  en la M3 con los packs de la ROM 52.
+
+**Actor de muerte de Fio.** Captura `c3d3` (`run_marco_catalog.py
+--character 3 --first 2352 --hit 400:0 --child-routines c4c64,c4cba
+--family-routines c4c64-c4dd6 --family-frames 2750-2940`, plan de reposo de
+640 fotogramas): sus 85 actualizaciones son las de `data/fio_cap_fixture.json`
+(la familia `fio_cap`; el golpe cae 2 fotogramas después que en `c3d2`);
+`export_rest_sprites.py ZIP c3d3@c4c64-c4dd6 --roots-from 253322-253323
+--only`: 12 descriptores, 171 volcados, 11 562 píxeles iguales, **0
+distintos**. Falta meterlos en el cartucho (punto 2 de §6).
 
 **Siguiente paso:** la voz de Tarma (punto 1) y, después, la
 captura de una muerte de cada personaje (`capture_weapons.lua` con la

@@ -8,7 +8,7 @@ ROMS=${MSX_ROMPATH:-/home/user/roms}
 debug=""
 if [ "${MSX_FULL_DEBUG:-0}" = 1 ]; then debug="-debug -debugger none -debuglog -debugscript $here/mame/start.cmd"; fi
 cd "$out"
-MSX_CAPTURE_DIR=$out timeout ${MSX_TIMEOUT:-7200} /usr/games/mame mslugx -rompath "$ROMS" -bios euro \
+MSX_CAPTURE_DIR=$out timeout ${MSX_TIMEOUT:-7200} "${MSX_MAME:-/usr/games/mame}" mslugx -rompath "$ROMS" -bios euro \
   -video none -sound none $debug -skip_gameinfo -nothrottle -autoboot_delay 0 \
   -autoboot_script "$here/${MSX_FULL_SCRIPT:-capture_fullgame.lua}" \
   -state_directory "${MSX_FULL_STATES:-$out/states}" -cfg_directory "$out/cfg" -nvram_directory "$out/nvram" > "$out/mame.log" 2>&1

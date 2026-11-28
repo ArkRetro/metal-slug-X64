@@ -65,6 +65,13 @@ R va primero: cambia la temporización de todo, y las demás pruebas en ares
 deben medirse ya con el reloj corregido.
 
 ### R: reloj y rendimiento
+
+**Estado (work-r):** 1–2 hechos (el original ralentiza: `003A48` borra los
+vblanks; `scene_clock` ya no recupera). 3: perfilado, sin optimización
+integrada (el coste está repartido en `run_gactor`). 4: `make check`, caché
+216/216 y matriz PASS, pero `multi` no es 0. 5: medido (VI 59,846 Hz, un
+fotograma sin paso cada ≈ 91), opciones en `docs/RENDIMIENTO.md`.
+
 1. Desensamblar la espera de vblank y el bucle principal del 68K. Decide qué
    pasa en el original cuando un fotograma no llega (ralentiza o recupera).
 2. Traducir ese comportamiento al reloj. Si el original ralentiza, se elimina

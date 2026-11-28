@@ -1532,3 +1532,23 @@ Opciones:
 3. Programar el VI a la frecuencia de la Neo Geo (registros de sincronismo
    del VI): fluido y exacto, pero fuera de norma NTSC; habría que probar
    televisores, MiSTer y emuladores.
+
+### Resultados (ares, matriz completa salvo `m4boss`, frente a `gates4`)
+
+- `make check`: todo pasa salvo los 2 pasos bloqueados por datos
+  (`test_bgp_share.py`, `check_mission_descriptors.py 6`); `check-core` pasa
+  (incluye `test_scene_clock`). Caché de escena: **216 ranuras** en los dos
+  arranques (normal y con Start).
+- Matriz: todas PASS; `pause` pasa (en `gates4` fallaba). `m6s2end` da 698
+  `native draw missing` (456 en `gates4`): las mismas entradas, más
+  fotogramas (142 ventanas frente a 134), porque ya no se recupera.
+- `multi` (fotogramas con dos pasos, suma de la prueba), antes → después:
+  m5s1 700 → 556, m5s2 67 → 57, m5s3 1527 → 1419, m6boss 21405 → 17395,
+  m6s1end 1989 → 1470, m6s2end 24876 → 16906, slugnoid 4627 → 4448,
+  pause 15 → 12; m4 348 → 351, m6s1 2399 → 2625, veh 270 → 335,
+  ending 276 → 317. **No llega a 0**: los fotogramas que duran más de un
+  vblank de la Neo Geo (mundo + fondo > 16,9 ms) siguen corriendo dos pasos,
+  y eso es lo que haría el original (una actualización = 2 vblanks); lo que
+  ya no hay es la tanda de pasos dobles para pagar la deuda.
+- `sim` máximo, sin cambio (1 076 901 µs en m5s2): es la carga del salto de
+  misión de la prueba, no juego.

@@ -76,8 +76,9 @@ static bool k39da8(neo_gactor_t *a,neo_genv_t *e) {
     SW(0x72,W(0x72)&1u);
     SL(0x30,0);SL(0x34,0);SL(0x62,0);                               /* 01B1DC */
     SB(0x93,0);
-    /* 03C526 -> 019240: RAM 10C2F6 = 0 (Mission 1) clears the carry: no 03C62A. */
-    return true;
+    /* 03C526: the water ripple 03C62A (+6E = 1) when 019240 has a palette
+     * for RAM 10C2F6 (none in Mission 1; the Mission 2 stage-1 river). */
+    return neo_gate_ripple(a,e,1);
 }
 /* 039EDA: (rand & 7) * 8 + 0x40. */
 static uint16_t k39eda(neo_genv_t *e) {return (uint16_t)(((ga_rand(e)&7u)<<3)+0x40u);}

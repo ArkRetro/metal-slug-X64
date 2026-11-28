@@ -7,7 +7,7 @@
  * and max per phase in microseconds; no per-frame logging. */
 #include <stdint.h>
 enum {
-    MSX_PERF_SIM,        /* scene_clock catch-up: every msx_game_update of the frame */
+    MSX_PERF_SIM,        /* actor_draw up to the last msx_game_update of the frame (input, stage loads, steps) */
     MSX_PERF_PREP,       /* log diffs, animation pick, prefetch requests, effects frame */
     MSX_PERF_BEGIN,      /* scene_render_begin: service, attach/clear, mode */
     MSX_PERF_BG_PREFETCH,/* background cell prefetch requests + service */
@@ -32,6 +32,8 @@ void msx_perf_frame_start(void);
 void msx_perf_mark(unsigned phase);
 void msx_perf_add(unsigned bucket,uint32_t ticks);
 void msx_perf_steps(unsigned steps);
+/* Where the frame is (camera x, stage): the multi-step lines name it. */
+void msx_perf_where(unsigned camera,unsigned stage);
 void msx_perf_counts(unsigned draws,unsigned soldiers);
 void msx_perf_frame_end(void);
 #else
@@ -39,7 +41,12 @@ static inline void msx_perf_frame_start(void) {}
 static inline void msx_perf_mark(unsigned phase) {(void)phase;}
 static inline void msx_perf_add(unsigned bucket,uint32_t ticks) {(void)bucket;(void)ticks;}
 static inline void msx_perf_steps(unsigned steps) {(void)steps;}
+static inline void msx_perf_where(unsigned camera,unsigned stage) {(void)camera;(void)stage;}
 static inline void msx_perf_counts(unsigned draws,unsigned soldiers) {(void)draws;(void)soldiers;}
 static inline void msx_perf_frame_end(void) {}
 #endif
+/* Presentation timing per boot stage (always built; msx_perf.c). */
+void msx_frames_present(void);
+void msx_frames_stage(const char *label);
+unsigned msx_frames_count(void);
 #endif

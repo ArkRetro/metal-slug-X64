@@ -1,13 +1,34 @@
 #ifndef MSX_SCENE_ASSETS_H
 #define MSX_SCENE_ASSETS_H
 #include <stdint.h>
+#include "neo_animation.h"
 #include <stdbool.h>
 enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
+enum { SCENE_STRIP_ITEMS=2048, SCENE_STRIP_GROUPS=512, SCENE_STRIP_ENTRY_BYTES=8 };
+/* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
+ * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
+ * set from scene_meta.h in scene_assets.c). */
+enum { SCENE_MISSION_CHUNKS_MAX=1272 };   /* 1272 since the Mission 5 pack carries the Slugnoid pilots of characters 1..3 (B82: 19 chunks taken from the Mission 2 pack, tools/pack_add_actors.py: 1269 chunks); 1256 since the Mission 5 pack carries the boss 0A0C00 and its pieces (1250 chunks); 1224 since the Mission 6 pack carries the group m5 with the Slugnoid pilots 09649C[1..3] (488d91d): 1224 chunks (its format-4 copy of make check: 1223); 1216 since the Mission 6 pack carries the sewer soldiers' no-blood palettes 888..88A (their images: 1213 chunks); 1200 since the Mission 6 pack with its actors (filesystem/mission6/rest-native.json keeps the Mission 2..5 actors, as each export does) and the groups m3, m4, m5: 1195 chunks; 1088 since the Mission 5 pack with the Mission 3 group (the soldiers 05C53C), the metro train 051344 and the Mission 4 vehicle 0587C4's programs: 1037 chunks or more; 1024 since Mission 4 has 895 chunks and the format-4 Mission 5 pack of make check (its export keeps the Mission 4 actors) 935; before 896: Mission 4 with the props and flyers (834: its export carries the Mission 2 and 3 actors too); Mission 3 with the fat bomb, dust and molotov (800); Mission 3 with the final boss 04A2C2 (779); Mission 3 with the fat Marco's weapons (648); Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (544 after the rider car) */
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
-typedef struct { uint16_t page,palette; int16_t x,y; uint16_t width,height,format; } scene_image_t;
-typedef struct { uint16_t layer; int16_t x,y; uint16_t phases[8]; } scene_map_cell_t;
+/* 12 bytes (was 14): width <= 64 and format 0 / 2 in every table
+ * (pack_scene.py asserts bytes; the mission packs' parts are <= 64 x 64, map
+ * strips 16 x 256). The 2 bytes per image of the base tables (12 656 images)
+ * are ~25 KB of the program image (docs/MEMORY_OPTIMIZATION.md, "Imagen de
+ * 12 bytes"). Initializers: page, palette, x, y, height, width, format. */
+typedef struct { uint16_t page,palette; int16_t x,y; uint16_t height; uint8_t width,format; } scene_image_t;
+_Static_assert(sizeof(scene_image_t)==12,"scene_image_t is 12 bytes");
+/* A map cell: layer, position and its image per video phase (& 7), as the
+ * first phase's image plus, for an animated cell, a shared pattern of image
+ * deltas (scene_cell_patterns; SCENE_CELL_STATIC: the same image in every
+ * phase). 8 bytes instead of 8 ids (RAM budget, docs/RENDIMIENTO.md). */
+enum { SCENE_CELL_STATIC=255, SCENE_CELL_PATTERNS=16 };
+typedef struct { uint8_t layer,anim; int16_t x,y; uint16_t phase; } scene_map_cell_t;
+extern int8_t scene_cell_patterns[SCENE_CELL_PATTERNS][8];
+static inline uint16_t scene_cell_phase(const scene_map_cell_t *cell,unsigned phase) {
+    return cell->anim==SCENE_CELL_STATIC?cell->phase:(uint16_t)(cell->phase+scene_cell_patterns[cell->anim][phase&7u]);
+}
 /* misses: every wait for a chunk (sync_misses: those of non-deferrable
  * draws: background, Marco, HUD); idle_decodes: decoded while the CPU waited
  * for a framebuffer (scene_assets_idle). */
@@ -26,7 +47,24 @@ int scene_native_palette(unsigned resource);
  * logo's). scene_assets_init calls it if needed, then loads synchronously
  * what the first frame requires. */
 void scene_assets_begin(void);
+/* The cache begun in the boot cinematics' spare time: as many slots as fit
+ * now keeping `keep` bytes free, sized for the heap it will have once
+ * `coming` more bytes are freed (the movies); scene_assets_idle warms them
+ * and scene_assets_begin adds the rest. False when nothing fits yet. */
+bool scene_assets_begin_early(int coming,int keep);
+/* Build the warm list ahead, a bounded step before `deadline` (TICKS_READ;
+ * 0: all of it); true while steps remain. */
+bool scene_assets_plan_step(uint32_t deadline);
+/* More slots for a cache begun early, while the heap keeps `keep` bytes
+ * (a movie closed). */
+void scene_assets_grow_early(int keep);
+/* Bytes of actor_init's allocations already made before the cache (Marco's
+ * parts preloaded during the boot cinematics): taken off its reserve. */
+void scene_assets_game_preloaded(unsigned bytes);
 void scene_assets_init(void);
+/* The chosen character (+6E, 0..3): a version 6 mission pack's stage keeps
+ * only that character's block of the Slugnoid pilot's images (09649C[+70]). */
+void scene_assets_set_rider(unsigned character);
 /* One step of idle-time work while the CPU waits for a framebuffer: start the
  * next DMA or decode a staged chunk if it ends before the next vertical blank.
  * Returns false when there is nothing to do or no time left in this frame. */
@@ -36,6 +74,8 @@ bool scene_assets_idle(void);
 void scene_assets_mem(const char *stage);
 void scene_assets_check_budget(void);
 int scene_assets_heap_low(void);
+/* Cache slots holding a chunk, and slots allocated (diagnostics). */
+void scene_assets_slots(unsigned *resident,unsigned *capacity);
 const scene_bank_t *scene_bank(unsigned id);
 const scene_image_t *scene_frame(unsigned id,unsigned frame);
 const scene_image_t *scene_background_tile(unsigned row,unsigned col);
@@ -80,4 +120,70 @@ unsigned scene_completed_epoch(void);
 void scene_begin_epoch(unsigned epoch);
 void scene_complete_epoch(unsigned epoch);
 scene_cache_stats_t scene_cache_stats(void);
+/* Mission packs (romfs/missionN.pack, docs/MISION2.md "Fase 2"). A layer of
+ * a stage scrolls by camera*x_num/x_den and rises by camera_y*y_num/y_den;
+ * it is drawn while visible_min <= camera x <= visible_max. */
+typedef struct { uint8_t x_num,x_den,y_num,y_den; int16_t visible_min,visible_max; } scene_layer_rule_t;
+/* Rise of pack layer `layer` (0..3) for the foreground's vertical offset
+ * `height`: height*y_num/y_den (rounded away from zero as the fit) plus the
+ * layer's phase. tools/neo_scene.py reads layers 0/1 with Mission 1's
+ * Y_PHASE 8 (10E83E/10D7B6 at y 264 there) and map.json stores their cells
+ * 8 px higher; in the packs every layer object starts at y 256 (MAME run4
+ * trace: sky_y = mid_y = fore_y = 256 at 19440, 19950, 26160, 117990), so
+ * the screen row of a cell is map y + vertical offset, the offset of
+ * layers 0/1 being 8 + the fitted rise (VRAM of run4 at 19680, 26670, 28620,
+ * 119100, 119460: tools/test_scene_layer_y.c). */
+static inline int scene_layer_rise(const scene_layer_rule_t *r,unsigned layer,int height) {
+    int rise=height>=0?(height*r->y_num+r->y_den-1)/r->y_den:-((-height*r->y_num)/r->y_den);
+    return rise+(layer<2?8:0);
+}
+enum { SCENE_STAGE_DYNAMIC_MAPS=16 };
+/* Map patches of a stage: 16 with their layer in the cell's layer byte
+ * (0x80 | patch << 3 | layer); Mission 4 has 48: the layer bits 5..7 are the
+ * banks 1..3 of the terrain layer 3 (tools/pack_mission.py). */
+enum { SCENE_STAGE_PATCHES=64 };
+static inline unsigned scene_patch_cell_index(uint8_t layer) {return ((layer>>3)&15u)+((layer&7u)>=5u?16u*((layer&7u)-4u):0u);}
+static inline unsigned scene_patch_cell_layer(uint8_t layer) {return (layer&7u)>=5u?3u:(layer&7u);}
+typedef struct {
+    unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */
+    uint32_t descriptor;             /* stage descriptor (016DDE..) */
+    uint16_t width,camera_max;uint32_t backdrop;
+    int16_t grid_row0;               /* kernel row of the grid's row 0 (pack grid_origin_y; neo_collision_set_row_origin) */
+    uint16_t columns,rows;           /* collision grid (8-px cells, column major, row 0 at the bottom) */
+    const uint8_t *grid;uint8_t *grid_dynamic;const uint8_t *unknown;uint8_t *ring; /* kernel cell ring (rows > 32) */
+    const uint8_t *camera_list;uint32_t camera_rom;uint16_t camera_len;   /* descriptor +0 */
+    const uint8_t *script;uint32_t script_rom;uint16_t script_len;        /* +8 -> table 0x000800 */
+    const uint8_t *players;uint32_t players_rom;uint16_t players_len;     /* +4 (019604 records) */
+    scene_layer_rule_t rules[4];
+    const scene_map_cell_t *cells;unsigned cell_count;
+    /* Map patches 0C70FC (B37, tools/extract_map_patches.py): patch i's cells
+     * follow the stage's cells with layer byte 0x80 | i << 3 | layer. */
+    const scene_map_cell_t *patch_cells;unsigned patch_cell_count,patch_count;
+    uint32_t patch_submap[SCENE_STAGE_PATCHES],patch_layer_object[SCENE_STAGE_PATCHES];
+    void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
+    /* Memory for the renderer's background draw lists (scene_strips.h, B47):
+     * SCENE_STRIP_ITEMS items and SCENE_STRIP_GROUPS groups of 8 bytes, with
+     * the stage's tables (slots), not the program image: Mission 1 draws
+     * through the direct walk. */
+    void *strip_items,*strip_groups;
+    /* Dynamic maps (0140C0) of the pack's 'MSXR' block (Mission 3): ROM
+     * label, bytes (the ROM's, docs/MISION3.md "Reconocimiento del mapa"). */
+    unsigned dynamic_map_count;uint32_t dynamic_map_rom[SCENE_STAGE_DYNAMIC_MAPS];uint16_t dynamic_map_length[SCENE_STAGE_DYNAMIC_MAPS];
+    const uint8_t *dynamic_map[SCENE_STAGE_DYNAMIC_MAPS];
+} scene_stage_t;
+/* ROM bytes at `address` held by the loaded stage (its dynamic maps), or
+ * NULL: the generic actors' ga_rom fallback (ga_rom_set_extra). */
+const uint8_t *scene_stage_rom(uint32_t address);
+/* An animation program of the loaded mission's own data (pack 'MSXD'),
+ * NULL when none (neo_world.c: after the image's soldier_programs). */
+const neo_anim_program_t *scene_stage_program(uint32_t tag);
+/* Opens /missionN.pack (header only; Mission 1's map goes back to the LRU). */
+bool scene_mission_load(unsigned mission);
+/* Reads one stage's tables into reserved cache slots and pins its map. */
+bool scene_stage_load(unsigned index);
+void scene_assets_set_load_idle(void (*fn)(void));
+/* Back to Mission 1's compiled tables. */
+void scene_mission_unload(void);
+/* The loaded stage, or NULL while Mission 1's compiled tables are active. */
+const scene_stage_t *scene_stage(void);
 #endif

@@ -85,7 +85,8 @@ correlación normalizada (con la música y otros efectos mezclados):
 `0x10A5` del blindado no es un efecto puntual: sola suena continua (motor) y
 `0C`+`10A5`, lo que se envía al destruirlo, la detiene (render silencioso).
 Como el blindado nativo no tiene evento de aparición y no se midió su bucle,
-**no se incluye**. `06` y `0C` no paran la música.
+**no se incluye**. `06` y `0C` no paran la música. (Corregido en §13: `10A5`
+es un efecto de 11,58 s del camión `02916E`, no un bucle.)
 
 ## 4. Política de canales medida
 
@@ -168,8 +169,8 @@ descartan las `>= 0x2000` (`90A5`, `90E8`: `0120F8` las tira) y `002C`
 `data/sound_map.json` (`sfx_<palabra>`, con las rutinas ROM que las piden en
 el port) y se renderizan aisladas como antes (`render_sound_commands.py
 --labels`). `10A5` (motor del blindado) y `1026` siguen sonando al final de la
-ventana de 300 fotogramas: son bucles, no efectos, y no se empaquetan
-(`pack_game_audio.py`: estado `LOOP`). Total de efectos: 49 renders, 63 s.
+ventana de 300 fotogramas y no se empaquetaban (`pack_game_audio.py`:
+estado `LOOP`); con 1500 fotogramas terminan solos (§13). Total de efectos: 49 renders, 63 s.
 
 **Política medida.** `tools/measure_sound_pairs.py` renderiza pares (A y,
 12 fotogramas después, B) y los ajusta contra los renders aislados con dos
@@ -237,6 +238,444 @@ cartucho ni abre ficheros. La música sigue en streaming desde la ROM.
 `main`: 665 *chunks*, caché 4256 KB, falso). La caché de 224 *chunks* sigue
 por encima del peor conjunto de trabajo (30, `check_scene_budget.py`).
 
+## 9. Fin de misión: «MISSION COMPLETE» (informe de MiSTer, ROM 13)
+
+No sonaba la voz de fin de misión. El actor de misión `101364`, en `0188B8`
+(la actualización en que `0188B0` ve el `+60` del recuento de prisioneros),
+llama a `15422` (solo borra `10C2BD`; `15418` lo pone a FF: no es música)
+y luego a `0120F8` con `0x0020` y `0x1137`, antes de crear las letras
+`06090A`. El port no pedía ninguna.
+
+- `data/sound_map.json`: `music_mission_complete` (`0020`, banco 00: orden
+  de música, sustituye a la de la misión en el controlador) y `sfx_1137`
+  (la voz). Render aislado (`render_sound_commands.py --rom-dir ROMS
+  --labels music_mission_complete sfx_1137`): `0020` 6,77 s estéreo,
+  latencia 355 ms, termina dentro de la ventana de 900 fotogramas (no es un
+  bucle); `1137` 2,05 s mono, `OK`.
+- `pack_game_audio.py`: una música que termina en su ventana (`OK`) se
+  empaqueta entera, estéreo y sin bucle (`one_shot`); un render parcial
+  (`--labels`) conserva en `manifest.json` los paquetes de los demás
+  sonidos. `music_mission_complete.wav64` 183 160 B, `sfx_1137.wav64`
+  27 872 B (residente en RAM como los demás efectos).
+- Canal de `1137`, medido (`measure_sound_pairs.py --pairs`, 7 pares en
+  `data/sound_pairs.json`): consigo misma *corta* (onda y envolvente,
+  margen 0,31); con pistola `10F7`, explosión `1027` y la voz rebelde `1041`,
+  en ambos órdenes, *solapa* (onda). No comparte canal con nada medido:
+  `derive_sound_policy.py` le da un canal propio `ch_1137` (nivel 0; una
+  segunda petición la reinicia). No va al canal VOZ de los rebeldes porque
+  `1041` y `1137` suenan juntos en el original.
+- `gameplay.c` (`mission_end_step`, paso `0188B8`): pide `0x0020` y
+  `0x1137` en ese orden, en la lista de sonidos del mundo, en la misma
+  actualización que crea las letras. `game_audio.c`: `0x0020` para la
+  música de la misión y toca el *jingle* una vez en la voz de la intro
+  (libre en juego; `game_audio_sync` la para al reiniciar); `0x1137` pasa
+  por la política como cualquier efecto.
+- Comprobación (`tools/test_gameplay.c`, `release_run`): cada orden se pide
+  una sola vez, `0020` justo antes de `1137`, en la actualización 30 +
+  recuento (la siguiente a la última del recuento; semilla 1: actualización
+  259, recuento 229), con las letras ya creadas (`+7C` = 0x9F tras su primer
+  `subq`).
+
+## 10. Música al empezar la Misión 2 (informe del usuario, ROM 20)
+
+En hardware real la Misión 2 empezaba sin música tras jugar la Misión 1.
+`game_audio_stage_music` abría la `0022` pero solo la tocaba si la música
+anterior sonaba o si el juego no estaba en fin de misión: el *jingle* `0020`
+la había parado y el fin de misión seguía marcado. En el original `018434`
+pide la palabra y el controlador la toca; además `1805C` (primer registro de
+cada misión) manda antes el reinicio `03` y `01829E` pone `+80` = FFFF.
+Ahora: `game_audio_mission_start` (el `03`: efectos, voz del *jingle* y
+música parados) y la música pedida en la carga suena siempre. En ares con el
+cartucho de transición (`tools/test_m1m2_ares.py`): `MSX AUDIO stage music
+0022` seguido de `MSX AUDIO music start` (antes del arreglo: sin `music
+start`). Ver MISION2.md, «Transición Misión 1 → Misión 2».
+
+## 11. El rayo `10F8` (sonido sostenido, rama `work-laser`)
+
+`01E19E` pide `10F8` al crear el rayo de las armas `06/0B` (si el otro
+jugador no lo tiene sonando) y `01E4D4` lo para con `012192` al acabar. El
+render aislado (`render_sound_commands.py --labels sfx_10f8`) sigue sonando
+al final de su ventana (`ACTIVE_AT_WINDOW_END`, 5,015 s) y no tiene un
+periodo exacto medible (ruido modulado): no es un bucle de muestra. Se
+empaqueta la ventana entera (`data/sound_map.json` `"stop": "012192"`,
+`pack_game_audio.py`), a 32 kHz porque el 30 % de su energía está por encima
+de 11 kHz, y `game_audio.c` atiende ahora la petición de parada de los
+actores (`palabra | 0x8000`): el canal que suena esa palabra se para. Es
+el único efecto no residente: se reproduce desde `rom:/` como la música
+(88 KB que el presupuesto de la caché de escena, 208 ranuras, no tiene). Un
+rayo que dure más de 5 s queda en silencio antes que en la recreativa
+(desviación declarada). Pares medidos (`measure_sound_pairs.py --labels
+sfx_10f8` y, en modo explícito, contra `1056`, `1069`, `109B`, `10A7`,
+`10E8`, `1121`, `1137`): sin corte ni caída claros: canal propio
+`ch_10f8`.
+
+## 12. Voz de muerte de Marco y efectos que no cargaban (ROM 23, rama `work-m2fix3`)
+
+**B30: faltaba siempre la voz al morir.** `0C2956` (muerte por contacto, la
+de `0C3118` al perder el vehículo y la del tiempo) y `0C2D6A` (caída) piden
+antes que nada la palabra de la tabla `0C294E` indexada por el personaje
+(+6E: Marco `1123`, Tarma `1087`, Eri `1125`, Fio `114E`). Captura
+`capboss` (MAME, `wpset` en el anillo `10BF68`): `1123` en cada una de las
+15 muertes, llamador `0C2D96`. El port no la pedía: `start_death`
+(`gameplay.c`) la pone ahora en la lista de sonidos del mundo para toda
+muerte. `sfx_1123` en `data/sound_map.json`, render aislado
+(`render_sound_commands.py --labels sfx_1123`: 1,505 s, `OK`, latencia
+15,8 ms), 133 pares medidos (`measure_sound_pairs.py --pairs`: consigo
+misma y contra las 66 etiquetas de la política en los dos órdenes; en
+`data/sound_pairs.json`): corta las voces de los rebeldes y estas caen
+bajo ella (`103E`, `1041`, `104A`, `104F`, `1142`; `10A3`/`10A4`/`10A7`/`10C6`
+solo por onda), solapa con el resto. `derive_sound_policy.py`: canal VOZ,
+nivel 2; ningún otro sonido cambia de canal ni de nivel. `104A`, `104F` y
+`1142` ya tenían el nivel 2, así que en el port la cortan (3 contradicciones
+nuevas en `data/sound_policy.json`, como las anteriores). `sfx_1123.wav64` 20 546 B, residente.
+
+**Seis efectos nunca cargaban.** `msx_ramfs` tenía 64 ficheros y 64
+descriptores: con `fixed.bin` solo cabían 63 efectos y los seis últimos de
+`msx_sfx_defs` (`1142`, `1158` la voz de la C, `115A`, `1168`, `116A`,
+`116E`) se quedaban fuera (`MSX AUDIO game sounds=64/70` en la ROM 23 y un
+único `missing` en el registro). Ahora 96 ficheros y 96 descriptores (cada
+efecto residente tiene su WAV64 abierto) y un registro por efecto que no
+carga. Con todo residente la ROM de referencia se quedaba 9 KB por debajo
+del suelo de la caché de escena (3323 de 3332 KB): la voz de fin de misión
+`1137` (suena con la caché quieta) y la voz de la D `115A` (rara) se leen de
+`rom:/` como `10F8` (51 KB): 210 ranuras en la referencia.
+
+**B34: la voz «Rocket launcher».** La recreativa la pide al coger el arma
+(`0C0928` → tabla `0C08F8`: `112E` para los ids 3 y 8; captura `capboss`
+95523 y `capw8` 14145, solo esa palabra). El port pide lo mismo
+(`marco_weapons_grant`) y `112E` es residente desde la ROM 21; en el
+recorrido de la Misión 1 en ares (referencia) al coger el arma 8:
+`MSX AUDIO voice 112E: started` y nada la corta después. Registro nuevo para
+las voces del jugador (`MSX AUDIO voice XXXX: started / started, cut YYYY /
+dropped under YYYY / cut by YYYY / not resident`). Sin causa encontrada en
+el port: queda abierto. Dato de la recreativa (`capw8`, `-wavwrite` desde
+`sec00_2100`, correlación normalizada de la parte propia de cada voz, tras
+el «OK» común de 0,45 s): la voz de la C en 5928 se oye (0,61), la de la H
+en 8658 (con `108C` cada 5 fotogramas) y la de la R en 14145 (con `10F5` 6
+fotogramas después) no (0,04, el nivel de base): en la recreativa también
+puede no oírse si se dispara al coger el arma; falta medir ese par.
+
+## 13. Voz MISSION 2 START y los «bucles» 10A5/1026 (rama `work-m2fix5`)
+
+**Voz `1132`.** Las letras MISSION n START (`0607DE`) piden en su primera
+actualización la palabra `607D2[misión]` (`060878` → `0120F8`; la tabla de
+la ROM es `1131..1136` para las misiones 1 a 6). Captura MAME
+(`capture_fullgame.lua` desde `sec01_19391`, punto de parada en `0120F8`):
+`1132` en el fotograma 19428, retorno `060888`, la única palabra hasta los
+disparos. El port ahora la pide (`gameplay.c`, actualización de las letras
+con un `neo_end_ram_t` propio); `start_voices` cuenta solo las voces sin
+render (la `1131` de la Misión 1 está en el audio de la entrada; `1133+`).
+`tools/test_neo_end.c` (letras de inicio) comprueba una sola petición
+`1131 + 10C2F4` en la primera actualización. Render aislado: 2,677 s,
+`OK`, 36 KB. Pares: 135 medidos (consigo misma y con las 67 etiquetas en
+los dos órdenes): solo corta y es cortada por `1137` (fin de misión), el
+resto se solapa o es dudoso: canal propio con `1137` (`CH_1132`), nivel 0.
+No cabe residente (la referencia quedaba en 209 ranuras, suelo 208): se
+lee de `rom:/` como `1137`. Registro `MSX AUDIO voice 1132: …`.
+
+**B20: `10A5` y `1026` no son bucles.** La ventana de render de 300
+fotogramas (5 s) terminaba dentro de ellos (`ACTIVE_AT_WINDOW_END`) y
+`pack_game_audio.py` los descartaba como bucles. Con `frames: 1500` en
+`sound_map.json` los dos terminan solos (`OK`, silencio hasta el final de
+la ventana): `10A5` 11,578 s (motor del camión `02916E`: `0120F8` en
+`029220`/`029428`, también `0296C0`; `012192` lo para en `02935C`/`0294A2`,
+el port envía `10A5|8000`) y `1026` 6,159 s (derrumbe de la cúpula `054A60`;
+también `022B56`, `046C40`, `04A9D4`, `0A13DA`; nunca parado). No hace falta
+soporte de bucle.
+- `10A5`: 157 KB, de `rom:/`. Pares (138): se corta a sí mismo, corta `10E8`
+  y cae bajo `10EA`: canal de `10E8`/`10EA` (renombrado `CH_10A5`), nivel 1;
+  ningún otro sonido cambia.
+- `1026`: renderizado (83 KB en `filesystem/audio`) pero **sin entrada en la
+  política: parada explícita** (petición `unmapped`, registro
+  `MSX AUDIO voice 1026: unmapped`). Sus 138 pares unen dos canales del
+  port: cae bajo la explosión `1027`, `1021`, `1025`, `102C`, `1035`, `1064`,
+  `1067`, `10F9`, `10FF` y el humo, y corta o es cortado por `102F`, `1032`,
+  `1034`, `1158`, el estallido. Con ellos `derive_sound_policy.py` junta el
+  canal de las voces de las armas (`1056`, `112C..112F`, `1158`, `115A`…)
+  con el de impacto y cambia el nivel de 14 sonidos ya medidos: el modelo
+  de un canal por grupo no lo representa. Esos pares no están en
+  `data/sound_pairs.json` (medida repetible con
+  `measure_sound_pairs.py --pairs`, lista `1026` × las 68 etiquetas).
+
+## 14. Voz al coger el láser y las armas 0E/0F (ROM 24, rama `work-m2fix6`)
+
+**B36: no sonaba la voz al coger la L.** `0C0928` pide la palabra de la
+tabla `0C08F8` (leída de la ROM: `0000 0000 112F 112E 112C 112D 1130 112F
+112E 112C 112D 1130 1158 115A 115B 1159`); el port ya la pedía
+(`marco_weapons_grant`), pero `1130` (ids 06/0B), `115B` (0E) y `1159` (0F)
+no estaban en `data/sound_map.json`: nunca se renderizaron y la política no
+las conocía. Render aislado (`render_sound_commands.py --labels sfx_1130
+sfx_115b sfx_1159`, a un directorio aparte y `pack_game_audio.py --source`
+ese directorio, que funde el manifiesto): 1,388 s / 1,508 s / 1,867 s, `OK`,
+latencia 9,7–12,9 ms; WAV64 de 18 962, 20 582 y 25 442 bytes.
+
+Pares (`measure_sound_pairs.py --pairs`, 411: cada una consigo misma, entre
+ellas y contra las 67 etiquetas de la política en los dos órdenes; en
+`data/sound_pairs.json`): cortan y son cortadas por las otras voces de
+recogida (`112C..112F`, `1158`, `115A`), caen bajo `1124`, `113A` y `1056`;
+con el resto solapan o no está claro. `derive_sound_policy.py`: canal
+`ch_1056`, nivel 1, como sus hermanas. Dos pares (`1159>1032`,
+`115B>vehicle_burst`) son cortes solo por onda (residuo en el límite de
+media mezcla) que la envolvente lee como solape, y habrían unido todo el
+grupo de `1056` al canal de impacto aunque los demás pares cruzados de los
+dos grupos solapan (ninguno corta ni cae; decenas son solapes claros en los
+dos órdenes): la herramienta los deja como puentes (`--bridge`, por
+defecto, listados en `bridges`). Ningún otro sonido cambia de canal ni de
+nivel (comprobado: la política anterior se reproduce igual sin los pares
+nuevos).
+
+Memoria: `115B` y `1159` (armas 0E/0F, que no da ningún objeto de las
+Misiones 1 y 2: B16) se leen de `rom:/` como `115A`. `1130` era residente
+(19 KB); al fusionar `work-m2fix5` (`1132` y `10A5` en la política) la
+referencia de la M2 quedó en 207 ranuras (suelo 208, aserción en
+`scene_assets_begin`): `1130` también se lee de `rom:/`.
+
+## 15. Voz al coger el molotov (B35, rama `work-molotov`)
+
+`0C0A7C` pide `0C0A66[tipo]` (`0000 1157 1156 1155`): `1156` para el
+molotov, después del `1124` de `0C0B32`. `sfx_1156` en
+`data/sound_map.json`; render aislado (`render_sound_commands.py --labels
+sfx_1156` a un directorio aparte, `pack_game_audio.py --source` ese
+directorio): 1,568 s, `OK`, latencia 12,9 ms, WAV64 de 21 392 bytes. Pares
+(`measure_sound_pairs.py --pairs`, 145: consigo misma y contra las 72
+etiquetas en los dos órdenes; en `data/sound_pairs.json`): corta `1124`
+(y cae si `1124` va después), corta y es cortada como las otras voces de
+recogida. `derive_sound_policy.py`: `ch_1056`, nivel 1; ningún otro sonido
+cambia. Se lee de `rom:/` (rara, como `1130`).
+
+## 16. `10E9` desde `rom:/` (B38)
+
+El Slugnoid (`neo_slugnoid.c`) dejó la referencia de la M2 por debajo del
+suelo de la caché de escena (3306 de 3332 KB con todos sus pilotos, 14 KB
+de menos con solo el de Marco). `10E9` (37 KB: la salida A+B del SV-001 y
+la muerte del Slugnoid con jinete, raros) se lee de `rom:/` como `1156`:
+209 ranuras (suelo 208). Los sonidos nuevos del Slugnoid `116C` (bomba de
+tipo 3) y `1089` (torreta perdida) no están renderizados.
+
+## 17. Música y efectos de la Misión 3 (B66, G8, rama `work-m3music`)
+
+La M3 no tenía música: `game_audio_stage_music` recibía la `0024` del
+descriptor y no tenía fichero (`MSX AUDIO stage music 0024 missing`).
+
+**Peticiones de la M3** (grifo nuevo: `capture_fullgame.lua` desde
+`states4/sec03_26140`, réplica de `run4`, con `wpset 320000` sobre el
+*latch* y `bpset 0120F8`; el byte de banco `<0x20` solo se envía cuando
+cambia, `0120A4`):
+
+| Fotograma | Bytes | Origen |
+| --- | --- | --- |
+| 117383 / 117582 | `0A 80` / `00 20` | fin de la M2 (fundido, *jingle*) |
+| 117965..117968 | `03`, `06`, `00 24` | `1805C` (reinicio) y `018412..01842E`: descriptor `016E0E` +C = `0024` (el único de la M3) |
+| 144484 | `0A 80` | `059F76` (hijo del jefe `04A2C2`, `0E11AA[0]` = `0060 00C0`): fundido `01228C` |
+| 144676/144677 | `00 28` | `059FBA` tras la espera de 0xC0 (192 fotogramas) |
+| 149230 / 149430 | `0A 80` / `00 20` | fin de la M3 |
+| 149828..149831 | `03`, `06`, `00 25` | Misión 4 |
+
+No hay más órdenes de música: ninguna sección de la M3 ni el jefe
+intermedio `0A4A94` piden música, y no hay *jingle* de entrada (la voz
+MISSION 3 START `1133` es un efecto, `0607DE`).
+
+**Render** (`render_sound_commands.py --labels music_mission3
+music_mission3_boss`, 24000 fotogramas, a un directorio aparte;
+`pack_game_audio.py --source`): `0024` periodo 98,77 s desde 2,14 s
+(similitud 0,986, empalme 0,927; el candidato de 296,3 s es su triple: la
+similitud a 98,77 s es 0,98–0,99 en todo el render), `0028` 119,19 s desde
+0,80 s (0,987, empalme 0,943). `music_mission3*.wav64`: 2 759 060 y
+3 274 220 bytes (intro + bucle). `game_audio.c`: `0x24` y `0x28` en
+`music_name`; el `0x28` llega por la lista de sonidos del mundo como el
+`0x27` de la M2 (`neo_m3boss.c` crea `059F76`, que corre `neo_m2boss.c`).
+
+**El fundido del controlador** (Z80, desensamblado con `dasm` del depurador
+de MAME y volcados de la RAM `F800..FFFF` por fotograma): `0A xx` guarda
+`F806 = 0x0700[xx−0x20]·16` (`4FB9`; `0A 80` → `0x0070`) y la dirección
+`F808 = 1` (`2136`); cada interrupción del temporizador A (`24 AC`, `25 03`:
+TA = 691, (1024 − 691)·144 / 8 MHz = 5,994 ms, 2,81 por fotograma) resta
+`F806` del nivel maestro `F804` (`4D67..4D97`, de `FFFF` a 0 en 585
+interrupciones, ≈ 208 fotogramas). Cada canal multiplica su nivel por
+`F805` con las tablas log/exp `0x0600/0x0700` (`2716`, `3547`…) y lo pasa
+a atenuación con tablas por chip (`0x0A80`…). Al llegar el `00 28` el
+maestro va por `0x1B`; el byte de banco `00` lo devuelve a `FFFF`
+(`4FFF..5003` y `F806 = FFFF`), así que la música del jefe empieza entera,
+como su render aislado. El port sigue parando la música en el `0A..`
+(como en la M2): reproducir el fundido exige la curva de salida de cada
+chip, no solo el maestro (medida contra el render sin fundido: −7 dB a los
+100 fotogramas, −25 dB a los 180, más rápido que `F805/255`). **Pendiente.**
+
+**Efectos (G8).** Las 30 palabras sin política de la captura (más `1026`,
+§13) en `data/sound_map.json` con sus llamadas y fotogramas. Render
+aislado: 22 terminan en 5 s; `109D`, `109E` (`0284B0`, `0A366C`), `10EB`,
+`10EC` (jefe intermedio) y `10ED` terminan con 1500 fotogramas (5,9–7,1 s;
+las cuatro primeras las para su actor con `012192`: `"stop"`, como `10F8`);
+**`1078`, `1079`, `107A`, `107B` son bucles del controlador** (siguen a los
+25 s; `1079..107B` de las órdenes de cámara `0B8D1A..32` vía `0186A0`,
+`1078` del programa del jefe `04B352`): sin paquete, sin soporte de bucle
+para efectos. **Pendiente.**
+
+Pares (`measure_sound_pairs.py --pairs`, 4472: las 26 consigo mismas, entre
+ellas y contra las 73 etiquetas de la política en los dos órdenes; tres
+procesos de MAME en paralelo, cada trozo borrado tras medirlo). Con todos
+ellos `derive_sound_policy.py` movía 27 sonidos ya medidos (las voces de
+recogida de `1056` al canal de impacto, etc.). Se añaden de una en una,
+por frecuencia en la captura, y se queda cada palabra que no cambia el
+canal (los compañeros) ni el nivel de ningún sonido medido: **18 con
+política** (`1169` `ch_1169`; `10EB/10EC/10ED` `ch_10eb`; `1065`, `1029`,
+`102D` impacto 2; `10EF`, `10D5` impacto 0; `10BA` `ch_10ba`; `105E` voz 2;
+`109F` voz 0; `109D`, `109E`, `10EE` con `10A5/10E8/10EA`, nivel 1, canal
+renombrado `ch_109d`; `10FC` arma 0; `1133` `ch_1132` 0; `1153` `ch_1056`
+1). **Sin política, como `1026`** (`MSX AUDIO … unmapped`): `1020`, `1062`,
+`109A`, `116D`, `108B`, `10A1`, `1139`, `1155`; sus pares están en
+`data/sound_pairs_m3_unmapped.json`. Las 18 se leen de `rom:/`
+(`game_audio.c` `m3_word`, 1,23 MB): las referencias no tienen RAM sobre
+el suelo de la caché. `109D`, `109E`, `10D5` y `1169` quedan en PCM16 (su
+VADPCM no pasa la comprobación de B43).
+
+## 18. Golpes a los vehículos `1089`/`108A`/`108B` (B75, rama `work-audit`)
+
+`1089` y `108A` en `data/sound_map.json`; render aislado `1089` 1,537 s,
+`108A` 0,644 s; 438 pares nuevos (con ellas mismas, entre sí, con `108B` y
+con las 102 etiquetas de la política en los dos órdenes). Añadidas de una en
+una como en §17: `1089` impacto 2 sin mover nada (205 pares en
+`data/sound_pairs.json`; `rom:/`); `108A` y `108B` mueven `108E` y `116E` y
+quedan sin política (`data/sound_pairs_b75_unmapped.json`). Detalle en
+`ANIMACIONES_DANO.md` §6. **Decididos después por el controlador Z80 (§19).**
+
+## 19. El controlador Z80: grupos y prioridades (B75, agente H, rama `work-audit`)
+
+Leído del código del Z80 (`250-m1.m1`, desensamblado con `z80dis` en un
+directorio de trabajo; `tools/sound_driver_table.py` lo traduce y lee la
+ROM del zip, solo números):
+
+- `0066` (NMI) guarda cada byte del *latch* en el anillo `FFF0..FFFF`
+  (índice `FFEF`); el bucle `1E3F` llama a `2001`, que lee un byte por vuelta,
+  cuenta órdenes en `F816` y, con byte `< 0x20`, guarda el banco en `F819`;
+  con byte `>= 0x20`, `F818` y, para bancos `>= 0x10`, `20C6`: puntero de 3
+  bytes `0x0088 + (banco − 0x10)·4` (`57BE`: desplazamiento lineal en la m1,
+  ventanas `0B..08`), entrada `(orden − 0x20)·4` de esa tabla y `506F`.
+- **Cabecera del efecto** (`506F`): cuatro palabras de petición que el efecto
+  para al empezar (`5204`: las pistas con esa palabra `F818/F819` puestas por
+  otra orden; p. ej. `1022` para `109B`, `10A3` y `1064`, `1034` para `10E9`,
+  `108E` para `10AE`), el **grupo** `D` y entradas de 5 bytes (puntero de
+  pista, un byte, **prioridad** `E`) hasta un puntero 0.
+- **Ranura** (`50CF`, ocho de 0x23 bytes en `FDF6`): con `D ≠ 0`, una ranura
+  activa del mismo grupo puesta por otra orden se para y se reutiliza si su
+  prioridad es `>= E`; si es `< E` la pista nueva **se descarta** (byte menor
+  = más prioridad; iguales se cortan). Grupos distintos toman una ranura
+  libre (sin libres, la de byte mayor). El canal del chip lo reparte después
+  `4A2A`/`4422` (ADPCM-A: seis registros de `FAA9`, por ocupación, prioridad
+  y antigüedad).
+
+**Contraste con los pares medidos** (`--check data/sound_policy.json`): de
+los 5187 pares con resultado claro, la regla de grupo y prioridad acierta
+**5150**; los 37 restantes son descartes de `109F`/`10A4` (FM/SSG) tras
+otros grupos, `10E9>1034` y `1064>1022` (las listas de parada) y los dos
+puentes `1159>1032`, `115B>1033`. El modelo medido de §4/§8 une grupos
+distintos en el canal «voz» (`02`, `05`, `07`, `08`, `0F`, `10`) por esos
+descartes FM y ordena mal niveles dentro de un grupo (`116E` 0x65 y `108F`
+0x6E tienen el mismo nivel; `1048` y `104A`, ambos 0x1F, niveles 1 y 2).
+
+**Decisión de `108A`, `108B` y `1087`** sin mover ningún sonido medido: el
+controlador los trata exactamente como a otro sonido ya con política (mismo
+grupo, misma lista de parada vacía y la misma prioridad):
+
+| Palabra | Grupo / prioridad | Gemelo | Canal y nivel |
+| --- | --- | --- | --- |
+| `108A`, `108B` | `07` / `0x65` | `116E` (`07` / `0x65`) | voz 0 |
+| `1087` (voz de muerte de Tarma) | `02` / `0x01` | `1123` (Marco, `02` / `0x01`) | voz 2 |
+
+`derive_sound_policy.py --rom ZIP --twin sfx_108a=sfx_116e --twin
+sfx_108b=sfx_116e --twin sfx_1087=sfx_1123` comprueba la igualdad en la ROM y
+copia canal y nivel (los pares medidos de `108A`/`108B` quedan en su entrada,
+sin unir canales ni acotar niveles): `data/sound_policy.json` igual salvo
+las tres entradas nuevas. Con el gemelo, `108E` (0x64) descarta a `108A` y lo
+corta, como en los pares medidos; frente a `108F..1092` (0x6E) el port los
+corta en los dos órdenes (en el Z80 `108A` descarta a `108F`): la misma
+desviación que ya tenía `116E`. `sfx_1087.wav64` (VADPCM, 6 794 B, desde el
+render aislado de `ws-logo`) y `sfx_108a.wav64` (8 918 B) se leen de `rom:/`
+(`game_audio.c`); `sfx_108b.wav64` ya estaba.
+
+**Hecho (agente J): la política entera es la regla del controlador.**
+`tools/compile_sound_policy.py --rom ZIP --keep src/msx_sfx_policy.h` escribe
+para cada efecto (los 101 del cartucho: los 12 primeros y los 89 de la
+cabecera anterior) su grupo `D`, el byte de prioridad `E` de su primera pista
+y su lista de parada, leídos de su cabecera `506F` en `250-m1.m1`.
+`src/msx_sfx.c` aplica `5204` (al empezar, para los efectos de su lista,
+aunque luego se descarte) y `50CF` (mismo grupo `D ≠ 0`: corta si el que
+suena tiene byte `>=`, si no se descarta; la misma palabra vuelve a empezar);
+un canal por grupo (20 canales: 18 grupos y los dos efectos de grupo 0,
+`109B` y `10BA`). Ya no hay canales ni niveles medidos: los pares medidos
+son la prueba. `108A`/`108B`/`116E` (0x65) descartan a `108F..1092` (0x6E)
+como en el Z80 y estos los cortan; `108E` (0x64) descarta y corta a `108A`.
+
+**Prueba de pares** (`make check`, `tools/test_msx_sfx.c` con
+`build/sound_pairs_fixture.h` de `tools/compile_sound_pairs_fixture.py`):
+los 5 441 pares claros de `data/sound_policy.json`; de los 4 330 entre
+efectos del cartucho, **4 293 iguales** y 37 desviaciones listadas en la
+prueba (cualquier otra la hace fallar): 34 descartes de `109F`/`10A3`/`10A4`
+(FM/SSG) tras otros grupos (el reparto de canales del chip `4A2A/4422`, sin
+traducir), los cortes `1159>1032` y `115B>1033` entre los grupos 06/01 (sin
+lista de parada: sin explicar) y `109B>109B` (grupo 0: el driver toma otra
+ranura, el port un solo canal por efecto). Las listas de parada resuelven
+`1064>1022` y `10E9>1034`, que la regla sola no daba. `game_audio.c` calla
+los canales de `stop_mask`.
+
+**Pendiente**: el reparto de canales del chip (`4422`); `1159>1032`,
+`115B>1033`; los nueve efectos de `data/sound_policy.json` que la cabecera
+anterior no llevaba (`102E`, `1030`, `1036`, `1053`, `1060`, `1066`, `10D1`,
+`1134`, `113B`; sus `.wav64` existen) siguen fuera del cartucho: añadirlos
+cambia el presupuesto de RAM (`RAMFS_FILES`), no se ha probado en ares.
+## 20. Compresión de audio con pérdida (aprobada por el usuario el 20-XI) y las músicas del final
+
+**Excepción aprobada por el usuario el 20-XI: compresión de audio con pérdida.** Solo afecta a la codificación:
+qué suena, cuándo, bucles, canales y prioridades siguen saliendo de la ROM, y el PCM de referencia es el render
+aislado de MAME 0.264 (`render_sound_commands.py`). Todo el audio ya era VADPCM (`--wav-compress 1`); a 24 kHz
+las músicas 0x2E (resultados, `0570AE`) y 0x31 (créditos, `0A445C`) no cabían (5 871 000 B, quedaban 786 432).
+Ahora **las músicas van a 20 kHz** (VADPCM estéreo, `pack_game_audio.py --music-rate 20000`, el valor por
+defecto) y **los efectos siguen a 24 kHz**. Las 15 músicas se han vuelto a renderizar de la ROM (24 000
+fotogramas cada una; `--period music_mission4=86.67 --period music_mission4_boss=46.96` como en MISION4.md):
+los bucles salen iguales a los del paquete anterior (periodos y arranques a 0,01 s). Opus (`--wav-compress 3`)
+no hace falta.
+
+`game_audio.c`: `music_name` 0x2E → `music_results` (intro + bucle) y 0x31 → `music_credits` (su render acaba
+a los 163,3 s, estado `OK`: una vez, sin bucle; `music_once`).
+
+**Tolerancia del códec** (`manifest.json`, medida por `pack_game_audio.py` al descodificar cada paquete con el
+descodificador de referencia `wav64_vadpcm.py`): `snr_codec_db` = PCM descodificado contra el PCM de 20 kHz que
+recibe `audioconv64` (el códec solo); `snr_render_db` = el descodificado, llevado de vuelta a 48 kHz por FFT,
+contra el render (códec + recorte de banda a 10 kHz). `test_wav64_vadpcm.py` exige que cada música tenga sus
+dos SNR y que el archivo sea el medido (sha256); ya no hay comparación bit a bit de la música.
+
+| Pista | Palabra | s | Bytes (intro + bucle) | SNR códec (dB) | SNR contra el render (dB) |
+| --- | --- | --- | --- | --- | --- |
+| `music_credits` | 0031 | 163,313 | 3674908 | 24,85 | 18,98 |
+| `music_mission1` | 0021 | 78,793 | 1963928 | 22,48 | 16,04 |
+| `music_mission2` | 0022 | 79,330 | 1825040 | 25,26 | 18,85 |
+| `music_mission2_boss` | 0027 | 72,262 | 1681508 | 24,70 | 18,04 |
+| `music_mission2_stage3` | 0023 | 90,450 | 2262188 | 23,82 | 16,26 |
+| `music_mission3` | 0024 | 98,764 | 2299196 | 24,64 | 18,51 |
+| `music_mission3_boss` | 0028 | 119,190 | 2728388 | 25,24 | 20,18 |
+| `music_mission4` | 0025 | 86,679 | 2119520 | 23,13 | 16,61 |
+| `music_mission4_boss` | 002C | 46,957 | 1439732 | 22,51 | 15,91 |
+| `music_mission5` | 0026 | 47,576 | 1180280 | 23,36 | 17,60 |
+| `music_mission5_stage2` | 002A | 59,520 | 1392104 | 22,45 | 16,67 |
+| `music_mission5_stage3` | 002B | 85,931 | 1960724 | 35,03 | 30,58 |
+| `music_mission6_boss` | 0029 | 87,842 | 2134424 | 23,90 | 19,72 |
+| `music_mission_complete` | 0020 | 6,770 | 152704 | 22,70 | 16,78 |
+| `music_results` | 002E | 48,102 | 1217792 | 21,10 | 12,61 |
+
+A 24 kHz la SNR contra el render era unos 3 dB mejor (medida en `music_mission2_stage3`, 60 s: 19,5 dB a 24 kHz,
+16,3 a 20 kHz, códec solo 24,1 / 23,8). `music_results` es la de más energía alta (6,8 % por encima de 8 kHz).
+Tamaños: `filesystem/audio` 31 426 980 → 31 534 114 B con las dos músicas dentro; cartucho 66 256 896 →
+**66 535 424 B** (tope 67 043 328; quedan 507 904).
+
+**Medido en ares** (`test_ending_ares.py`, mismo recorrido antes y después, 40 ventanas `MSX PERF` de 300
+fotogramas): antes el final no tenía música (`stage music 002E missing`); ahora `MSX AUDIO stage music 002E`,
+`music start`, `music fade 0AA0`, `stage music 0031`, `music start`, `music fade 0AA0`. `audio` (todo
+`msx_audio_service`) medio por ventana 468 → 701 µs, máximo 3651 → 3533 µs; peor ventana fuera de las cargas del
+paquete `cpu` máx. 28 531 → 29 075 µs (las dos mayores, 197 / 863-871 ms, son las cargas del paquete 13 en ambos);
+*underruns* 4 → 4. **Por qué sube la media con menos muestras**: antes no había ninguna música sonando en el final (los dos `stage music` fallaban), así que el mezclador solo mezclaba silencio. Ventana a ventana: las ventanas con música van a 686–822 µs (antes 463–486 en esas mismas ventanas, en silencio) y las que no tienen música siguen igual (464–483 en las dos pasadas). El aumento es lo que cuesta descodificar y mezclar un canal estéreo VADPCM de 20 kHz, unos 0,27 ms por servicio; no es una pérdida respecto a las misiones, donde la música ya sonaba a 24 kHz. Memoria: el VADPCM de libdragon no reserva nada nuevo (la música se lee de `rom:/`); Comprobado: en la pasada de antes el registro tiene `music start` / `music stop` solo en el menú de pruebas, antes de la primera ventana `MSX PERF`, y ningún `stage music` en el final (`0x2E` / `0x31` no tenían `music_name`: `request` ignoraba la palabra), así que durante el final no sonaba nada. **El remuestreo no es la causa**: el mezclador sale a 32 kHz (`msx_audio_init`: `audio_init(MSX_AUDIO_RATE = 32000)`) y en `libdragon/src/audio/mixer.c` (`mixer_exec`, `rsp_wv[ch].step`) todo canal activo se mezcla en el RSP con su paso `frequency / sample_rate`, sin ruta aparte para un canal a la frecuencia de salida; las músicas de las misiones (24 kHz antes, 20 ahora) ya pasaban por ahí. El cartucho de medida con las dos músicas a 32 kHz no se pudo probar: se pasa del tope (`cart-size`, por encima de 67 043 328 B, donde ares ya no escribe registro). Peor ventana fuera de las cargas: 29,1 ms (< 33,3). **Renders**: borrados de `audio-src`, después de comprobar que `pack_game_audio.py` sin ellos deja `filesystem/audio` idéntico (`diff -r`), con el sha256 de cada música en el manifiesto.
+caché de escena 3344 KB, **209 ranuras** (sin cambio), efectos residentes 956 122 B como antes. `make check` EXIT 0
+(331 PASS), `make -j2`, `test_ending_ares.py` PASS.
+
 ## Regenerar
 
 ```sh
@@ -256,10 +695,11 @@ Los pares de la sección 4 se reproducen con `MSX_RENDER_PLAN`, p. ej.
 
 ## Pendiente
 
-- Motor del blindado (`10A5`) y `1026` (bucles, sin empaquetar); sonidos
+- `1026` sin política (§13); sonidos
   del jugador fuera de la pistola que el port no pide (granadas, muerte de
   Marco, `1123`…), voces de selección, música de jefe/continuación
-  (`002C`/`002D`) y del resto de misiones.
+  (`002C`/`002D`) y de las misiones 4 a 6; el fundido `0A` del controlador
+  y los bucles `1078..107B` de la M3 (§17).
 - En una de dos ejecuciones del recorrido en ares el mundo paró una rutina
   (`MSX world unsupported routine=afff0`): cobertura de la IA rebelde
   dependiente del ritmo de entradas, sin relación con el audio (0 underruns
@@ -291,3 +731,69 @@ fuera una lectura PI). Con el arreglo: 0,04 %, sin recorte.
 La entrada en paracaídas (`entry.wav64`, VADPCM) también medía 2–3,5 % en su
 ventana frente a 0,33 % de la fuente; sin comprimir (como el título) mide
 0,01–0,3 %. `pack_cinematic.py` usa ahora `--wav-compress 0` (≈800 KB).
+
+## B43: el motor del camión `10A5` (ROM 28) y la comprobación del VADPCM
+
+Informe del usuario en MiSTer: fallo de audio con el camión de la M1.
+Peticiones del arcade (MAME `fight1`, `capture_gameplay_audio.lua`):
+`10A5` desde `02922A` en el fotograma 4855 y, 78 fotogramas después, `0C`,
+`10`, `A5` desde `029366` (la parada `012192`); el render de referencia deja
+de contener el motor justo ahí. El port hace lo mismo (`test_gameplay`:
+`10A5` en la actualización 739, `90A5` en 817; ares: `voice 10A5: started`,
+`stopped`). La lógica era correcta.
+
+El fallo estaba en el fichero: `tools/wav64_vadpcm.py` (descodificador de
+`audioconv64/vadpcm/decode.c`, idéntico bit a bit en `sfx_10a5`,
+`explosion` y `sfx_1032`) da para `sfx_10a5.wav64` 281 de 1157 ventanas de
+10 ms con error mayor que la propia señal (peor 15799 RMS sobre 1091): el
+codificador elige escalas de 9 a 12 en ~1500 tramas y la reconstrucción se
+dispara, con o sin desbordamiento de 32 bits. Los otros 63 efectos, las
+músicas de la M1 y la M2 y el bucle de SOLDIER SELECT pasan la misma
+comprobación (error de ventana < máx(1000, señal)).
+
+`pack_game_audio.py` descodifica ahora cada efecto empaquetado y, si falla,
+lo guarda en PCM16 (`compression` y `vadpcm_check` en el manifiesto).
+`sfx_10a5` queda en PCM16 mono 24 kHz: 555 748 bytes en la ROM (antes
+156 536), sigue leyéndose de `rom:/` (48 KB/s). `tools/test_wav64_vadpcm.py`
+(en `make check`) prueba el descodificador con una señal sintética y, si
+están los paquetes privados, todos los efectos.
+
+## B44: la música de SOLDIER SELECT
+
+El arcade pide `0000`,`0030` desde `0208A2` (fotograma 3453 de `fight1`) y
+la mantiene hasta `06` (3804); la película `select` solo guarda 2,70 s
+(3460..3619). Render aislado de `0030` (`data/select_music_map.json`, 7200
+fotogramas): sigue sonando al final de la ventana; `find_loop`: periodo
+50,0 s desde 0,54 s, similitud 0,991. El último segundo de `select.wav`
+cae en la muestra 100761 del render (correlación de onda 0,72).
+`tools/pack_select_music.py` escribe `select-music-head.wav64` (el audio de
+la película + el render hasta el empalme, fundido de 10 ms en la unión;
+PCM16 32 kHz, 2,95 s) y `select-music-loop.wav64` (VADPCM 32 kHz, 49,995 s,
+empalme 0,959, comprobado). `main.c` los reproduce en la espera de SOLDIER
+SELECT (`msx_audio_open_loop`); la elección abre el audio de `confirm` como
+antes. ares: `MSX CINE select chosen audio=1` tras 25 s de espera.
+
+### B86: audio cortado al mover el cursor (ROM 53)
+
+Render aislado de `0030` repetido con MAME 0.264 (`render_sound_commands.py
+--map data/select_music_map.json`): el bucle VADPCM del cartucho
+(`select-music-loop.wav64` decodificado) coincide con el render, con error RMS
+230..940 frente a una señal de ≈3000 (el del códec) y un deslizamiento lineal de
+13 muestras en 50 s (el redondeo de la longitud a múltiplo de 16); la cola del
+`head` tras la película, error RMS 32. Los datos son correctos: no falla la
+música ni las voces en sí.
+
+Medida en ares (`MSX CINE select hold audio ... underruns=`, nuevo en el
+registro): 0 `underruns` en la espera sin tocar nada; uno por cada movimiento
+del cursor (3 en 3 movimientos) y uno más en la apertura de `confirm`. La fase
+culpable es `msx_cinematic_open` de `confirm-cN.msxc` (`finish_ms=78..80`,
+`open_us=77725`): abre la película en síncrono sin dar de comer al AI, que
+solo tiene dos búferes (≈80 ms). En MiSTer, con el PI más lento, el hueco es
+mayor y se oye en cada movimiento y al elegir.
+
+Corrección: `msx_cinematic_set_wait_hook(msx_audio_idle)` (`main.c`):
+`ensure` llama al gancho entre pasos mientras la película se abre (no en
+`msx_cinematic_next`), así el AI recibe sus búferes durante la apertura. No
+cambia el contenido del audio ni de los fotogramas (CRC `cab22096` y
+`342b3c8e` iguales). ares tras el cambio: `underruns=0` en la espera con 3
+movimientos y en `confirm`.

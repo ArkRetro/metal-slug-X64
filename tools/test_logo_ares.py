@@ -18,10 +18,11 @@ import argparse,json,os,re,subprocess,threading,time
 from pathlib import Path
 from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
+EMU=os.environ.get('MSX_EMULATOR','/workspace/emulator')   # the ares tree (build/rundir/bin/ares, data146, config146, runtime, root)
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
 p.add_argument('--skip',nargs='?',const='logo',default='',help='Stages to skip with Start: comma list of logo,title,entry (alone: logo)')
-p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares')
+p.add_argument('--ares',default=EMU+'/build/rundir/bin/ares')
 p.add_argument('--record',type=Path,help='Write a review MP4 here')
 p.add_argument('--record-after',type=float,default=6.0,help='Seconds recorded after the logo ends')
 p.add_argument('--scale',type=int,default=2,help='Video scale of the 320x240 picture')
@@ -29,9 +30,9 @@ a=p.parse_args()
 skips=set(filter(None,a.skip.split(',')));assert skips<={'logo','title','entry'},skips
 out=a.output.resolve();assert not out.exists() or not any(out.iterdir()),'Use a new output directory'
 out.mkdir(parents=True,exist_ok=True)
-env=dict(os.environ,XDG_DATA_HOME='/workspace/emulator/data146',XDG_CONFIG_HOME='/workspace/emulator/config146',
-         XDG_RUNTIME_DIR='/workspace/emulator/runtime',LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',
-         VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
+env=dict(os.environ,XDG_DATA_HOME=EMU+'/data146',XDG_CONFIG_HOME=EMU+'/config146',
+         XDG_RUNTIME_DIR=EMU+'/runtime',LD_LIBRARY_PATH=EMU+'/root/usr/lib/x86_64-linux-gnu',
+         VK_DRIVER_FILES=EMU+'/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 pcm=out/'ares-audio.raw'
 if a.record:
     (out/'asound.conf').write_text('pcm.!default {\n type file\n slave { pcm { type null } }\n file "%s"\n format "raw"\n}\n'%pcm)
@@ -104,6 +105,8 @@ try:
             cad=re.search(r'MSX TITLE cadence unique=(\d+) dropped=(\d+)',log());assert cad
             assert 'title' in skips or int(cad[2])==0,('dropped title frames',cad[0])
             stages['title']=dict(frames=int(t[1]),skipped='title' in skips,dropped=int(cad[2]))
+            # The options screen (docs/OPCIONES.md) when the cartridge has the table: Start leaves it.
+            if 'MSX OPTIONS start' in log():wait(r'MSX OPTIONS open',120);time.sleep(.5);press_start();wait(r'MSX OPTIONS close',30)
             # HOW TO PLAY / SOLDIER SELECT / the choice (optional files): the
             # selection waits on P1 at Marco for A or Start.
             done=[]
@@ -122,11 +125,18 @@ try:
             cad=re.search(r'MSX INTRO cadence unique=(\d+) skipped=(\d+)',log());assert cad
             assert 'entry' in skips or int(cad[2])==0,('dropped entry frames',cad[0])
             stages['entry']=dict(frames=int(e[1]),rendered=int(e[2]),skipped='entry' in skips,dropped=int(cad[2]))
-            h=wait(r'MSX mission handoff x=(-?\d+) y=(-?\d+)',120);stages['handoff']=[int(h[1]),int(h[2])]
+            h=wait(r'MSX mission handoff (?:\(descent\) )?x=(-?\d+) y=(-?\d+)',120);stages['handoff']=[int(h[1]),int(h[2])]
             nm=wait(r'MSX first frame ready',120)
         time.sleep(1.0)
         ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'after-logo.png')
         time.sleep(3.0);assert 'RSP CRASH' not in log() and 'ASSERTION FAILED' not in log()
+        # Presentation per stage (msx_perf.c, docs/RENDIMIENTO.md "Cinemáticas
+        # sin parones"): no movie may show a frame twice beyond its cadence.
+        presentation={m[1]:dict(presents=int(m[2]),gap_vb=int(m[3]),max_vb=int(m[4]),late=int(m[5]),long=int(m[6]))
+                      for m in re.finditer(r'MSX FRAMES (\S+) presents=(\d+) gap_vb=(\d+) max_vb=(\d+) late=(\d+) long=(\d+)',log())}
+        for name in ('title','howto','select','confirm','entry'):
+            if name in presentation and name not in skips and not (stages.get(name) or {}).get('skipped'):
+                assert presentation[name]['late']==0,('late frames',name,presentation[name])
         if a.record:time.sleep(a.record_after)
         stop.set();time.sleep(.2)
         assert process.poll() is None,'ares exited'
@@ -134,7 +144,7 @@ try:
     box=picture_box(out/'after-logo.png')
     for name in shots+['after-logo.png']:Image.open(out/name).crop(box).resize((640,480),Image.NEAREST).save(out/('picture-'+name))
     result=dict(status='PASS',emulator='ares 146',rom=str(a.rom),cap_points=int(start[1]),side_edges=int(start[2]),cap_triangles=int(start[3]),
-                jingle=True,skipped=sorted(skips),next=nm[0],stages=stages,frames=int(timing[1]),seconds=float(timing[2]),
+                jingle=True,skipped=sorted(skips),next=nm[0],stages=stages,presentation=presentation,frames=int(timing[1]),seconds=float(timing[2]),
                 frame_max_us=int(timing[3]),cpu_max_us=int(timing[4]),cpu_mean_us=int(timing[5]),late_frames=int(timing[6]),max_triangles_drawn=int(timing[7]),
                 screenshots=shots+['after-logo.png'],
                 limits='Emulator frame times (emulated clock); MiSTer/hardware not measured here.')

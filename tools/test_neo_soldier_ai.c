@@ -4,7 +4,15 @@
 #define MSX_SOLDIER_PROGRAMS 1
 #include "../src/neo_soldier_ai.h"
 #include "soldier_ai_tables.h"
-#include "soldier_tick_fixture.h"
+#ifndef TICK_FIXTURE_HEADER
+#define TICK_FIXTURE_HEADER "soldier_tick_fixture.h"
+#endif
+#include TICK_FIXTURE_HEADER
+/* Cases whose state after the update holds a hit the native code cannot
+ * apply (an attack other than the pistol's after the soldier's update). */
+#ifndef TICK_MAX_EXTERNAL
+#define TICK_MAX_EXTERNAL 2
+#endif
 #define COUNT(a) (sizeof(a)/sizeof((a)[0]))
 static int32_t s32(uint32_t v) {return v<=0x7fffffffu?(int32_t)v:(int32_t)((int64_t)v-0x100000000LL);}
 static const neo_anim_program_t *program(uint32_t tag) {
@@ -129,7 +137,7 @@ int main(void) {
     for (unsigned j=0;j<ncovered;j++) printf(" %05x",(unsigned)covered[j]);
     printf("\n");
     for (unsigned k=0;k<nroutines;k++) if (routine_fail[k]) printf("  routine %06x: %u failures\n",(unsigned)routine_id[k],routine_fail[k]);
-    assert(!fail && !bad_load && pass+external==COUNT(tick_cases) && external<=2);
+    assert(!fail && !bad_load && pass+external==COUNT(tick_cases) && external<=TICK_MAX_EXTERNAL);
     printf("PASS: %u original soldier updates reproduced natively (state, animation cursor and RNG)\n",pass);
     return 0;
 }

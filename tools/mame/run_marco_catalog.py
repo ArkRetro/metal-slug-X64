@@ -4,7 +4,7 @@ import argparse,json,os,subprocess,hashlib,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 # MAME 0.264+ and Xvfb: the emulator tree when present, else the system ones.
-MAME=next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')
+MAME=os.environ.get('MSX_MAME') or next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')   # MSX_MAME: a MAME 0.264 binary elsewhere
 XVFB=next((m for m in ('/workspace/emulator/root/usr/bin/Xvfb','/usr/bin/Xvfb') if os.path.exists(m)),'Xvfb')
 # Names describe input conditions only. Classify animation from actual evidence.
 CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',96,('Down','fire')),
@@ -21,27 +21,31 @@ CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',
 def schedule(cases=CASES,first=2100):
  events={};rows=[];at=first
  def event(f,button,value):events.setdefault(f,[]).append(('P1 '+button,value))
- for name,length,buttons in cases:
-  assert isinstance(name,str) and name and 16<=length<=1200 and set(buttons)<={'Up','Down','Left','Right','fire','jump','grenade'}
+ for case in cases:
+  name,length,buttons=case[:3];fire_at=case[3] if len(case)>3 else None
+  assert isinstance(name,str) and name and 2<=length<=1200 and set(buttons)<={'Up','Down','Left','Right','fire','jump','grenade'}
   for b in ('Up','Down','Left','Right','A','B','C'):event(at,b,0)
   for b in buttons:
    if b not in ('fire','jump','grenade'):event(at,b,1)
   if 'fire' in buttons:
-   for f in range(at,at+length-1,8):event(f,'A',1);event(f+2,'A',0)
+   # fire_at (plan key "fire_at"): the frames of the case, from its first,
+   # on which A is pressed (released 2 frames later); default every 8.
+   for f in (range(at,at+length-1,8) if fire_at is None else [at+int(o) for o in fire_at]):
+    assert at<=f<at+length;event(f,'A',1);event(f+2,'A',0)
   if 'jump' in buttons:event(at,'B',1);event(at+2,'B',0)
   if 'grenade' in buttons:event(at+(8 if 'jump' in buttons else 0),'C',1);event(at+12,'C',0)
-  rows.append(dict(name=name,first=at,last=at+length-1,inputs=buttons));at+=length
+  rows.append(dict(name=name,first=at,last=at+length-1,inputs=buttons,**({} if fire_at is None else dict(fire_at=list(fire_at)))));at+=length
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');p.add_argument('--give-cgun',action='store_true',help='capture only: at the first plan frame write the C (id 0C, 40 rounds kept, cap 3, +94 = 1) like a pickup, as tools/capture_weapons.lua plan air');p.add_argument('--first',type=int,default=2100,help='first plan frame (default 2100, after the landing; 1830 covers the parachute descent, landing at 2039)');p.add_argument('--keep-bombs',action='store_true',help='capture only: bombs kept at 10 (several throws per plan)');a=p.parse_args()
- assert not (a.give_hgun and a.give_cgun)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--family-routines',help='boss-trace.txt (export_rest_sprites.py DIR@lo-hi) of the nodes whose routine is in these hex ranges (lo-hi,...), frames --family-frames');p.add_argument('--family-frames',default='0-0',help='FROM-TO frames of --family-routines');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');p.add_argument('--give-cgun',action='store_true',help='capture only: at the first plan frame write the C (id 0C, 40 rounds kept, cap 3, +94 = 1) like a pickup, as tools/capture_weapons.lua plan air');p.add_argument('--give-rgun',action='store_true',help='capture only: at the first plan frame write the R (id 03, 30 rounds kept, cap 2, +94 = 1) like a pickup (marco_weapons_grant)');p.add_argument('--give-weapon',help='capture only: at the first plan frame write weapon HEXID like a pickup (0C0928 tables: cap, +94, rounds kept)');p.add_argument('--victory',type=int,help='capture only: N frames after the first plan frame write RAM 10C304 = 04 and 10C301 = FF, the mission end of 018F92/018846 (victory table 0BF658)');p.add_argument('--give-fat',action='store_true',help='capture only: at the first plan frame request form 2 (+94 = 2, the food 0C0BF4) with RAM 10C2F6 = 4 (Mission 3, 0C0BAE keeps the form)');p.add_argument('--give-mummy',action='store_true',help='capture only: at the first plan frame request form 3 (+94 = 3), as a hit of kind 0x10 (the mummy breath) does in 0C36C0');p.add_argument('--child-routines',help='capture only: hex routines (r,r,...) of the player\'s children, every node of them logged each frame to children.log');p.add_argument('--hit',help='capture only: AFTER:KIND, AFTER frames after the first plan frame write the player +5A = KIND (hex) and set +5F bit 7, the hit 004C24 leaves (0C3702 -> 0C2956)');p.add_argument('--first',type=int,default=2100,help='first plan frame (default 2100, after the landing; 1830 covers the parachute descent, landing at 2039)');p.add_argument('--keep-bombs',action='store_true',help='capture only: bombs kept at 10 (several throws per plan)');p.add_argument('--character',type=int,choices=(0,1,2,3),help='player +6E chosen at SOLDIER SELECT with the controller (0 Marco, 1 Tarma, 2 Eri, 3 Fio; confirm at 1800, so --first >= 2350)');p.add_argument('--update-trace',action='store_true',help='MARCO_UPDATE: the player\'s words after each update (00424A)');p.add_argument('--load',help='capture only: STATES/mslugx/NAME.sta:FRAME, a MAME save state (e.g. a run4 section state of /home/user/captures-m6/states/mslugx) loaded at frame 1, the frame count then set to FRAME (no boot inputs); --first must be after FRAME');a=p.parse_args()
+ assert a.give_hgun+a.give_cgun+a.give_rgun+a.give_mummy+bool(a.give_weapon)<=1 and not (a.give_fat and a.give_mummy)   # --give-fat goes with one weapon (the fat form keeps it: rule FF of 0C32E4)
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
  if a.plan:
-  cases=[(c['name'],c['length'],tuple(c['inputs'])) for c in json.loads(a.plan.read_text())]
+  cases=[(c['name'],c['length'],tuple(c['inputs']))+((tuple(c['fire_at']),) if 'fire_at' in c else ()) for c in json.loads(a.plan.read_text())]
   assert cases
- rows,events=schedule(cases,a.first);last=rows[-1]['last'];assert last<=12000
+ rows,events=schedule(cases,a.first);last=rows[-1]['last'];assert last-a.first<=12000 and (a.load or last<=12000)
  if a.end_frame is not None:
   assert a.first+4<=a.end_frame<=last;last=a.end_frame
   rows=[dict(c,last=min(c['last'],last)) for c in rows if c['first']<=last]
@@ -53,6 +57,7 @@ def main():
  env=dict(os.environ,MSX_CAPTURE_DIR=str(out),LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu')
  if a.command_trace:env['MSX_COMMAND_TRACE']='1'
  if a.paired_trace:env['MSX_PAIRED_TRACE']='1'
+ if a.update_trace:env['MSX_UPDATE_TRACE']='1'
  if a.controller_trace:env['MSX_CONTROLLER_TRACE']='1'
  if a.logic_only:env['MSX_LOGIC_ONLY']='1'
  if a.queue_trace:env['MSX_QUEUE_TRACE']='1'
@@ -61,18 +66,38 @@ def main():
  if a.ammo_trace:env['MSX_AMMO_TRACE']='1'
  if a.give_hgun:env['MSX_GIVE_HGUN']='1'
  if a.give_cgun:env['MSX_GIVE_CGUN']='1'
+ if a.give_rgun:env['MSX_GIVE_RGUN']='1'
+ if a.give_mummy:env['MSX_GIVE_MUMMY']='1'
+ if a.give_fat:env['MSX_GIVE_FAT']='1'
+ if a.give_weapon:env['MSX_GIVE_WEAPON']=a.give_weapon
  if a.keep_bombs:env['MSX_KEEP_BOMBS']='1'
+ if a.character is not None:
+  assert a.first>=2032,'the choice at 1800 lands 202 frames later than the captures of Marco: --first 2032 (the descent) or more'
+  env['MSX_CHARACTER']=str(a.character)
+ if a.victory is not None:env['MSX_VICTORY']=str(a.victory)
+ if a.hit:env['MSX_HIT']=a.hit
+ if a.child_routines:env['MSX_CHILD_ROUTINES']=a.child_routines
+ if os.environ.get('MSX_CHARACTER_WATCH'):env['MSX_CHARACTER_WATCH']='1'
  if a.dump_routines:env['MSX_DUMP_ROUTINES']=a.dump_routines
+ if a.family_routines:
+  lo,_,hi=a.family_frames.partition('-');env.update(MSX_FAMILY_ROUTINES=a.family_routines,MSX_FAMILY_FROM=lo,MSX_FAMILY_TO=hi)
+ state_dir=None
+ if a.load:
+  path,_,f=a.load.rpartition(':');path=Path(path).resolve();assert path.suffix=='.sta' and path.parent.name=='mslugx' and int(f)<a.first,'--load STATES/mslugx/NAME.sta:FRAME, --first after FRAME'
+  state_dir=str(path.parent.parent);env['MSX_LOAD']=path.stem;env['MSX_LOAD_FRAME']=f
  assert sum((a.body_trace,a.motion_trace,a.stance_trace,a.idle_trace))<=1,'Block tracers share a debugger latch'
  if a.idle_trace:env['MSX_IDLE_TRACE']='1'
  if a.stance_trace:env['MSX_STANCE_TRACE']='1'
  if a.motion_trace:
   env['MSX_MOTION_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
-  server=subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
+  # MSX_DISPLAY=:N: an X server already running (one shared display per agent).
+  shared=os.environ.get('MSX_DISPLAY')
+  server=None if shared else subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:
-   number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
-   cmd=[MAME,'mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]
+   if shared:env['DISPLAY']=shared
+   else:number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
+   cmd=[MAME,'mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]+(['-state_directory',state_dir] if state_dir else [])
    (out/'run-command.json').write_text(json.dumps(cmd,indent=2)+'\n')
    with (out/'mame.log').open('w') as log:subprocess.run(cmd,cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=int(os.environ.get('MSX_CATALOG_TIMEOUT','480')))
    log=(out/'mame.log').read_text();debug=(out/'debug.log').read_text();assert 'LUA ERROR' not in log and 'Error in command' not in debug and 'MARCO_DRAW' in debug
@@ -80,5 +105,6 @@ def main():
    sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
    (out/'capture.json').write_text(json.dumps(dict(status='CAPTURED',frames=last-a.first+1,script_sha256=sha(script),plan_sha256=sha(out/'plan.json'),program_fixed_sha256=sha(out/'program-fixed.bin'),program_bank_sha256=sha(out/'program-bank.bin')),indent=2)+'\n')
    print('CAPTURED',last-a.first+1,'frames /',len(rows),'input conditions')
-  finally:server.terminate();server.wait(timeout=8)
+  finally:
+   if server:server.terminate();server.wait(timeout=8)
 if __name__=='__main__':main()

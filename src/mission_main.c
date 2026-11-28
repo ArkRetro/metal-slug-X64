@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include "msx_vi.h"
 #include <stdio.h>
 #include "scene_renderer.h"
 #include "actor.h"
@@ -18,9 +19,9 @@ int main(void) {
     if (dfs_init(DFS_DEFAULT_LOCATION)!=DFS_ESUCCESS) fail("DragonFS");
     if (get_memory_size()<8*1024*1024) fail("Se requiere Expansion Pak (8 MiB)");
     rdpq_init();msx_audio_init();
-    console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);joypad_init();
+    console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);msx_vi_neogeo();joypad_init();
     msx_neogeo_logo();  // 3D NEOGEO boot logo + jingle, then the X64 title (docs/LOGO_NEOGEO.md)
-    if (!msx_title_intro()) fail("Presentacion inicial");
+    if (!msx_title_intro("rom:/entry.msxc")) fail("Presentacion inicial");
     if (!msx_cinematic_open("rom:/entry.msxc")) fail("Entrada cinematica");
     if (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0]) fail("CRC primer frame");
     if (!msx_audio_open(MSX_AUDIO_INTRO,"rom:/entry.wav64")) fail("Audio de entrada");
@@ -40,6 +41,7 @@ int main(void) {
             unique++;last_presented=state.index;
         }
         msx_cinematic_draw(surface);rendered++;
+        while (msx_cinematic_prepare_idle()) {}
         if (target>=state.frames && state.index+1==state.frames) break;
     }
     debugf("MSX INTRO cadence unique=%u skipped=%u\n",unique,skipped);

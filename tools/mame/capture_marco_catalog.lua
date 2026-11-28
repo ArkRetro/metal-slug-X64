@@ -168,12 +168,102 @@ end
 probe(0x4412,'MARCO_SELECT','cursor=%08X field=%02X value=%02X count=%04X state=%08X x=%04X y=%04X attributes=%04X z=%04X correction=%02X flash_palette=%02X palettes=%08X',
  'a1-1,b@(a1),b@(a6+b@(a1)),w@(a1+1)/8,a0,w@(a6+3c),w@(a6+40),w@(a6+14),w@(a6+1e),b@(a6+4d),b@(a6+16),d@(a6+19)')
 probe(0x4256,'MARCO_INIT','program=%08X speed=%04X','a1,d0&ffff')
+-- MSX_UPDATE_TRACE=1: the player's node words right after its routine returns to the node loop
+-- (004248 jsr (a0) -> 00424A), once per game update whatever the frame (Mission 6 runs an update in
+-- 1..5 frames: the frame-end actor dumps can catch an update half done).
+if os.getenv('MSX_UPDATE_TRACE')=='1' then
+ probe(0x424a,'MARCO_UPDATE','r=%08X f15=%02X v30=%08X v34=%08X x3c=%08X y40=%08X x28=%08X y2c=%08X p38=%08X f26=%04X f5a=%02X f5b=%02X f93=%02X f6e=%04X f19=%02X f80=%04X',
+  'd@a6,b@(a6+15),d@(a6+30),d@(a6+34),d@(a6+3c),d@(a6+40),d@(a6+28),d@(a6+2c),d@(a6+38),w@(a6+26),b@(a6+5a),b@(a6+5b),b@(a6+93),w@(a6+6e),b@(a6+19),w@(a6+80)')
+ -- The water death 0C2D06: 03C55C found the surface (carry) -> 0C2D28 with D1 the surface - 1 relative
+ -- to the object A0 (its +18 added next).
+ probe(0xc2d28,'MARCO_WATER','d1=%08X a0=%08X y18=%08X y40=%08X f80=%04X','d1,a0,d@(a0+18),d@(a6+40),w@(a6+80)')
+end
 probe(0x4406,'MARCO_DRAW','descriptor=%08X xy=%08X attr=%04X z=%04X','d7,d0,d1&ffff,d5&ffff')
 probe(0x44ec,'MARCO_CALLBACK','target=%08X','a1')
 dbg:command('wpset 1014e4,4,w,temp9>='..string.format('%x',plan.first)..',{printf "MARCO_CURSOR_WRITE frame=%d pc=%08X a6=%08X address=%08X data=%08X\\n",temp9,pc,a6,wpaddr,wpdata;g}')
 local boot={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0},[1550]={'P1 A',1},[1701]={'P1 A',0}}
+-- MSX_CHARACTER=n (player field +6E: 0 Marco, 1 Tarma, 2 Eri, 3 Fio;
+-- docs/PERSONAJES.md): chosen with the controller only. The P1 cursor shows
+-- on Marco at about 1650 (screen order Marco, Eri, Tarma, Fio); Right is
+-- pressed once per place from 1700 and A at 1800 (the landing then comes
+-- 250 frames later than with the A at 1550: plan.first >= 2350).
+local character=tonumber(os.getenv('MSX_CHARACTER') or '-1')
+if character>=0 then
+ local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_CHARACTER 0..3')
+ boot[1550]=nil;boot[1701]=nil
+ for k=0,place-1 do boot[1700+20*k]={'P1 Right',1};boot[1710+20*k]={'P1 Right',0} end
+ boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
+end
+-- MSX_SELECT_INPUTS=<string of L/R>: instead of MSX_CHARACTER, one Left or
+-- Right press per letter from 1700 (every 20 frames) and A at 1800: how the
+-- cursor moves at the ends of the row (docs/PERSONAJES.md).
+local select_inputs=os.getenv('MSX_SELECT_INPUTS')
+if select_inputs then
+ boot[1550]=nil;boot[1701]=nil
+ for k=1,#select_inputs do
+  local b=select_inputs:sub(k,k)=='L' and 'P1 Left' or 'P1 Right'
+  boot[1700+20*(k-1)]={b,1};boot[1710+20*(k-1)]={b,0}
+ end
+ boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
+end
+-- MSX_LOAD=<state> with MSX_LOAD_FRAME=<frame> (capture only, run_marco_catalog.py --load): a
+-- save state of the -state_directory loaded at frame 1, the count going on from its frame (the
+-- boot inputs are then never reached).
+-- MSX_FAMILY_ROUTINES=lo-hi,lo-hi (hex) with MSX_FAMILY_FROM/TO (frames;
+-- capture only, run_marco_catalog.py --family-routines): boss-trace.txt in
+-- the format of tools/capture_weapons.lua (U/V node dumps around every update
+-- 004246..00424A of a work-RAM node whose routine +0 lies in a range, W its
+-- writes, F frames) for tools/export_rest_sprites.py DIR@lo-hi.
+local fam_ranges={}
+for lo,hi in (os.getenv('MSX_FAMILY_ROUTINES') or ''):gmatch('(%x+)-(%x+)') do fam_ranges[#fam_ranges+1]={tonumber(lo,16),tonumber(hi,16)} end
+local fam_from=tonumber(os.getenv('MSX_FAMILY_FROM') or '0');local fam_to=tonumber(os.getenv('MSX_FAMILY_TO') or '0')
+local mstate=manager.machine.devices[':maincpu'].state
+local fam_log,fam_rtap,fam_wtap=nil,nil,nil;local fam_busy=true;local fam_active=nil
+local FPOOL0,FPOOL1=0x1010a4,0x1010a4+0xb0*100
+local function fam_hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+local function fam_read(address,data,mask)
+ if fam_busy then return end
+ if address>=FPOOL0 and address<FPOOL1 then
+  local o=(address-FPOOL0)%0xb0
+  if o==0 and mstate['CURPC'].value==0x4246 then
+   fam_busy=true
+   local r=cpu:read_u32(address);fam_active=nil
+   for _,q in ipairs(fam_ranges) do if r>=q[1] and r<=q[2] then fam_active=address end end
+   if fam_active then fam_log:write(string.format('U %x %x %s\n',address,r,fam_hex(address,0xb0))) end
+   fam_busy=false
+  elseif o==8 and fam_active==address-8 and mstate['CURPC'].value==0x424a then
+   fam_busy=true;fam_log:write(string.format('V %x %s\n',fam_active,fam_hex(fam_active,0xb0)));fam_busy=false;fam_active=nil
+  end
+ end
+end
+local function fam_write(address,data,mask)
+ if fam_busy or not fam_active then return end
+ fam_log:write(string.format('W %x %x %x %x\n',address,mask,data,mstate['CURPC'].value))
+end
+local function fam_frame(f)
+ if #fam_ranges==0 then return end
+ if f==fam_from then
+  fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
+  fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
+ end
+ if fam_log then
+  fam_log:write(string.format('F %d\n',f))
+  if f==fam_to then fam_rtap:remove();fam_wtap:remove();fam_log:close();fam_log=nil end
+ end
+end
+local load_name=os.getenv('MSX_LOAD')
 emu.register_frame_done(function()
- frame=frame+1;dbg:command(string.format('temp9=%x',frame))
+ frame=frame+1
+ fam_busy=true
+ if load_name and frame==1 then manager.machine:load(load_name);frame=tonumber(os.getenv('MSX_LOAD_FRAME')) end
+ dbg:command(string.format('temp9=%x',frame))
+ -- MSX_CHARACTER_WATCH=1: every access to player 1's character word +6E
+ -- (101532) from frame 1600 on (the choice), to find its readers
+ -- (docs/PERSONAJES.md).
+ if frame==1600 and os.getenv('MSX_CHARACTER_WATCH')=='1' then
+  for _,sym in ipairs({'curpc','ppc','genpc'}) do dbg:command('wpset 101532,2,rw,1,{printf "CHARACTER_ACCESS frame=%d '..sym..'=%08X a6=%08X data=%08X\\n",temp9,'..sym..',a6,wpdata;g}') end
+ end
  if boot[frame] then button(boot[frame][1],boot[frame][2]) end
  -- Capture only (MSX_GIVE_HGUN): the H as a pickup gives it (weapon id 0A at
  -- 10C71E, rounds 10C724, 10C71C = FF, +94 = 1; tools/capture_weapons.lua
@@ -189,6 +279,47 @@ emu.register_frame_done(function()
   if frame==plan.first then cpu:write_u8(0x10c71e,0x0c);cpu:write_u8(0x10c71c,3);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
   cpu:write_u16(0x10c724,40)
  end
+ -- Capture only (MSX_GIVE_RGUN): the R as a pickup gives it (id 03 at
+ -- 10C71E, 30 rounds, cap 2, none live, +94 = 1: marco_weapons_grant),
+ -- rounds kept at 30.
+ if os.getenv('MSX_GIVE_RGUN')=='1' and frame>=plan.first then
+  if frame==plan.first then cpu:write_u8(0x10c71e,0x03);cpu:write_u8(0x10c71c,2);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
+  cpu:write_u16(0x10c724,30)
+ end
+ -- Capture only (MSX_GIVE_WEAPON=<hex id>): any weapon as a pickup gives it
+ -- (0C0928: id at 10C71E, cap 10C71C from ROM 0C08A8, none live 10C71A,
+ -- +94 from 0C0918, rounds from 0C08B8), rounds kept at that value.
+ local give_weapon=os.getenv('MSX_GIVE_WEAPON')
+ if give_weapon and frame>=plan.first then
+  local id=tonumber(give_weapon,16)
+  if frame==plan.first then cpu:write_u8(0x10c71e,id);cpu:write_u8(0x10c71c,cpu:read_u8(0x0c08a8+id));cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,cpu:read_u8(0x0c0918+id)) end
+  cpu:write_u16(0x10c724,cpu:read_u16(0x0c08b8+2*id))
+ end
+ -- Capture only (MSX_GIVE_MUMMY): the form request +94 = 3 at the first plan
+ -- frame, as the player's contact 0C36C0 sets it for a hit of kind 0x10
+ -- (the mummy's breath); the original forms check 0C3428 then runs the
+ -- transformation 0C17A0/0C182A and the mummy controller 0C18B4.
+ if os.getenv('MSX_GIVE_MUMMY')=='1' and frame==plan.first then cpu:write_u8(0x1014c4+0x94,3) end
+ -- Capture only (MSX_GIVE_FAT): form 2 as the food 0C0BF4 requests it
+ -- (+94 = 2) with the mission value RAM 10C2F6 = 4 (Mission 3), the one
+ -- for which 0C0BAE keeps the form (else the forms check drops it).
+ if os.getenv('MSX_GIVE_FAT')=='1' and frame==plan.first then cpu:write_u16(0x10c2f6,4);cpu:write_u8(0x1014c4+0x94,2) end
+ -- Capture only (MSX_VICTORY=<frames after the first plan frame>): the
+ -- mission end as 018F92/018846 leave it for player 1 (RAM 10C304 = 04, the
+ -- boss's +5E in MAME runK; 10C301 = FF): the idle 0C2022 then takes the
+ -- victory table 0BF658 (0C1E84).
+ local victory=tonumber(os.getenv('MSX_VICTORY') or '-1')
+ if victory>=0 and frame==plan.first+victory then cpu:write_u8(0x10c304,4);cpu:write_u8(0x10c301,0xff) end
+ -- Capture only (MSX_HIT=<frames after the first plan frame>:<hex kind>):
+ -- the player's hit as the contact 004C24 leaves it (+5A = kind, +5F bit 7);
+ -- the player's 0C3702 then runs the death 0C2956 (forms 2/3: 0C2A36/0C2C40).
+ local hit=os.getenv('MSX_HIT')
+ if hit then
+  local after,kind=hit:match('^(%d+):(%x+)$')
+  if frame==plan.first+tonumber(after) then
+   cpu:write_u8(0x1014c4+0x5a,tonumber(kind,16));cpu:write_u8(0x1014c4+0x5f,cpu:read_u8(0x1014c4+0x5f)|0x80)
+  end
+ end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end
@@ -199,6 +330,25 @@ emu.register_frame_done(function()
    dbg:command('wpset 10000f,1,w,1,{printf "MARCO_PHASE_WRITE frame=%d pc=%08X data=%08X\\n",temp9,pc,wpdata;g}')
   end
   dbg:command(string.format('printf "MARCO_VIDEO_STATE frame=%%d a5=%%08X flag=%%02X phase=%%02X head0=%%08X head1=%%08X\\n",%x,a5,b@(a5+1946),b@(10000f),d@(a5+1d48),d@(a5+2d4e)',frame))
+ end
+ -- Capture only (MSX_CHILD_ROUTINES=hex,hex): every node of the work RAM
+ -- whose routine (+0) is one of these and whose creator (+0C) is the
+ -- player 1014C4, its 0xB0 bytes as hex, one line per node and frame.
+ local children=os.getenv('MSX_CHILD_ROUTINES')
+ if children and frame>=plan.first and frame<=plan.last then
+  if not child_log then child_log=assert(io.open(output..'/children.log','w')) end
+  local ram=cpu:read_range(0x100000,0x10ffff,8)
+  for r in children:gmatch('(%x+)') do
+   local pat=string.pack('>I4',tonumber(r,16));local at=1
+   while true do
+    local i=ram:find(pat,at,true);if not i then break end
+    if (i-1)%2==0 and ram:sub(i+12,i+15)==string.pack('>I4',0x1014c4) then
+     child_log:write(string.format('%d %06X %s\n',frame,0x100000+i-1,(ram:sub(i,i+0xaf):gsub('.',function(c) return string.format('%02x',c:byte()) end))))
+    end
+    at=i+2
+   end
+  end
+  child_log:flush()
  end
  if frame>=plan.first and frame<=plan.last then
   local file=assert(io.open(output..'/actor'..frame..'.bin','wb'));file:write(cpu:read_range(0x1014c4,0x101573,8));file:close()
@@ -227,5 +377,6 @@ emu.register_frame_done(function()
    local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
   end
  end
- if frame==plan.last then inputs:close();states:close();manager.machine:exit() end
+ fam_frame(frame);fam_busy=false
+ if frame==plan.last then if fam_log then fam_log:close() end;inputs:close();states:close();manager.machine:exit() end
 end,'frame')

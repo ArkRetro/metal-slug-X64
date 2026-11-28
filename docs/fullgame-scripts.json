@@ -1,0 +1,2373 @@
+{
+ "source": "Script table ROM 0x000800; grammar of ROM 019F7E/01A0A6/01A372/01A5CA (tools/decode_level_script.py)",
+ "sections": [
+  {
+   "index": 0,
+   "base": "0x2D62A8",
+   "end": "0x2D7132",
+   "top_level_statements": 182,
+   "spawn_records": 130,
+   "camera_waits": 63,
+   "camera_max": 3376,
+   "stops": [
+    {
+     "address": "0x2D64EC",
+     "camera": 872,
+     "stop": 872,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D64FA",
+     "camera": 872,
+     "stop": 872,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D6722",
+     "camera": 1304,
+     "stop": 1304,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D6730",
+     "camera": 1304,
+     "stop": 1304,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D6A1A",
+     "camera": 1920,
+     "stop": 1920,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D6A28",
+     "camera": 1920,
+     "stop": 1920,
+     "params": [
+      0,
+      0,
+      0,
+      32
+     ]
+    },
+    {
+     "address": "0x2D6D54",
+     "camera": 2336,
+     "stop": 2336,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D6D62",
+     "camera": 2336,
+     "stop": 2336,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D705A",
+     "camera": 3192,
+     "stop": 3192,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D7074",
+     "camera": 3192,
+     "stop": 3192,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D710A",
+     "camera": 3376,
+     "stop": 3376,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D7118",
+     "camera": 3376,
+     "stop": 3376,
+     "params": [
+      56,
+      32768,
+      144,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2D6C3C",
+    "0x2D6D52",
+    "0x2D6D70"
+   ],
+   "constructors": [
+    "0x01913C",
+    "0x02916E",
+    "0x031D80",
+    "0x031D92",
+    "0x03264E",
+    "0x033C98",
+    "0x03458E",
+    "0x0395B6",
+    "0x03FC5A",
+    "0x0400AA",
+    "0x0403A0",
+    "0x04115A",
+    "0x04857C",
+    "0x05486A",
+    "0x054904",
+    "0x05ED84",
+    "0x08571C",
+    "0x087E36",
+    "0x08C37C",
+    "0x092A32",
+    "0x099862",
+    "0x099DCC",
+    "0x099E06",
+    "0x09A67E",
+    "0x09D846",
+    "0x09D862",
+    "0x09D876",
+    "0x09F682",
+    "0x0A8C46",
+    "0x0A8C62",
+    "0x0AF17E",
+    "0x0B6298",
+    "0x0B639A",
+    "0x0B63A0",
+    "0x0B6566",
+    "0x0B833A",
+    "0x0D5976",
+    "0x0DC97E"
+   ]
+  },
+  {
+   "index": 1,
+   "base": "0x2D7298",
+   "end": "0x2D7516",
+   "top_level_statements": 33,
+   "spawn_records": 24,
+   "camera_waits": 14,
+   "camera_max": 320,
+   "stops": [
+    {
+     "address": "0x2D74B6",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D74C4",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2D7436",
+    "0x2D74D2"
+   ],
+   "constructors": [
+    "0x03882A",
+    "0x039590",
+    "0x08C37C",
+    "0x099E06",
+    "0x09A67E",
+    "0x09A692"
+   ]
+  },
+  {
+   "index": 2,
+   "base": "0x2D7518",
+   "end": "0x2D87E2",
+   "top_level_statements": 177,
+   "spawn_records": 201,
+   "camera_waits": 46,
+   "camera_max": 2368,
+   "stops": [
+    {
+     "address": "0x2D7856",
+     "camera": 616,
+     "stop": 616,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D7864",
+     "camera": 616,
+     "stop": 616,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2D7A80",
+     "camera": 1008,
+     "stop": 1008,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D7C36",
+     "camera": 1448,
+     "stop": 1448,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D7C70",
+     "camera": 1568,
+     "stop": 1568,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D8086",
+     "camera": 1920,
+     "stop": 1920,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D80BA",
+     "camera": 2048,
+     "stop": 2048,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D833E",
+     "camera": 2368,
+     "stop": 2368,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D834C",
+     "camera": 2368,
+     "stop": 2368,
+     "params": [
+      65512,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2D7A7E",
+    "0x2D7A94",
+    "0x2D7C6E",
+    "0x2D7C84",
+    "0x2D80B8",
+    "0x2D80CE",
+    "0x2D833C",
+    "0x2D835A"
+   ],
+   "constructors": [
+    "0x01913C",
+    "0x021A1C",
+    "0x021A26",
+    "0x035B66",
+    "0x035C68",
+    "0x03A892",
+    "0x0529C0",
+    "0x0613CA",
+    "0x0613D8",
+    "0x0613E6",
+    "0x0678CA",
+    "0x067902",
+    "0x06835C",
+    "0x06851A",
+    "0x0692B2",
+    "0x08C37C",
+    "0x099DE2",
+    "0x099DF0",
+    "0x099E06",
+    "0x09A67E",
+    "0x09A692",
+    "0x0B829C",
+    "0x0B833A"
+   ]
+  },
+  {
+   "index": 3,
+   "base": "0x2D87E4",
+   "end": "0x2D9CD8",
+   "top_level_statements": 281,
+   "spawn_records": 248,
+   "camera_waits": 106,
+   "camera_max": 3888,
+   "stops": [
+    {
+     "address": "0x2D8832",
+     "camera": 0,
+     "stop": 0,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D952A",
+     "camera": 2376,
+     "stop": 2376,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D9538",
+     "camera": 2376,
+     "stop": 2376,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2D9710",
+     "camera": 2912,
+     "stop": 2912,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x026254",
+    "0x032DE2",
+    "0x035B66",
+    "0x035D12",
+    "0x03670E",
+    "0x03A05A",
+    "0x03A2AA",
+    "0x0529C0",
+    "0x052A5C",
+    "0x0613CA",
+    "0x0613D8",
+    "0x0613E6",
+    "0x0678A2",
+    "0x0678B6",
+    "0x0678CA",
+    "0x0692B2",
+    "0x082BCE",
+    "0x08C154",
+    "0x08C168",
+    "0x08C37C",
+    "0x09692C",
+    "0x0995EC",
+    "0x099862",
+    "0x099DCC",
+    "0x09A67E",
+    "0x0B833A"
+   ]
+  },
+  {
+   "index": 4,
+   "base": "0x2D9CDA",
+   "end": "0x2DB694",
+   "top_level_statements": 364,
+   "spawn_records": 256,
+   "camera_waits": 139,
+   "camera_max": 6496,
+   "stops": [
+    {
+     "address": "0x2D9F10",
+     "camera": 312,
+     "stop": 312,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D9F1E",
+     "camera": 312,
+     "stop": 312,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D9F62",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2D9F70",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DA53A",
+     "camera": 1520,
+     "stop": 1520,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAB04",
+     "camera": 2888,
+     "stop": 2888,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAB12",
+     "camera": 2888,
+     "stop": 2888,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAC44",
+     "camera": 3296,
+     "stop": 3296,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAD36",
+     "camera": 3716,
+     "stop": 3716,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAD44",
+     "camera": 3716,
+     "stop": 3716,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DADE0",
+     "camera": 3904,
+     "stop": 3904,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DAE06",
+     "camera": 3944,
+     "stop": 3944,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DB452",
+     "camera": 5980,
+     "stop": 5980,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DB460",
+     "camera": 5980,
+     "stop": 5980,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2D9F58",
+    "0x2D9F60",
+    "0x2DA668",
+    "0x2DA670"
+   ],
+   "constructors": [
+    "0x01913C",
+    "0x01F1D4",
+    "0x0214EA",
+    "0x027F54",
+    "0x02916E",
+    "0x02B202",
+    "0x0391EA",
+    "0x03EE8A",
+    "0x0403A0",
+    "0x04115A",
+    "0x04A2C2",
+    "0x04E990",
+    "0x0569B4",
+    "0x0569D0",
+    "0x0569E6",
+    "0x05C53C",
+    "0x05D226",
+    "0x05D234",
+    "0x05D916",
+    "0x05ED84",
+    "0x084588",
+    "0x087E36",
+    "0x08A732",
+    "0x08AFB6",
+    "0x08C172",
+    "0x08C37C",
+    "0x08DA12",
+    "0x093C9A",
+    "0x097FCC",
+    "0x099862",
+    "0x099DCC",
+    "0x099E1C",
+    "0x09A67E",
+    "0x09A692",
+    "0x09AE1E",
+    "0x09AE2C",
+    "0x09BA2A",
+    "0x0A2F2E",
+    "0x0A4A94",
+    "0x0AC866",
+    "0x0AF17E",
+    "0x0AF1B6",
+    "0x0B9400",
+    "0x0DC97E"
+   ]
+  },
+  {
+   "index": 5,
+   "base": "0x2DB696",
+   "end": "0x2DCB3A",
+   "top_level_statements": 300,
+   "spawn_records": 216,
+   "camera_waits": 105,
+   "camera_max": 5552,
+   "stops": [
+    {
+     "address": "0x2DBA40",
+     "camera": 1000,
+     "stop": 1000,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DBA4E",
+     "camera": 1000,
+     "stop": 1000,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DBB0C",
+     "camera": 1256,
+     "stop": 1256,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DBB1A",
+     "camera": 1256,
+     "stop": 1256,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DBDBA",
+     "camera": 2160,
+     "stop": 2160,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DBDC8",
+     "camera": 2160,
+     "stop": 2160,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DC07A",
+     "camera": 2632,
+     "stop": 2632,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DC088",
+     "camera": 2632,
+     "stop": 2632,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DC21A",
+     "camera": 3256,
+     "stop": 3256,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DC228",
+     "camera": 3256,
+     "stop": 3256,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DC67A",
+     "camera": 4360,
+     "stop": 4360,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DC688",
+     "camera": 4360,
+     "stop": 4360,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2DBB0A",
+    "0x2DBB28",
+    "0x2DBFBE",
+    "0x2DC05A",
+    "0x2DC096",
+    "0x2DC668",
+    "0x2DC696"
+   ],
+   "constructors": [
+    "0x01913C",
+    "0x01F828",
+    "0x01F866",
+    "0x02267E",
+    "0x027F54",
+    "0x02916E",
+    "0x033526",
+    "0x036C34",
+    "0x0403A0",
+    "0x04115A",
+    "0x0569E6",
+    "0x0587C4",
+    "0x05D234",
+    "0x07E554",
+    "0x08391C",
+    "0x083C8A",
+    "0x08514A",
+    "0x085522",
+    "0x08571C",
+    "0x087E36",
+    "0x08A732",
+    "0x08DA12",
+    "0x08DA34",
+    "0x092A32",
+    "0x099DCC",
+    "0x099DF0",
+    "0x099E06",
+    "0x09A67E",
+    "0x09A71E",
+    "0x09AE1E",
+    "0x09AE2C",
+    "0x0A9F0C",
+    "0x0AF17E",
+    "0x0AF1A8"
+   ]
+  },
+  {
+   "index": 6,
+   "base": "0x2DCB3C",
+   "end": "0x2DDB00",
+   "top_level_statements": 189,
+   "spawn_records": 141,
+   "camera_waits": 47,
+   "camera_max": 1640,
+   "stops": [
+    {
+     "address": "0x2DCF52",
+     "camera": 600,
+     "stop": 600,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DCF60",
+     "camera": 600,
+     "stop": 600,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD282",
+     "camera": 880,
+     "stop": 880,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD290",
+     "camera": 880,
+     "stop": 880,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD640",
+     "camera": 1208,
+     "stop": 1208,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD64E",
+     "camera": 1208,
+     "stop": 1208,
+     "params": [
+      65520,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD988",
+     "camera": 1640,
+     "stop": 1640,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DD996",
+     "camera": 1640,
+     "stop": 1640,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x04115A",
+    "0x0474B6",
+    "0x047F7E",
+    "0x050542",
+    "0x05C53C",
+    "0x05D226",
+    "0x0633E2",
+    "0x06341A",
+    "0x063478",
+    "0x087E36",
+    "0x08AFB6",
+    "0x08C37C",
+    "0x08DA12",
+    "0x08DCB2",
+    "0x08FF7E",
+    "0x092A32",
+    "0x09624E",
+    "0x09A67E",
+    "0x09A692",
+    "0x0AF17E",
+    "0x0AF1A8",
+    "0x0BBE16",
+    "0x0BBE5E",
+    "0x0BBED0"
+   ]
+  },
+  {
+   "index": 7,
+   "base": "0x2DDB02",
+   "end": "0x2DE832",
+   "top_level_statements": 186,
+   "spawn_records": 119,
+   "camera_waits": 36,
+   "camera_max": 1520,
+   "stops": [
+    {
+     "address": "0x2DDBA2",
+     "camera": 80,
+     "stop": 80,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DDBB0",
+     "camera": 80,
+     "stop": 80,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DDC08",
+     "camera": 192,
+     "stop": 192,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DDC16",
+     "camera": 192,
+     "stop": 192,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DDD94",
+     "camera": 384,
+     "stop": 384,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DDDA2",
+     "camera": 384,
+     "stop": 384,
+     "params": [
+      65488,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DDF00",
+     "camera": 528,
+     "stop": 528,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DDF0E",
+     "camera": 528,
+     "stop": 528,
+     "params": [
+      65488,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DE0D0",
+     "camera": 688,
+     "stop": 688,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DE0DE",
+     "camera": 688,
+     "stop": 688,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DE258",
+     "camera": 808,
+     "stop": 808,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DE266",
+     "camera": 808,
+     "stop": 808,
+     "params": [
+      32,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DE444",
+     "camera": 992,
+     "stop": 992,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DE452",
+     "camera": 992,
+     "stop": 992,
+     "params": [
+      65520,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DE63C",
+     "camera": 1280,
+     "stop": 1280,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DE64A",
+     "camera": 1280,
+     "stop": 1280,
+     "params": [
+      65424,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x027F54",
+    "0x035B66",
+    "0x04115A",
+    "0x0474B6",
+    "0x047F7E",
+    "0x04857C",
+    "0x051344",
+    "0x05D76A",
+    "0x099862",
+    "0x099DCC",
+    "0x09A67E",
+    "0x09A692",
+    "0x0AF17E",
+    "0x0AF1A8",
+    "0x0BBF12",
+    "0x0BC1E6",
+    "0x0D3B36"
+   ]
+  },
+  {
+   "index": 8,
+   "base": "0x2DE834",
+   "end": "0x2DF676",
+   "top_level_statements": 167,
+   "spawn_records": 184,
+   "camera_waits": 58,
+   "camera_max": 2560,
+   "stops": [
+    {
+     "address": "0x2DEA2A",
+     "camera": 8,
+     "stop": 8,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DEA38",
+     "camera": 8,
+     "stop": 8,
+     "params": [
+      65528,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DECC0",
+     "camera": 544,
+     "stop": 544,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DECCE",
+     "camera": 544,
+     "stop": 544,
+     "params": [
+      65512,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF03A",
+     "camera": 1056,
+     "stop": 1056,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF048",
+     "camera": 1056,
+     "stop": 1056,
+     "params": [
+      65512,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF2B8",
+     "camera": 1568,
+     "stop": 1568,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF2C6",
+     "camera": 1568,
+     "stop": 1568,
+     "params": [
+      65512,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF4E0",
+     "camera": 2064,
+     "stop": 2064,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF4EE",
+     "camera": 2064,
+     "stop": 2064,
+     "params": [
+      65488,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DF5FA",
+     "camera": 2472,
+     "stop": 2472,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF608",
+     "camera": 2472,
+     "stop": 2472,
+     "params": [
+      65488,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x032B46",
+    "0x032B5A",
+    "0x032B6E",
+    "0x08346E",
+    "0x0836E8",
+    "0x087E36",
+    "0x089948",
+    "0x08995A",
+    "0x08996A",
+    "0x08FF7E",
+    "0x095C98",
+    "0x09692C",
+    "0x099DCC",
+    "0x09A692",
+    "0x0A0C00",
+    "0x0AF17E",
+    "0x0BC296",
+    "0x0BC3A6",
+    "0x0BC4F4"
+   ]
+  },
+  {
+   "index": 9,
+   "base": "0x2DF678",
+   "end": "0x2E0038",
+   "top_level_statements": 168,
+   "spawn_records": 106,
+   "camera_waits": 62,
+   "camera_max": 3624,
+   "stops": [
+    {
+     "address": "0x2DF9AA",
+     "camera": 1056,
+     "stop": 1056,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DF9B8",
+     "camera": 1056,
+     "stop": 1056,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2DFB60",
+     "camera": 2352,
+     "stop": 2352,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2DFB7A",
+     "camera": 2352,
+     "stop": 2352,
+     "params": [
+      0,
+      65336,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E0008",
+     "camera": 3624,
+     "stop": 3624,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E0016",
+     "camera": 3624,
+     "stop": 3624,
+     "params": [
+      65488,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x01F1D4",
+    "0x01F836",
+    "0x01F844",
+    "0x020166",
+    "0x036C34",
+    "0x04115A",
+    "0x0530F4",
+    "0x05310E",
+    "0x0569B4",
+    "0x0569E6",
+    "0x05C58C",
+    "0x05D916",
+    "0x05ED84",
+    "0x08571C",
+    "0x08A732",
+    "0x08C172",
+    "0x099DCC",
+    "0x099E06",
+    "0x09A67E",
+    "0x09A692",
+    "0x09AE1E",
+    "0x09AE2C",
+    "0x09BA2A",
+    "0x0AF17E",
+    "0x0AF1B6",
+    "0x0AF1C4",
+    "0x0B833A"
+   ]
+  },
+  {
+   "index": 10,
+   "base": "0x2E003A",
+   "end": "0x2E19E4",
+   "top_level_statements": 366,
+   "spawn_records": 279,
+   "camera_waits": 76,
+   "camera_max": 4240,
+   "stops": [
+    {
+     "address": "0x2E0410",
+     "camera": 1104,
+     "stop": 1104,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E041E",
+     "camera": 1104,
+     "stop": 1104,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E06D8",
+     "camera": 1512,
+     "stop": 1512,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E06E6",
+     "camera": 1512,
+     "stop": 1512,
+     "params": [
+      65504,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E0B48",
+     "camera": 2256,
+     "stop": 2256,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E0B56",
+     "camera": 2256,
+     "stop": 2256,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E0DDE",
+     "camera": 2672,
+     "stop": 2672,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E0DEC",
+     "camera": 2672,
+     "stop": 2672,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E1272",
+     "camera": 3872,
+     "stop": 3872,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E1280",
+     "camera": 3872,
+     "stop": 3872,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E19C0",
+     "camera": 4240,
+     "stop": 4240,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x032946",
+    "0x036C34",
+    "0x04115A",
+    "0x0569B4",
+    "0x0569E6",
+    "0x0676A8",
+    "0x0676B6",
+    "0x086712",
+    "0x086728",
+    "0x08AFA8",
+    "0x08AFDE",
+    "0x08C37C",
+    "0x08DA12",
+    "0x08DA34",
+    "0x08FF7E",
+    "0x099DCC",
+    "0x099DF0",
+    "0x099E06",
+    "0x09A67E",
+    "0x09A692",
+    "0x0A2EFA",
+    "0x0A2F2E",
+    "0x0AF17E",
+    "0x0AF1A8",
+    "0x0BE460",
+    "0x0BE8F6"
+   ]
+  },
+  {
+   "index": 11,
+   "base": "0x2E19E6",
+   "end": "0x2E1A02",
+   "top_level_statements": 4,
+   "spawn_records": 2,
+   "camera_waits": 1,
+   "camera_max": 1,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x01913C",
+    "0x04153E"
+   ]
+  },
+  {
+   "index": 12,
+   "base": "0x2E1A04",
+   "end": "0x2E1AC8",
+   "top_level_statements": 18,
+   "spawn_records": 9,
+   "camera_waits": 8,
+   "camera_max": 320,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x08AFB6",
+    "0x08C37C",
+    "0x08FF7E",
+    "0x099DCC"
+   ]
+  },
+  {
+   "index": 13,
+   "base": "0x2E1ACA",
+   "end": "0x2E1B7A",
+   "top_level_statements": 14,
+   "spawn_records": 8,
+   "camera_waits": 3,
+   "camera_max": 1,
+   "stops": [
+    {
+     "address": "0x2E1AE6",
+     "camera": 1,
+     "stop": 1,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x02016C",
+    "0x03458E",
+    "0x0613CA",
+    "0x09F682"
+   ]
+  },
+  {
+   "index": 14,
+   "base": "0x2E1B7C",
+   "end": "0x2E1D8C",
+   "top_level_statements": 45,
+   "spawn_records": 26,
+   "camera_waits": 18,
+   "camera_max": 2944,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x01F866",
+    "0x02011C",
+    "0x020122",
+    "0x020166",
+    "0x02016C",
+    "0x0214EA",
+    "0x0216BA",
+    "0x0790A4",
+    "0x0790AE",
+    "0x0790B8",
+    "0x0790C2",
+    "0x07BB24",
+    "0x07E554",
+    "0x092A32",
+    "0x0A454C",
+    "0x0AF17E",
+    "0x0C64A6",
+    "0x0C677E"
+   ]
+  },
+  {
+   "index": 15,
+   "base": "0x2E1D8E",
+   "end": "0x2E1E3A",
+   "top_level_statements": 14,
+   "spawn_records": 5,
+   "camera_waits": 5,
+   "camera_max": 4240,
+   "stops": [
+    {
+     "address": "0x2E1DFA",
+     "camera": 0,
+     "stop": 0,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E1E16",
+     "camera": 4240,
+     "stop": 4240,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x0474B6",
+    "0x09692C",
+    "0x0AF1A8",
+    "0x0BE8F6"
+   ]
+  },
+  {
+   "index": 16,
+   "base": "0x2E1E3C",
+   "end": "0x2E2218",
+   "top_level_statements": 41,
+   "spawn_records": 44,
+   "camera_waits": 18,
+   "camera_max": 744,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x031D80",
+    "0x03264E",
+    "0x03FC5A",
+    "0x0400AA",
+    "0x08571C",
+    "0x08C37C",
+    "0x09624E",
+    "0x099DCC",
+    "0x099E06",
+    "0x09A67E",
+    "0x09D846",
+    "0x09D862",
+    "0x09D876",
+    "0x0B6298",
+    "0x0B833A"
+   ]
+  },
+  {
+   "index": 17,
+   "base": "0x2E29E4",
+   "end": "0x2E2F52",
+   "top_level_statements": 115,
+   "spawn_records": 73,
+   "camera_waits": 42,
+   "camera_max": 2208,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0613CA",
+    "0x0613D8",
+    "0x06263C",
+    "0x062674",
+    "0x062C72",
+    "0x06835C",
+    "0x07EFC2",
+    "0x07F8C6",
+    "0x08017A",
+    "0x080A68",
+    "0x08242E",
+    "0x082442",
+    "0x082BD8",
+    "0x08346E",
+    "0x0836DE",
+    "0x0836E8",
+    "0x08391C",
+    "0x083C98",
+    "0x08C37C"
+   ]
+  },
+  {
+   "index": 18,
+   "base": "0x2E2F7A",
+   "end": "0x2E2F9E",
+   "top_level_statements": 5,
+   "spawn_records": 1,
+   "camera_waits": 2,
+   "camera_max": 1920,
+   "stops": [
+    {
+     "address": "0x2E2F7A",
+     "camera": 1920,
+     "stop": 1920,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x0D74DA"
+   ]
+  },
+  {
+   "index": 19,
+   "base": "0x2E2FA0",
+   "end": "0x2E307E",
+   "top_level_statements": 11,
+   "spawn_records": 9,
+   "camera_waits": 4,
+   "camera_max": 2000,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x06CDF6",
+    "0x08A732",
+    "0x09A67E",
+    "0x0AC866"
+   ]
+  },
+  {
+   "index": 20,
+   "base": "0x2E3080",
+   "end": "0x2E48D0",
+   "top_level_statements": 349,
+   "spawn_records": 245,
+   "camera_waits": 134,
+   "camera_max": 6496,
+   "stops": [
+    {
+     "address": "0x2E32CC",
+     "camera": 312,
+     "stop": 312,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E32DA",
+     "camera": 312,
+     "stop": 312,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E3342",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E3350",
+     "camera": 320,
+     "stop": 320,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E3936",
+     "camera": 1544,
+     "stop": 1544,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E3E04",
+     "camera": 2888,
+     "stop": 2888,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E3E12",
+     "camera": 2888,
+     "stop": 2888,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E4020",
+     "camera": 3904,
+     "stop": 3904,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E4046",
+     "camera": 3944,
+     "stop": 3944,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E46A2",
+     "camera": 5980,
+     "stop": 5980,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E46B0",
+     "camera": 5980,
+     "stop": 5980,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [
+    "0x2E3338",
+    "0x2E3340",
+    "0x2E39F0",
+    "0x2E39F8"
+   ],
+   "constructors": [
+    "0x01913C",
+    "0x01F1D4",
+    "0x027F54",
+    "0x02B202",
+    "0x0391EA",
+    "0x03EE8A",
+    "0x0403A0",
+    "0x04115A",
+    "0x04A2C2",
+    "0x04E990",
+    "0x04E998",
+    "0x0569B4",
+    "0x0569D0",
+    "0x0569E6",
+    "0x05C53C",
+    "0x05D226",
+    "0x05D234",
+    "0x05D916",
+    "0x05ED84",
+    "0x084588",
+    "0x087E36",
+    "0x08A732",
+    "0x08AFB6",
+    "0x08AFDE",
+    "0x08C172",
+    "0x08C37C",
+    "0x08DA12",
+    "0x08DA34",
+    "0x08DCA6",
+    "0x093C9A",
+    "0x097FCC",
+    "0x099862",
+    "0x099DCC",
+    "0x099E1C",
+    "0x09A67E",
+    "0x09A692",
+    "0x09AE1E",
+    "0x09AE2C",
+    "0x09BA2A",
+    "0x0A2F2E",
+    "0x0A4A94",
+    "0x0AC866",
+    "0x0AF17E",
+    "0x0AF1B6",
+    "0x0B9400"
+   ]
+  },
+  {
+   "index": 21,
+   "base": "0x2E48D2",
+   "end": "0x2E57D2",
+   "top_level_statements": 183,
+   "spawn_records": 130,
+   "camera_waits": 47,
+   "camera_max": 1640,
+   "stops": [
+    {
+     "address": "0x2E4C46",
+     "camera": 600,
+     "stop": 600,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E4C54",
+     "camera": 600,
+     "stop": 600,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E4F58",
+     "camera": 880,
+     "stop": 880,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E4F66",
+     "camera": 880,
+     "stop": 880,
+     "params": [
+      0,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E5312",
+     "camera": 1208,
+     "stop": 1208,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E5320",
+     "camera": 1208,
+     "stop": 1208,
+     "params": [
+      65520,
+      32768,
+      0,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E565A",
+     "camera": 1640,
+     "stop": 1640,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    },
+    {
+     "address": "0x2E5668",
+     "camera": 1640,
+     "stop": 1640,
+     "params": [
+      65520,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x04115A",
+    "0x0474B6",
+    "0x047F7E",
+    "0x050542",
+    "0x05C53C",
+    "0x05D226",
+    "0x0633E2",
+    "0x06341A",
+    "0x063478",
+    "0x087E36",
+    "0x08AFB6",
+    "0x08C37C",
+    "0x08DA12",
+    "0x08DCB2",
+    "0x08FF7E",
+    "0x092A32",
+    "0x09624E",
+    "0x09A67E",
+    "0x09A692",
+    "0x0AF17E",
+    "0x0AF1A8",
+    "0x0BBE16",
+    "0x0BBE5E",
+    "0x0BBED0"
+   ]
+  },
+  {
+   "index": 22,
+   "base": "0x2E57D4",
+   "end": "0x2E598A",
+   "top_level_statements": 5,
+   "spawn_records": 14,
+   "camera_waits": 0,
+   "camera_max": null,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0A8C62"
+   ]
+  },
+  {
+   "index": 23,
+   "base": "0x2E840C",
+   "end": "0x2E84BC",
+   "top_level_statements": 23,
+   "spawn_records": 11,
+   "camera_waits": 11,
+   "camera_max": 2368,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0AC866",
+    "0x0DA550",
+    "0x0DA716",
+    "0x0DA8D2",
+    "0x0DABEE",
+    "0x0DAD4E",
+    "0x0DAD86",
+    "0x0DADBE",
+    "0x0DAEEC",
+    "0x0DB1A8",
+    "0x0DB3EA"
+   ]
+  },
+  {
+   "index": 24,
+   "base": "0x2E84BE",
+   "end": "0x2E861C",
+   "top_level_statements": 38,
+   "spawn_records": 16,
+   "camera_waits": 14,
+   "camera_max": 2560,
+   "stops": [
+    {
+     "address": "0x2E85B6",
+     "camera": 1552,
+     "stop": 1552,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E85E0",
+     "camera": 1808,
+     "stop": 1808,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "address": "0x2E8606",
+     "camera": 2560,
+     "stop": 2560,
+     "params": [
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x06EE28",
+    "0x077218",
+    "0x077242",
+    "0x07A1E4",
+    "0x07DCD0",
+    "0x07E380",
+    "0x0AC866",
+    "0x0DC2C6",
+    "0x0DC39E",
+    "0x0DC5B8"
+   ]
+  },
+  {
+   "index": 25,
+   "base": "0x2E861E",
+   "end": "0x2E8670",
+   "top_level_statements": 7,
+   "spawn_records": 4,
+   "camera_waits": 2,
+   "camera_max": 64,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0403A0",
+    "0x06EE28",
+    "0x0AC866",
+    "0x0AF17E"
+   ]
+  },
+  {
+   "index": 26,
+   "base": "0x2E8672",
+   "end": "0x2E86EA",
+   "top_level_statements": 12,
+   "spawn_records": 5,
+   "camera_waits": 4,
+   "camera_max": 2344,
+   "stops": [
+    {
+     "address": "0x2E86C4",
+     "camera": 2344,
+     "stop": 2344,
+     "params": [
+      32768,
+      32768,
+      32768,
+      32768
+     ]
+    }
+   ],
+   "autoscroll": [],
+   "constructors": [
+    "0x0403A0",
+    "0x06EE28",
+    "0x0AC866",
+    "0x0AF17E",
+    "0x0B3FF0"
+   ]
+  },
+  {
+   "index": 27,
+   "base": "0x2E86EC",
+   "end": "0x2E87DC",
+   "top_level_statements": 21,
+   "spawn_records": 11,
+   "camera_waits": 9,
+   "camera_max": 496,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0403A0",
+    "0x08C37C",
+    "0x092A32",
+    "0x0AC866",
+    "0x0AF17E"
+   ]
+  },
+  {
+   "index": 28,
+   "base": "0x2E87DE",
+   "end": "0x2E87EC",
+   "top_level_statements": 3,
+   "spawn_records": 1,
+   "camera_waits": 0,
+   "camera_max": null,
+   "stops": [],
+   "autoscroll": [],
+   "constructors": [
+    "0x0B968C"
+   ]
+  },
+  {
+   "index": 29,
+   "base": "0x000878",
+   "note": "outside the banked script window"
+  }
+ ],
+ "observed_rest_positions": {
+  "capture": "/home/user/captures-fullgame/run3",
+  "checked": 311,
+  "not_blocking": []
+ }
+}

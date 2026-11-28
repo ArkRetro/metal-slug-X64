@@ -1,0 +1,7315 @@
+{
+"source": "MAME 0.264 isolated pair renders, tools/measure_sound_pairs.py (spacing 12 frames), B75 (work-audit): sfx_108a and sfx_108b with themselves, each other, sfx_1089 and every label of the policy in both orders. Adding either one to data/sound_pairs.json moves sfx_108e (voice 1 -> 2) and sfx_116e (voice 0 -> 1), so both stay without a policy entry (docs/AUDIO_JUEGO.md 17)",
+"pairs": {
+"sfx_1089>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 292.6,
+"second": "drop",
+"second_residual": 684.6,
+"mix_rms": 2732.9,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.015,
+"margin": 0.009
+}
+},
+"sfx_108a>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 656.2,
+"second": "overlap",
+"second_residual": 2678.6,
+"mix_rms": 2578.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "cut",
+"error": 0.033,
+"second": "drop",
+"second_error": 0.428,
+"margin": 0.395
+}
+},
+"explosion>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1162.5,
+"second": "cut",
+"second_residual": 1548.3,
+"mix_rms": 3658.9,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.028,
+"margin": 0.006
+}
+},
+"sfx_108a>pistol": {
+"wave": {
+"mode": "overlap",
+"residual": 774.5,
+"second": "drop",
+"second_residual": 1574.1,
+"mix_rms": 3788.5,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "cut",
+"second_error": 0.2,
+"margin": 0.189
+}
+},
+"rebel_103e>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 810.0,
+"second": "cut",
+"second_residual": 3114.6,
+"mix_rms": 5104.7,
+"latency_b": 12.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.105,
+"margin": 0.081
+}
+},
+"sfx_108a>sfx_1021": {
+"wave": {
+"mode": "overlap",
+"residual": 835.1,
+"second": "cut",
+"second_residual": 2041.4,
+"mix_rms": 3789.6,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.094,
+"margin": 0.062
+}
+},
+"sfx_1022>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1012.7,
+"second": "cut",
+"second_residual": 1746.0,
+"mix_rms": 3853.7,
+"latency_b": 16.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.032,
+"margin": 0.016
+}
+},
+"sfx_108a>sfx_1029": {
+"wave": {
+"mode": "overlap",
+"residual": 316.3,
+"second": "drop",
+"second_residual": 1216.3,
+"mix_rms": 3301.6,
+"latency_b": 10.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.18,
+"margin": 0.149
+}
+},
+"sfx_102c>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1065.8,
+"second": "cut",
+"second_residual": 2479.8,
+"mix_rms": 3841.3,
+"latency_b": 15.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "drop",
+"second_error": 0.158,
+"margin": 0.141
+}
+},
+"sfx_108a>sfx_102e": {
+"wave": {
+"mode": "overlap",
+"residual": 883.8,
+"second": "drop",
+"second_residual": 1587.7,
+"mix_rms": 3379.0,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.138,
+"margin": 0.109
+}
+},
+"sfx_102f>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 633.7,
+"second": "drop",
+"second_residual": 2085.7,
+"mix_rms": 3647.9,
+"latency_b": 15.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.051,
+"margin": 0.042
+}
+},
+"sfx_108a>sfx_1032": {
+"wave": {
+"mode": "overlap",
+"residual": 382.4,
+"second": "cut",
+"second_residual": 1269.3,
+"mix_rms": 4150.2,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.065,
+"second": "cut",
+"second_error": 0.079,
+"margin": 0.014
+}
+},
+"sfx_1034>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1778.8,
+"second": "drop",
+"second_residual": 2609.2,
+"mix_rms": 4922.0,
+"latency_b": 11.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.044,
+"margin": 0.036
+}
+},
+"sfx_108a>sfx_1036": {
+"wave": {
+"mode": "overlap",
+"residual": 1820.8,
+"second": "cut",
+"second_residual": 2580.6,
+"mix_rms": 3855.2,
+"latency_b": 13.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.067,
+"margin": 0.047
+}
+},
+"sfx_1048>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1290.2,
+"second": "cut",
+"second_residual": 1290.2,
+"mix_rms": 3500.3,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.032,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_104f": {
+"wave": {
+"mode": "overlap",
+"residual": 1180.9,
+"second": "cut",
+"second_residual": 2270.3,
+"mix_rms": 3963.6,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.088,
+"margin": 0.061
+}
+},
+"sfx_1053>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3156.0,
+"second": "overlap",
+"second_residual": 3163.3,
+"mix_rms": 4031.2,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.045,
+"second": "drop",
+"second_error": 0.144,
+"margin": 0.098
+}
+},
+"sfx_108a>sfx_105d": {
+"wave": {
+"mode": "cut",
+"residual": 383.1,
+"second": "overlap",
+"second_residual": 1807.0,
+"mix_rms": 2838.7,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "cut",
+"error": 0.102,
+"second": "overlap",
+"second_error": 0.175,
+"margin": 0.073
+}
+},
+"sfx_105e>sfx_108a": {
+"wave": {
+"mode": "drop",
+"residual": 167.9,
+"second": "overlap",
+"second_residual": 2563.2,
+"mix_rms": 2501.1,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.172,
+"margin": 0.171
+}
+},
+"sfx_108a>sfx_1064": {
+"wave": {
+"mode": "overlap",
+"residual": 1140.6,
+"second": "cut",
+"second_residual": 2337.2,
+"mix_rms": 3750.4,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.081,
+"margin": 0.064
+}
+},
+"sfx_1065>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 656.4,
+"second": "cut",
+"second_residual": 2332.0,
+"mix_rms": 3847.6,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "drop",
+"second_error": 0.107,
+"margin": 0.088
+}
+},
+"sfx_108a>sfx_1067": {
+"wave": {
+"mode": "overlap",
+"residual": 808.3,
+"second": "cut",
+"second_residual": 2171.9,
+"mix_rms": 3680.0,
+"latency_b": 16.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.09,
+"margin": 0.061
+}
+},
+"sfx_1069>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1310.1,
+"second": "cut",
+"second_residual": 1356.0,
+"mix_rms": 3497.9,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.032,
+"second": "overlap",
+"second_error": 0.033,
+"margin": 0.001
+}
+},
+"sfx_108a>sfx_1073": {
+"wave": {
+"mode": "overlap",
+"residual": 459.6,
+"second": "cut",
+"second_residual": 1459.2,
+"mix_rms": 3976.3,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.114,
+"second": "cut",
+"second_error": 0.163,
+"margin": 0.049
+}
+},
+"sfx_1074>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 939.3,
+"second": "cut",
+"second_residual": 2133.0,
+"mix_rms": 3163.9,
+"latency_b": 10.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.141,
+"margin": 0.131
+}
+},
+"sfx_108a>sfx_1084": {
+"wave": {
+"mode": "overlap",
+"residual": 276.5,
+"second": "drop",
+"second_residual": 1726.1,
+"mix_rms": 3598.4,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.12,
+"margin": 0.103
+}
+},
+"sfx_108c>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1354.7,
+"second": "cut",
+"second_residual": 1594.8,
+"mix_rms": 3583.1,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.024,
+"margin": 0.005
+}
+},
+"sfx_108a>sfx_108f": {
+"wave": {
+"mode": "drop",
+"residual": 188.1,
+"second": "overlap",
+"second_residual": 1752.8,
+"mix_rms": 3400.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.415,
+"margin": 0.414
+}
+},
+"sfx_1090>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1231.4,
+"second": "overlap",
+"second_residual": 1931.5,
+"mix_rms": 3544.5,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "cut",
+"error": 0.028,
+"second": "overlap",
+"second_error": 0.046,
+"margin": 0.017
+}
+},
+"sfx_108a>sfx_1092": {
+"wave": {
+"mode": "drop",
+"residual": 674.8,
+"second": "overlap",
+"second_residual": 1424.6,
+"mix_rms": 3517.2,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.001,
+"second": "overlap",
+"second_error": 0.14,
+"margin": 0.14
+}
+},
+"sfx_109b>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1333.1,
+"second": "overlap",
+"second_residual": 1389.8,
+"mix_rms": 3384.1,
+"latency_b": 17.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.022,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_109e": {
+"wave": {
+"mode": "overlap",
+"residual": 1333.8,
+"second": "drop",
+"second_residual": 1361.6,
+"mix_rms": 1994.8,
+"latency_b": 8.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.15,
+"second": "cut",
+"second_error": 0.209,
+"margin": 0.059
+}
+},
+"sfx_109f>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1794.4,
+"second": "overlap",
+"second_residual": 1906.2,
+"mix_rms": 3418.5,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.009
+}
+},
+"sfx_108a>sfx_10a4": {
+"wave": {
+"mode": "drop",
+"residual": 1582.9,
+"second": "overlap",
+"second_residual": 2088.2,
+"mix_rms": 3689.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.158,
+"margin": 0.131
+}
+},
+"sfx_10a5>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1464.1,
+"second": "cut",
+"second_residual": 1475.3,
+"mix_rms": 1767.3,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.082,
+"second": "drop",
+"second_error": 0.135,
+"margin": 0.054
+}
+},
+"sfx_108a>sfx_10ba": {
+"wave": {
+"mode": "drop",
+"residual": 2378.8,
+"second": "overlap",
+"second_residual": 2585.9,
+"mix_rms": 2901.6,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "cut",
+"second_error": 0.125,
+"margin": 0.059
+}
+},
+"sfx_10c6>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3489.9,
+"second": "overlap",
+"second_residual": 4286.1,
+"mix_rms": 3824.0,
+"latency_b": 14.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.052,
+"second": "drop",
+"second_error": 0.142,
+"margin": 0.09
+}
+},
+"sfx_108a>sfx_10d5": {
+"wave": {
+"mode": "overlap",
+"residual": 1524.8,
+"second": "drop",
+"second_residual": 2276.7,
+"mix_rms": 3956.5,
+"latency_b": 10.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.12,
+"margin": 0.093
+}
+},
+"sfx_10e8>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1647.7,
+"second": "cut",
+"second_residual": 1710.6,
+"mix_rms": 2644.8,
+"latency_b": 14.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.043,
+"second": "drop",
+"second_error": 0.24,
+"margin": 0.198
+}
+},
+"sfx_108a>sfx_10ea": {
+"wave": {
+"mode": "overlap",
+"residual": 2031.6,
+"second": "drop",
+"second_residual": 2136.3,
+"mix_rms": 3504.2,
+"latency_b": 9.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.036,
+"second": "cut",
+"second_error": 0.109,
+"margin": 0.073
+}
+},
+"sfx_10eb>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 4857.2,
+"second": "overlap",
+"second_residual": 5924.7,
+"mix_rms": 4860.3,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.068,
+"second": "drop",
+"second_error": 0.073,
+"margin": 0.005
+}
+},
+"sfx_108a>sfx_10ed": {
+"wave": {
+"mode": "overlap",
+"residual": 3577.9,
+"second": "drop",
+"second_residual": 3612.6,
+"mix_rms": 3863.1,
+"latency_b": 9.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.063,
+"second": "cut",
+"second_error": 0.076,
+"margin": 0.013
+}
+},
+"sfx_10ee>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 2919.8,
+"second": "cut",
+"second_residual": 3046.2,
+"mix_rms": 4297.3,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "drop",
+"second_error": 0.145,
+"margin": 0.122
+}
+},
+"sfx_108a>sfx_10f2": {
+"wave": {
+"mode": "overlap",
+"residual": 454.4,
+"second": "cut",
+"second_residual": 2001.2,
+"mix_rms": 3848.9,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.055,
+"margin": 0.029
+}
+},
+"sfx_10f3>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 188.5,
+"second": "cut",
+"second_residual": 1950.4,
+"mix_rms": 3750.9,
+"latency_b": 10.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "drop",
+"second_error": 0.208,
+"margin": 0.186
+}
+},
+"sfx_108a>sfx_10f5": {
+"wave": {
+"mode": "overlap",
+"residual": 416.8,
+"second": "drop",
+"second_residual": 1945.0,
+"mix_rms": 3678.8,
+"latency_b": 10.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.152,
+"margin": 0.127
+}
+},
+"sfx_10f6>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1424.2,
+"second": "cut",
+"second_residual": 2029.8,
+"mix_rms": 3732.4,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.169,
+"margin": 0.148
+}
+},
+"sfx_108a>sfx_10f9": {
+"wave": {
+"mode": "overlap",
+"residual": 548.0,
+"second": "drop",
+"second_residual": 2068.3,
+"mix_rms": 4208.5,
+"latency_b": 9.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.053,
+"margin": 0.044
+}
+},
+"sfx_10fb>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 359.2,
+"second": "cut",
+"second_residual": 1177.1,
+"mix_rms": 3650.4,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.033,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.011
+}
+},
+"sfx_108a>sfx_10ff": {
+"wave": {
+"mode": "overlap",
+"residual": 1267.5,
+"second": "drop",
+"second_residual": 2291.5,
+"mix_rms": 4061.3,
+"latency_b": 11.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.035,
+"second": "cut",
+"second_error": 0.139,
+"margin": 0.104
+}
+},
+"sfx_1121>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2219.1,
+"second": "overlap",
+"second_residual": 2377.7,
+"mix_rms": 3851.0,
+"latency_b": 16.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.037,
+"margin": 0.012
+}
+},
+"sfx_108a>sfx_1124": {
+"wave": {
+"mode": "overlap",
+"residual": 1602.0,
+"second": "cut",
+"second_residual": 2581.4,
+"mix_rms": 4272.7,
+"latency_b": 9.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.052,
+"second": "cut",
+"second_error": 0.164,
+"margin": 0.112
+}
+},
+"sfx_1125>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 788.6,
+"second": "cut",
+"second_residual": 3074.7,
+"mix_rms": 4974.1,
+"latency_b": 15.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.102,
+"margin": 0.08
+}
+},
+"sfx_108a>sfx_112d": {
+"wave": {
+"mode": "overlap",
+"residual": 2185.5,
+"second": "cut",
+"second_residual": 2772.4,
+"mix_rms": 4175.0,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.018,
+"second": "cut",
+"second_error": 0.105,
+"margin": 0.088
+}
+},
+"sfx_112e>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3477.1,
+"second": "overlap",
+"second_residual": 3933.7,
+"mix_rms": 4366.7,
+"latency_b": 15.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "drop",
+"second_error": 0.203,
+"margin": 0.189
+}
+},
+"sfx_108a>sfx_1130": {
+"wave": {
+"mode": "overlap",
+"residual": 2479.8,
+"second": "drop",
+"second_residual": 2931.6,
+"mix_rms": 3958.8,
+"latency_b": 11.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.046,
+"second": "cut",
+"second_error": 0.149,
+"margin": 0.103
+}
+},
+"sfx_1132>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1767.3,
+"second": "drop",
+"second_residual": 2626.2,
+"mix_rms": 3668.1,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.19,
+"margin": 0.179
+}
+},
+"sfx_108a>sfx_1134": {
+"wave": {
+"mode": "overlap",
+"residual": 2437.3,
+"second": "cut",
+"second_residual": 2881.0,
+"mix_rms": 3668.0,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.042,
+"margin": 0.024
+}
+},
+"sfx_1137>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1536.0,
+"second": "drop",
+"second_residual": 2552.4,
+"mix_rms": 4018.2,
+"latency_b": 10.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.215,
+"margin": 0.202
+}
+},
+"sfx_108a>sfx_113b": {
+"wave": {
+"mode": "overlap",
+"residual": 510.4,
+"second": "drop",
+"second_residual": 2191.2,
+"mix_rms": 4280.5,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.05,
+"margin": 0.04
+}
+},
+"sfx_1142>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 921.2,
+"second": "cut",
+"second_residual": 1870.3,
+"mix_rms": 3998.7,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.048,
+"margin": 0.028
+}
+},
+"sfx_108a>sfx_1153": {
+"wave": {
+"mode": "overlap",
+"residual": 2187.7,
+"second": "cut",
+"second_residual": 2883.0,
+"mix_rms": 4442.9,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "cut",
+"second_error": 0.066,
+"margin": 0.054
+}
+},
+"sfx_1156>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3019.2,
+"second": "overlap",
+"second_residual": 3379.5,
+"mix_rms": 4166.6,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.283,
+"margin": 0.27
+}
+},
+"sfx_108a>sfx_1159": {
+"wave": {
+"mode": "overlap",
+"residual": 825.1,
+"second": "cut",
+"second_residual": 1937.2,
+"mix_rms": 3939.4,
+"latency_b": 9.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.059,
+"second": "cut",
+"second_error": 0.144,
+"margin": 0.085
+}
+},
+"sfx_115a>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3576.0,
+"second": "overlap",
+"second_residual": 4971.0,
+"mix_rms": 4488.0,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.191,
+"margin": 0.179
+}
+},
+"sfx_108a>sfx_1168": {
+"wave": {
+"mode": "overlap",
+"residual": 573.0,
+"second": "drop",
+"second_residual": 878.1,
+"mix_rms": 3685.2,
+"latency_b": 10.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "drop",
+"second_error": 0.015,
+"margin": 0.011
+}
+},
+"sfx_1169>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1417.3,
+"second": "overlap",
+"second_residual": 1424.6,
+"mix_rms": 3772.3,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "cut",
+"error": 0.025,
+"second": "overlap",
+"second_error": 0.026,
+"margin": 0.001
+}
+},
+"sfx_108a>sfx_116e": {
+"wave": {
+"mode": "cut",
+"residual": 919.3,
+"second": "overlap",
+"second_residual": 2803.0,
+"mix_rms": 2615.4,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "cut",
+"error": 0.035,
+"second": "drop",
+"second_error": 0.88,
+"margin": 0.845
+}
+},
+"vehicle_burst>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1360.8,
+"second": "drop",
+"second_residual": 2221.8,
+"mix_rms": 4596.5,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.048,
+"margin": 0.039
+}
+},
+"sfx_108a>vehicle_smoke": {
+"wave": {
+"mode": "overlap",
+"residual": 1100.3,
+"second": "cut",
+"second_residual": 2309.4,
+"mix_rms": 4076.0,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.068,
+"margin": 0.052
+}
+},
+"sfx_102e>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 90.9,
+"second": "drop",
+"second_residual": 820.4,
+"mix_rms": 1903.6,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.05,
+"margin": 0.038
+}
+},
+"sfx_108b>sfx_1036": {
+"wave": {
+"mode": "overlap",
+"residual": 1937.5,
+"second": "cut",
+"second_residual": 1957.9,
+"mix_rms": 2919.9,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.018,
+"margin": 0.001
+}
+},
+"sfx_1053>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2882.0,
+"second": "cut",
+"second_residual": 2899.4,
+"mix_rms": 3058.0,
+"latency_b": 12.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.058,
+"second": "drop",
+"second_error": 0.065,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_1066": {
+"wave": {
+"mode": "overlap",
+"residual": 841.0,
+"second": "cut",
+"second_residual": 963.6,
+"mix_rms": 2467.3,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.04,
+"second": "cut",
+"second_error": 0.044,
+"margin": 0.004
+}
+},
+"sfx_10d1>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 974.7,
+"second": "cut",
+"second_residual": 974.7,
+"mix_rms": 1460.2,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.052,
+"second": "cut",
+"second_error": 0.052,
+"margin": 0.0
+}
+},
+"sfx_108b>sfx_1134": {
+"wave": {
+"mode": "overlap",
+"residual": 2357.3,
+"second": "cut",
+"second_residual": 2376.5,
+"mix_rms": 3074.8,
+"latency_b": 12.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.018,
+"second": "cut",
+"second_error": 0.021,
+"margin": 0.003
+}
+},
+"sfx_113b>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 388.2,
+"second": "cut",
+"second_residual": 437.5,
+"mix_rms": 2406.5,
+"latency_b": 15.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.035,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.008
+}
+},
+"sfx_1089>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 957.9,
+"second": "cut",
+"second_residual": 2201.0,
+"mix_rms": 3787.2,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.139,
+"margin": 0.124
+}
+},
+"sfx_108b>sfx_1089": {
+"wave": {
+"mode": "overlap",
+"residual": 969.7,
+"second": "cut",
+"second_residual": 1054.7,
+"mix_rms": 2607.8,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "cut",
+"second_error": 0.069,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1147.2,
+"second": "overlap",
+"second_residual": 1249.7,
+"mix_rms": 3372.5,
+"latency_b": 15.7
+},
+"envelope": {
+"mode": "cut",
+"error": 0.017,
+"second": "overlap",
+"second_error": 0.02,
+"margin": 0.004
+}
+},
+"sfx_108a>knife_hit": {
+"wave": {
+"mode": "overlap",
+"residual": 1056.0,
+"second": "drop",
+"second_residual": 1732.2,
+"mix_rms": 3988.4,
+"latency_b": 9.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "drop",
+"second_error": 0.066,
+"margin": 0.045
+}
+},
+"pistol>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 254.1,
+"second": "cut",
+"second_residual": 887.0,
+"mix_rms": 3544.2,
+"latency_b": 16.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.023,
+"margin": 0.001
+}
+},
+"sfx_108a>rebel_1041": {
+"wave": {
+"mode": "overlap",
+"residual": 1501.3,
+"second": "cut",
+"second_residual": 2903.1,
+"mix_rms": 5147.1,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.036,
+"second": "cut",
+"second_error": 0.11,
+"margin": 0.074
+}
+},
+"sfx_1021>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1097.4,
+"second": "drop",
+"second_residual": 2710.0,
+"mix_rms": 4049.0,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "drop",
+"second_error": 0.131,
+"margin": 0.114
+}
+},
+"sfx_108a>sfx_1025": {
+"wave": {
+"mode": "overlap",
+"residual": 1356.0,
+"second": "cut",
+"second_residual": 2667.3,
+"mix_rms": 4282.9,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.085,
+"margin": 0.066
+}
+},
+"sfx_1029>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1737.8,
+"second": "cut",
+"second_residual": 1808.4,
+"mix_rms": 3528.1,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.028,
+"margin": 0.007
+}
+},
+"sfx_108a>sfx_102d": {
+"wave": {
+"mode": "overlap",
+"residual": 1231.3,
+"second": "drop",
+"second_residual": 2378.2,
+"mix_rms": 3795.2,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.111,
+"margin": 0.085
+}
+},
+"sfx_102e>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1187.4,
+"second": "cut",
+"second_residual": 1681.0,
+"mix_rms": 3590.7,
+"latency_b": 16.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.111,
+"margin": 0.092
+}
+},
+"sfx_108a>sfx_1030": {
+"wave": {
+"mode": "overlap",
+"residual": 1230.6,
+"second": "cut",
+"second_residual": 2117.5,
+"mix_rms": 3792.9,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.041,
+"second": "cut",
+"second_error": 0.082,
+"margin": 0.04
+}
+},
+"sfx_1032>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 863.0,
+"second": "drop",
+"second_residual": 1814.3,
+"mix_rms": 4211.4,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.03,
+"margin": 0.023
+}
+},
+"sfx_108a>sfx_1035": {
+"wave": {
+"mode": "overlap",
+"residual": 1831.1,
+"second": "cut",
+"second_residual": 2752.3,
+"mix_rms": 4469.7,
+"latency_b": 9.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.048,
+"second": "cut",
+"second_error": 0.092,
+"margin": 0.044
+}
+},
+"sfx_1036>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 901.5,
+"second": "drop",
+"second_residual": 2693.4,
+"mix_rms": 4019.5,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.114,
+"margin": 0.098
+}
+},
+"sfx_108a>sfx_104a": {
+"wave": {
+"mode": "overlap",
+"residual": 981.3,
+"second": "cut",
+"second_residual": 2351.8,
+"mix_rms": 4815.2,
+"latency_b": 9.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.028,
+"second": "cut",
+"second_error": 0.077,
+"margin": 0.049
+}
+},
+"sfx_104f>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 696.8,
+"second": "cut",
+"second_residual": 2696.0,
+"mix_rms": 4185.5,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "drop",
+"second_error": 0.136,
+"margin": 0.115
+}
+},
+"sfx_108a>sfx_1056": {
+"wave": {
+"mode": "overlap",
+"residual": 992.8,
+"second": "drop",
+"second_residual": 2076.4,
+"mix_rms": 4046.7,
+"latency_b": 16.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.035,
+"margin": 0.028
+}
+},
+"sfx_105d>sfx_108a": {
+"wave": {
+"mode": "drop",
+"residual": 40.5,
+"second": "overlap",
+"second_residual": 2484.1,
+"mix_rms": 2463.2,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.142,
+"margin": 0.142
+}
+},
+"sfx_108a>sfx_1060": {
+"wave": {
+"mode": "cut",
+"residual": 727.3,
+"second": "overlap",
+"second_residual": 2591.3,
+"mix_rms": 3064.3,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "cut",
+"error": 0.018,
+"second": "overlap",
+"second_error": 0.164,
+"margin": 0.146
+}
+},
+"sfx_1064>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1108.1,
+"second": "cut",
+"second_residual": 2365.7,
+"mix_rms": 3968.0,
+"latency_b": 14.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "drop",
+"second_error": 0.165,
+"margin": 0.148
+}
+},
+"sfx_108a>sfx_1066": {
+"wave": {
+"mode": "overlap",
+"residual": 1118.3,
+"second": "drop",
+"second_residual": 2339.6,
+"mix_rms": 3696.5,
+"latency_b": 9.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.038,
+"second": "cut",
+"second_error": 0.098,
+"margin": 0.06
+}
+},
+"sfx_1067>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1523.9,
+"second": "cut",
+"second_residual": 2517.3,
+"mix_rms": 3882.0,
+"latency_b": 13.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "drop",
+"second_error": 0.171,
+"margin": 0.152
+}
+},
+"sfx_108a>sfx_1072": {
+"wave": {
+"mode": "cut",
+"residual": 1837.7,
+"second": "overlap",
+"second_residual": 2587.4,
+"mix_rms": 3029.3,
+"latency_b": 15.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.095,
+"second": "overlap",
+"second_error": 0.157,
+"margin": 0.063
+}
+},
+"sfx_1073>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 820.0,
+"second": "drop",
+"second_residual": 1978.1,
+"mix_rms": 4092.8,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.085,
+"margin": 0.078
+}
+},
+"sfx_108a>sfx_1075": {
+"wave": {
+"mode": "overlap",
+"residual": 788.8,
+"second": "drop",
+"second_residual": 1870.5,
+"mix_rms": 3842.7,
+"latency_b": 15.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.151,
+"margin": 0.124
+}
+},
+"sfx_1084>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1586.6,
+"second": "cut",
+"second_residual": 1894.5,
+"mix_rms": 3796.3,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.039,
+"margin": 0.017
+}
+},
+"sfx_108a>sfx_108e": {
+"wave": {
+"mode": "cut",
+"residual": 1306.3,
+"second": "overlap",
+"second_residual": 2665.2,
+"mix_rms": 2953.1,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "cut",
+"error": 0.013,
+"second": "overlap",
+"second_error": 0.127,
+"margin": 0.114
+}
+},
+"sfx_108f>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1192.2,
+"second": "overlap",
+"second_residual": 1697.5,
+"mix_rms": 3524.0,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "cut",
+"error": 0.017,
+"second": "overlap",
+"second_error": 0.033,
+"margin": 0.016
+}
+},
+"sfx_108a>sfx_1091": {
+"wave": {
+"mode": "drop",
+"residual": 707.6,
+"second": "overlap",
+"second_residual": 1684.3,
+"mix_rms": 3447.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.269,
+"margin": 0.268
+}
+},
+"sfx_1092>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1597.6,
+"second": "overlap",
+"second_residual": 1746.6,
+"mix_rms": 3449.3,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "cut",
+"error": 0.018,
+"second": "overlap",
+"second_error": 0.024,
+"margin": 0.005
+}
+},
+"sfx_108a>sfx_109d": {
+"wave": {
+"mode": "overlap",
+"residual": 1339.0,
+"second": "drop",
+"second_residual": 1352.4,
+"mix_rms": 1914.9,
+"latency_b": 8.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.168,
+"second": "cut",
+"second_error": 0.22,
+"margin": 0.052
+}
+},
+"sfx_109e>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1328.4,
+"second": "cut",
+"second_residual": 1356.7,
+"mix_rms": 2022.7,
+"latency_b": 16.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.065,
+"second": "drop",
+"second_error": 0.168,
+"margin": 0.103
+}
+},
+"sfx_108a>sfx_10a3": {
+"wave": {
+"mode": "drop",
+"residual": 1918.8,
+"second": "overlap",
+"second_residual": 2558.5,
+"mix_rms": 2723.3,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.055,
+"margin": 0.028
+}
+},
+"sfx_10a4>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2065.3,
+"second": "overlap",
+"second_residual": 2208.8,
+"mix_rms": 3658.2,
+"latency_b": 14.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.035,
+"margin": 0.004
+}
+},
+"sfx_108a>sfx_10a7": {
+"wave": {
+"mode": "drop",
+"residual": 1979.2,
+"second": "overlap",
+"second_residual": 2648.0,
+"mix_rms": 2660.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.074,
+"margin": 0.044
+}
+},
+"sfx_10ba>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2420.6,
+"second": "overlap",
+"second_residual": 2737.8,
+"mix_rms": 2961.9,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.083,
+"margin": 0.068
+}
+},
+"sfx_108a>sfx_10d1": {
+"wave": {
+"mode": "overlap",
+"residual": 949.7,
+"second": "drop",
+"second_residual": 1378.0,
+"mix_rms": 3767.1,
+"latency_b": 8.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.013,
+"margin": 0.01
+}
+},
+"sfx_10d5>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 2214.9,
+"second": "cut",
+"second_residual": 2376.3,
+"mix_rms": 4096.7,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.027
+}
+},
+"sfx_108a>sfx_10e9": {
+"wave": {
+"mode": "overlap",
+"residual": 663.5,
+"second": "cut",
+"second_residual": 1665.1,
+"mix_rms": 4050.3,
+"latency_b": 9.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "cut",
+"second_error": 0.086,
+"margin": 0.072
+}
+},
+"sfx_10ea>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 2556.3,
+"second": "cut",
+"second_residual": 2586.7,
+"mix_rms": 3713.7,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "drop",
+"second_error": 0.222,
+"margin": 0.191
+}
+},
+"sfx_108a>sfx_10ec": {
+"wave": {
+"mode": "overlap",
+"residual": 3695.7,
+"second": "cut",
+"second_residual": 3820.6,
+"mix_rms": 4071.4,
+"latency_b": 18.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.068,
+"second": "cut",
+"second_error": 0.076,
+"margin": 0.008
+}
+},
+"sfx_10ed>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3649.3,
+"second": "overlap",
+"second_residual": 3668.2,
+"mix_rms": 3908.8,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.065,
+"second": "drop",
+"second_error": 0.084,
+"margin": 0.019
+}
+},
+"sfx_108a>sfx_10ef": {
+"wave": {
+"mode": "drop",
+"residual": 3505.8,
+"second": "overlap",
+"second_residual": 4737.1,
+"mix_rms": 3942.3,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.018
+}
+},
+"sfx_10f2>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 175.8,
+"second": "cut",
+"second_residual": 2169.9,
+"mix_rms": 4079.1,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.018,
+"second": "drop",
+"second_error": 0.149,
+"margin": 0.131
+}
+},
+"sfx_108a>sfx_10f4": {
+"wave": {
+"mode": "overlap",
+"residual": 588.5,
+"second": "drop",
+"second_residual": 1908.1,
+"mix_rms": 3509.1,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.113,
+"margin": 0.097
+}
+},
+"sfx_10f5>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1496.6,
+"second": "cut",
+"second_residual": 2254.0,
+"mix_rms": 3989.9,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.062,
+"margin": 0.031
+}
+},
+"sfx_108a>sfx_10f8": {
+"wave": {
+"mode": "overlap",
+"residual": 841.6,
+"second": "cut",
+"second_residual": 1416.3,
+"mix_rms": 2572.6,
+"latency_b": 22.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.292,
+"second": "cut",
+"second_error": 0.326,
+"margin": 0.035
+}
+},
+"sfx_10f9>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1820.3,
+"second": "cut",
+"second_residual": 1831.5,
+"mix_rms": 3824.1,
+"latency_b": 15.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.021,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_10fc": {
+"wave": {
+"mode": "overlap",
+"residual": 19.4,
+"second": "drop",
+"second_residual": 682.6,
+"mix_rms": 3630.7,
+"latency_b": 9.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.026,
+"margin": 0.02
+}
+},
+"sfx_10ff>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1504.1,
+"second": "cut",
+"second_residual": 2120.5,
+"mix_rms": 3960.0,
+"latency_b": 11.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.017
+}
+},
+"sfx_108a>sfx_1123": {
+"wave": {
+"mode": "overlap",
+"residual": 1195.6,
+"second": "cut",
+"second_residual": 2179.8,
+"mix_rms": 4269.6,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.039,
+"second": "cut",
+"second_error": 0.182,
+"margin": 0.143
+}
+},
+"sfx_1124>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3414.9,
+"second": "overlap",
+"second_residual": 3899.6,
+"mix_rms": 4497.6,
+"latency_b": 16.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "drop",
+"second_error": 0.267,
+"margin": 0.251
+}
+},
+"sfx_108a>sfx_112c": {
+"wave": {
+"mode": "overlap",
+"residual": 2326.2,
+"second": "cut",
+"second_residual": 2911.4,
+"mix_rms": 4042.3,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.11,
+"margin": 0.091
+}
+},
+"sfx_112d>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3512.5,
+"second": "overlap",
+"second_residual": 4372.6,
+"mix_rms": 4353.1,
+"latency_b": 12.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.211,
+"margin": 0.199
+}
+},
+"sfx_108a>sfx_112f": {
+"wave": {
+"mode": "overlap",
+"residual": 2158.4,
+"second": "cut",
+"second_residual": 2866.5,
+"mix_rms": 4118.0,
+"latency_b": 9.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.047,
+"second": "cut",
+"second_error": 0.146,
+"margin": 0.099
+}
+},
+"sfx_1130>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3168.3,
+"second": "overlap",
+"second_residual": 3437.2,
+"mix_rms": 4156.7,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.254,
+"margin": 0.242
+}
+},
+"sfx_108a>sfx_1133": {
+"wave": {
+"mode": "overlap",
+"residual": 2337.7,
+"second": "cut",
+"second_residual": 2794.3,
+"mix_rms": 3628.0,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.023
+}
+},
+"sfx_1134>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1692.2,
+"second": "drop",
+"second_residual": 2642.6,
+"mix_rms": 3773.0,
+"latency_b": 10.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.187,
+"margin": 0.176
+}
+},
+"sfx_108a>sfx_113a": {
+"wave": {
+"mode": "overlap",
+"residual": 833.9,
+"second": "drop",
+"second_residual": 1812.0,
+"mix_rms": 3697.7,
+"latency_b": 15.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "cut",
+"second_error": 0.331,
+"margin": 0.322
+}
+},
+"sfx_113b>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 813.4,
+"second": "cut",
+"second_residual": 837.0,
+"mix_rms": 3894.2,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "cut",
+"error": 0.033,
+"second": "overlap",
+"second_error": 0.033,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_114e": {
+"wave": {
+"mode": "overlap",
+"residual": 1394.9,
+"second": "cut",
+"second_residual": 2688.7,
+"mix_rms": 5255.5,
+"latency_b": 16.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.069,
+"margin": 0.045
+}
+},
+"sfx_1153>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3483.4,
+"second": "overlap",
+"second_residual": 4033.4,
+"mix_rms": 4612.0,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "drop",
+"second_error": 0.174,
+"margin": 0.158
+}
+},
+"sfx_108a>sfx_1158": {
+"wave": {
+"mode": "overlap",
+"residual": 2780.9,
+"second": "cut",
+"second_residual": 3284.7,
+"mix_rms": 4325.6,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.11,
+"margin": 0.094
+}
+},
+"sfx_1159>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3085.7,
+"second": "overlap",
+"second_residual": 3908.8,
+"mix_rms": 4107.1,
+"latency_b": 16.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.22,
+"margin": 0.209
+}
+},
+"sfx_108a>sfx_115b": {
+"wave": {
+"mode": "overlap",
+"residual": 2758.9,
+"second": "drop",
+"second_residual": 3050.5,
+"mix_rms": 3947.1,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.118,
+"margin": 0.103
+}
+},
+"sfx_1168>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1456.2,
+"second": "cut",
+"second_residual": 1487.5,
+"mix_rms": 3389.5,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.015,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_116a": {
+"wave": {
+"mode": "overlap",
+"residual": 891.1,
+"second": "drop",
+"second_residual": 1331.2,
+"mix_rms": 3821.4,
+"latency_b": 10.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.026,
+"margin": 0.018
+}
+},
+"sfx_116e>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1493.5,
+"second": "cut",
+"second_residual": 1493.5,
+"mix_rms": 3470.0,
+"latency_b": 10.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.047,
+"second": "cut",
+"second_error": 0.047,
+"margin": 0.0
+}
+},
+"sfx_108a>vehicle_hit": {
+"wave": {
+"mode": "overlap",
+"residual": 1336.3,
+"second": "drop",
+"second_residual": 1939.8,
+"mix_rms": 4061.6,
+"latency_b": 11.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "drop",
+"second_error": 0.059,
+"margin": 0.045
+}
+},
+"vehicle_smoke>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 873.0,
+"second": "cut",
+"second_residual": 2802.1,
+"mix_rms": 4236.0,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "drop",
+"second_error": 0.124,
+"margin": 0.104
+}
+},
+"sfx_108b>sfx_1030": {
+"wave": {
+"mode": "overlap",
+"residual": 610.3,
+"second": "cut",
+"second_residual": 717.7,
+"mix_rms": 3037.1,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.043,
+"second": "cut",
+"second_error": 0.047,
+"margin": 0.004
+}
+},
+"sfx_1036>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 686.8,
+"second": "drop",
+"second_residual": 918.7,
+"mix_rms": 3048.5,
+"latency_b": 10.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.012,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_1060": {
+"wave": {
+"mode": "cut",
+"residual": 948.3,
+"second": "overlap",
+"second_residual": 1110.8,
+"mix_rms": 2113.0,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "cut",
+"error": 0.053,
+"second": "overlap",
+"second_error": 0.061,
+"margin": 0.007
+}
+},
+"sfx_1066>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 215.3,
+"second": "drop",
+"second_residual": 767.9,
+"mix_rms": 2621.9,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.016,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_1125": {
+"wave": {
+"mode": "overlap",
+"residual": 2303.2,
+"second": "cut",
+"second_residual": 2350.7,
+"mix_rms": 3676.2,
+"latency_b": 13.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "cut",
+"second_error": 0.009,
+"margin": 0.0
+}
+},
+"sfx_1134>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1271.2,
+"second": "drop",
+"second_residual": 1382.0,
+"mix_rms": 3168.1,
+"latency_b": 14.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.019,
+"margin": 0.008
+}
+},
+"sfx_108b>sfx_114e": {
+"wave": {
+"mode": "overlap",
+"residual": 149.5,
+"second": "cut",
+"second_residual": 466.6,
+"mix_rms": 4288.6,
+"latency_b": 18.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.022,
+"margin": 0.002
+}
+},
+"sfx_108a>sfx_1089": {
+"wave": {
+"mode": "overlap",
+"residual": 1204.8,
+"second": "cut",
+"second_residual": 2216.5,
+"mix_rms": 3610.0,
+"latency_b": 13.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.044,
+"second": "cut",
+"second_error": 0.081,
+"margin": 0.037
+}
+},
+"sfx_108a>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1319.0,
+"second": "overlap",
+"second_residual": 2721.5,
+"mix_rms": 3986.5,
+"latency_b": 16.1
+},
+"envelope": {
+"mode": "cut",
+"error": 0.016,
+"second": "overlap",
+"second_error": 0.071,
+"margin": 0.055
+}
+},
+"sfx_108a>explosion": {
+"wave": {
+"mode": "overlap",
+"residual": 895.7,
+"second": "drop",
+"second_residual": 1711.5,
+"mix_rms": 3658.8,
+"latency_b": 9.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.048,
+"second": "cut",
+"second_error": 0.19,
+"margin": 0.141
+}
+},
+"knife_hit>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 901.1,
+"second": "cut",
+"second_residual": 1274.8,
+"mix_rms": 3691.3,
+"latency_b": 12.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.033,
+"second": "cut",
+"second_error": 0.039,
+"margin": 0.006
+}
+},
+"sfx_108a>rebel_103e": {
+"wave": {
+"mode": "overlap",
+"residual": 1455.1,
+"second": "cut",
+"second_residual": 2753.7,
+"mix_rms": 4963.5,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.056,
+"margin": 0.04
+}
+},
+"rebel_1041>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1357.5,
+"second": "drop",
+"second_residual": 3282.9,
+"mix_rms": 4992.0,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.095,
+"margin": 0.072
+}
+},
+"sfx_108a>sfx_1022": {
+"wave": {
+"mode": "overlap",
+"residual": 1042.7,
+"second": "drop",
+"second_residual": 1934.0,
+"mix_rms": 3835.6,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.04,
+"second": "cut",
+"second_error": 0.157,
+"margin": 0.117
+}
+},
+"sfx_1025>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 753.1,
+"second": "cut",
+"second_residual": 2374.2,
+"mix_rms": 4454.3,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.078,
+"margin": 0.054
+}
+},
+"sfx_108a>sfx_102c": {
+"wave": {
+"mode": "overlap",
+"residual": 1492.6,
+"second": "cut",
+"second_residual": 2445.8,
+"mix_rms": 3642.7,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.087,
+"margin": 0.067
+}
+},
+"sfx_102d>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1149.7,
+"second": "cut",
+"second_residual": 2452.2,
+"mix_rms": 4051.2,
+"latency_b": 12.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "drop",
+"second_error": 0.19,
+"margin": 0.168
+}
+},
+"sfx_108a>sfx_102f": {
+"wave": {
+"mode": "overlap",
+"residual": 735.9,
+"second": "cut",
+"second_residual": 1630.1,
+"mix_rms": 3572.0,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.035,
+"second": "cut",
+"second_error": 0.057,
+"margin": 0.023
+}
+},
+"sfx_1030>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1164.1,
+"second": "drop",
+"second_residual": 2520.0,
+"mix_rms": 3943.9,
+"latency_b": 14.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.09,
+"margin": 0.078
+}
+},
+"sfx_108a>sfx_1034": {
+"wave": {
+"mode": "overlap",
+"residual": 135.7,
+"second": "cut",
+"second_residual": 1546.7,
+"mix_rms": 4776.4,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.027
+}
+},
+"sfx_1035>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 713.3,
+"second": "drop",
+"second_residual": 2973.0,
+"mix_rms": 4698.6,
+"latency_b": 11.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "drop",
+"second_error": 0.099,
+"margin": 0.081
+}
+},
+"sfx_108a>sfx_1048": {
+"wave": {
+"mode": "overlap",
+"residual": 822.3,
+"second": "drop",
+"second_residual": 1458.9,
+"mix_rms": 3827.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.019,
+"margin": 0.013
+}
+},
+"sfx_104a>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 417.8,
+"second": "drop",
+"second_residual": 3124.2,
+"mix_rms": 5060.6,
+"latency_b": 15.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.018,
+"second": "drop",
+"second_error": 0.145,
+"margin": 0.127
+}
+},
+"sfx_108a>sfx_1053": {
+"wave": {
+"mode": "overlap",
+"residual": 2688.9,
+"second": "drop",
+"second_residual": 2811.5,
+"mix_rms": 3836.5,
+"latency_b": 17.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.046,
+"second": "cut",
+"second_error": 0.098,
+"margin": 0.052
+}
+},
+"sfx_1056>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1289.4,
+"second": "cut",
+"second_residual": 1289.4,
+"mix_rms": 3766.1,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "cut",
+"second_error": 0.004,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_105e": {
+"wave": {
+"mode": "cut",
+"residual": 1335.2,
+"second": "overlap",
+"second_residual": 2229.1,
+"mix_rms": 2903.7,
+"latency_b": 15.1
+},
+"envelope": {
+"mode": "cut",
+"error": 0.041,
+"second": "overlap",
+"second_error": 0.16,
+"margin": 0.119
+}
+},
+"sfx_1060>sfx_108a": {
+"wave": {
+"mode": "drop",
+"residual": 273.1,
+"second": "overlap",
+"second_residual": 3279.9,
+"mix_rms": 1944.8,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "cut",
+"second_error": 0.905,
+"margin": 0.905
+}
+},
+"sfx_108a>sfx_1065": {
+"wave": {
+"mode": "overlap",
+"residual": 1008.6,
+"second": "cut",
+"second_residual": 2136.6,
+"mix_rms": 3685.5,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.03,
+"second": "cut",
+"second_error": 0.074,
+"margin": 0.044
+}
+},
+"sfx_1066>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1105.2,
+"second": "cut",
+"second_residual": 2271.4,
+"mix_rms": 3908.9,
+"latency_b": 12.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "drop",
+"second_error": 0.19,
+"margin": 0.167
+}
+},
+"sfx_108a>sfx_1069": {
+"wave": {
+"mode": "overlap",
+"residual": 490.3,
+"second": "drop",
+"second_residual": 1189.0,
+"mix_rms": 3556.7,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "drop",
+"second_error": 0.171,
+"margin": 0.152
+}
+},
+"sfx_1072>sfx_108a": {
+"wave": {
+"mode": "drop",
+"residual": 595.7,
+"second": "overlap",
+"second_residual": 2660.1,
+"mix_rms": 2648.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.001,
+"second": "overlap",
+"second_error": 0.16,
+"margin": 0.158
+}
+},
+"sfx_108a>sfx_1074": {
+"wave": {
+"mode": "overlap",
+"residual": 1104.3,
+"second": "cut",
+"second_residual": 1987.7,
+"mix_rms": 3049.1,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.1,
+"margin": 0.074
+}
+},
+"sfx_1075>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 989.7,
+"second": "cut",
+"second_residual": 1549.5,
+"mix_rms": 3746.9,
+"latency_b": 15.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.03,
+"margin": 0.009
+}
+},
+"sfx_108a>sfx_108c": {
+"wave": {
+"mode": "overlap",
+"residual": 1158.4,
+"second": "drop",
+"second_residual": 1608.2,
+"mix_rms": 3662.4,
+"latency_b": 9.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.188,
+"margin": 0.167
+}
+},
+"sfx_108e>sfx_108a": {
+"wave": {
+"mode": "drop",
+"residual": 585.6,
+"second": "overlap",
+"second_residual": 3311.8,
+"mix_rms": 2088.2,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "cut",
+"second_error": 0.458,
+"margin": 0.458
+}
+},
+"sfx_108a>sfx_1090": {
+"wave": {
+"mode": "drop",
+"residual": 92.0,
+"second": "overlap",
+"second_residual": 1962.5,
+"mix_rms": 3376.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.47,
+"margin": 0.47
+}
+},
+"sfx_1091>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1720.6,
+"second": "overlap",
+"second_residual": 1955.3,
+"mix_rms": 3513.5,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "cut",
+"error": 0.018,
+"second": "overlap",
+"second_error": 0.027,
+"margin": 0.01
+}
+},
+"sfx_108a>sfx_109b": {
+"wave": {
+"mode": "overlap",
+"residual": 638.2,
+"second": "drop",
+"second_residual": 911.2,
+"mix_rms": 3464.7,
+"latency_b": 22.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.396,
+"margin": 0.385
+}
+},
+"sfx_109d>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 1363.8,
+"second": "overlap",
+"second_residual": 1372.0,
+"mix_rms": 1933.2,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.091,
+"second": "drop",
+"second_error": 0.177,
+"margin": 0.086
+}
+},
+"sfx_108a>sfx_109f": {
+"wave": {
+"mode": "drop",
+"residual": 1111.2,
+"second": "overlap",
+"second_residual": 1490.4,
+"mix_rms": 3210.8,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.035,
+"second": "cut",
+"second_error": 0.161,
+"margin": 0.126
+}
+},
+"sfx_10a3>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2416.3,
+"second": "overlap",
+"second_residual": 2913.0,
+"mix_rms": 2786.4,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.028,
+"second": "drop",
+"second_error": 0.113,
+"margin": 0.085
+}
+},
+"sfx_108a>sfx_10a5": {
+"wave": {
+"mode": "overlap",
+"residual": 1359.4,
+"second": "drop",
+"second_residual": 1381.9,
+"mix_rms": 1755.4,
+"latency_b": 9.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.17,
+"second": "cut",
+"second_error": 0.205,
+"margin": 0.035
+}
+},
+"sfx_10a7>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2039.3,
+"second": "overlap",
+"second_residual": 2844.2,
+"mix_rms": 2741.1,
+"latency_b": 13.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "drop",
+"second_error": 0.121,
+"margin": 0.09
+}
+},
+"sfx_108a>sfx_10c6": {
+"wave": {
+"mode": "drop",
+"residual": 2771.1,
+"second": "overlap",
+"second_residual": 3777.3,
+"mix_rms": 3705.0,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.048,
+"second": "cut",
+"second_error": 0.083,
+"margin": 0.035
+}
+},
+"sfx_10d1>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1257.5,
+"second": "cut",
+"second_residual": 1257.5,
+"mix_rms": 3470.0,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.025,
+"second": "cut",
+"second_error": 0.025,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_10e8": {
+"wave": {
+"mode": "overlap",
+"residual": 1188.1,
+"second": "drop",
+"second_residual": 1299.3,
+"mix_rms": 2556.8,
+"latency_b": 23.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.053,
+"second": "cut",
+"second_error": 0.201,
+"margin": 0.148
+}
+},
+"sfx_10e9>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 2934.3,
+"second": "drop",
+"second_residual": 3513.9,
+"mix_rms": 4172.2,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.178,
+"margin": 0.172
+}
+},
+"sfx_108a>sfx_10eb": {
+"wave": {
+"mode": "drop",
+"residual": 4619.1,
+"second": "overlap",
+"second_residual": 5532.8,
+"mix_rms": 4819.8,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.063,
+"second": "cut",
+"second_error": 0.068,
+"margin": 0.005
+}
+},
+"sfx_10ec>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 3857.7,
+"second": "cut",
+"second_residual": 3892.1,
+"mix_rms": 4154.6,
+"latency_b": 16.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "drop",
+"second_error": 0.081,
+"margin": 0.015
+}
+},
+"sfx_108a>sfx_10ee": {
+"wave": {
+"mode": "overlap",
+"residual": 2649.0,
+"second": "drop",
+"second_residual": 2818.0,
+"mix_rms": 4046.9,
+"latency_b": 17.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.096,
+"margin": 0.073
+}
+},
+"sfx_10ef>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3673.0,
+"second": "overlap",
+"second_residual": 4805.3,
+"mix_rms": 4036.0,
+"latency_b": 16.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.03,
+"second": "drop",
+"second_error": 0.049,
+"margin": 0.019
+}
+},
+"sfx_108a>sfx_10f3": {
+"wave": {
+"mode": "overlap",
+"residual": 654.6,
+"second": "cut",
+"second_residual": 2126.0,
+"mix_rms": 3531.9,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.126,
+"margin": 0.104
+}
+},
+"sfx_10f4>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 138.8,
+"second": "cut",
+"second_residual": 1697.2,
+"mix_rms": 3742.4,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.219,
+"margin": 0.2
+}
+},
+"sfx_108a>sfx_10f6": {
+"wave": {
+"mode": "overlap",
+"residual": 787.5,
+"second": "drop",
+"second_residual": 1995.2,
+"mix_rms": 3511.7,
+"latency_b": 14.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.079,
+"margin": 0.06
+}
+},
+"sfx_10f8>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 2113.2,
+"second": "overlap",
+"second_residual": 2593.3,
+"mix_rms": 2629.3,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.316,
+"second": "drop",
+"second_error": 0.395,
+"margin": 0.079
+}
+},
+"sfx_108a>sfx_10fb": {
+"wave": {
+"mode": "overlap",
+"residual": 1410.6,
+"second": "drop",
+"second_residual": 1655.0,
+"mix_rms": 3828.1,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.199,
+"margin": 0.181
+}
+},
+"sfx_10fc>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 649.9,
+"second": "cut",
+"second_residual": 651.4,
+"mix_rms": 3369.2,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "cut",
+"error": 0.018,
+"second": "overlap",
+"second_error": 0.018,
+"margin": 0.0
+}
+},
+"sfx_108a>sfx_1121": {
+"wave": {
+"mode": "overlap",
+"residual": 1060.0,
+"second": "drop",
+"second_residual": 2114.1,
+"mix_rms": 3888.4,
+"latency_b": 14.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.118,
+"margin": 0.098
+}
+},
+"sfx_1123>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1146.4,
+"second": "drop",
+"second_residual": 2712.0,
+"mix_rms": 4542.5,
+"latency_b": 14.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.074,
+"margin": 0.061
+}
+},
+"sfx_108a>sfx_1125": {
+"wave": {
+"mode": "overlap",
+"residual": 1239.5,
+"second": "cut",
+"second_residual": 2677.5,
+"mix_rms": 4839.3,
+"latency_b": 9.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.084,
+"margin": 0.053
+}
+},
+"sfx_112c>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3273.9,
+"second": "overlap",
+"second_residual": 4612.8,
+"mix_rms": 4222.2,
+"latency_b": 10.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.256,
+"margin": 0.245
+}
+},
+"sfx_108a>sfx_112e": {
+"wave": {
+"mode": "overlap",
+"residual": 2300.3,
+"second": "cut",
+"second_residual": 2879.0,
+"mix_rms": 4200.0,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.113,
+"margin": 0.092
+}
+},
+"sfx_112f>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3228.5,
+"second": "overlap",
+"second_residual": 4010.2,
+"mix_rms": 4315.9,
+"latency_b": 12.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.228,
+"margin": 0.218
+}
+},
+"sfx_108a>sfx_1132": {
+"wave": {
+"mode": "overlap",
+"residual": 2415.0,
+"second": "cut",
+"second_residual": 2847.2,
+"mix_rms": 3570.6,
+"latency_b": 14.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.045,
+"margin": 0.024
+}
+},
+"sfx_1133>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 2373.9,
+"second": "cut",
+"second_residual": 2814.8,
+"mix_rms": 3734.0,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.188,
+"margin": 0.176
+}
+},
+"sfx_108a>sfx_1137": {
+"wave": {
+"mode": "overlap",
+"residual": 172.0,
+"second": "cut",
+"second_residual": 1706.9,
+"mix_rms": 3855.5,
+"latency_b": 10.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.053,
+"second": "cut",
+"second_error": 0.112,
+"margin": 0.058
+}
+},
+"sfx_113a>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 588.7,
+"second": "cut",
+"second_residual": 1261.9,
+"mix_rms": 3800.8,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.034,
+"margin": 0.008
+}
+},
+"sfx_108a>sfx_1142": {
+"wave": {
+"mode": "overlap",
+"residual": 1118.9,
+"second": "drop",
+"second_residual": 2432.7,
+"mix_rms": 4268.3,
+"latency_b": 13.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "cut",
+"second_error": 0.193,
+"margin": 0.188
+}
+},
+"sfx_114e>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1944.5,
+"second": "drop",
+"second_residual": 3448.9,
+"mix_rms": 5429.6,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.126,
+"margin": 0.104
+}
+},
+"sfx_108a>sfx_1156": {
+"wave": {
+"mode": "overlap",
+"residual": 2425.1,
+"second": "cut",
+"second_residual": 3025.6,
+"mix_rms": 3952.1,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.121,
+"margin": 0.1
+}
+},
+"sfx_1158>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3668.7,
+"second": "overlap",
+"second_residual": 4811.2,
+"mix_rms": 4507.8,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.195,
+"margin": 0.182
+}
+},
+"sfx_108a>sfx_115a": {
+"wave": {
+"mode": "overlap",
+"residual": 2800.9,
+"second": "cut",
+"second_residual": 3322.2,
+"mix_rms": 4303.0,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.111,
+"margin": 0.095
+}
+},
+"sfx_115b>sfx_108a": {
+"wave": {
+"mode": "cut",
+"residual": 3073.7,
+"second": "overlap",
+"second_residual": 3773.5,
+"mix_rms": 4178.4,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "drop",
+"second_error": 0.268,
+"margin": 0.254
+}
+},
+"sfx_108a>sfx_1169": {
+"wave": {
+"mode": "overlap",
+"residual": 1740.6,
+"second": "drop",
+"second_residual": 2084.8,
+"mix_rms": 4133.8,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.047,
+"margin": 0.035
+}
+},
+"sfx_116a>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 1596.9,
+"second": "cut",
+"second_residual": 1632.7,
+"mix_rms": 3530.7,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "cut",
+"error": 0.017,
+"second": "overlap",
+"second_error": 0.018,
+"margin": 0.0
+}
+},
+"sfx_108a>vehicle_burst": {
+"wave": {
+"mode": "overlap",
+"residual": 1992.6,
+"second": "cut",
+"second_residual": 2447.0,
+"mix_rms": 4463.2,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.037,
+"second": "cut",
+"second_error": 0.059,
+"margin": 0.022
+}
+},
+"vehicle_hit>sfx_108a": {
+"wave": {
+"mode": "overlap",
+"residual": 405.8,
+"second": "cut",
+"second_residual": 848.2,
+"mix_rms": 3698.9,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.021,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_102e": {
+"wave": {
+"mode": "overlap",
+"residual": 613.6,
+"second": "cut",
+"second_residual": 757.6,
+"mix_rms": 1755.6,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.011
+}
+},
+"sfx_1030>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 208.9,
+"second": "drop",
+"second_residual": 626.0,
+"mix_rms": 3148.7,
+"latency_b": 16.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.008,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_1053": {
+"wave": {
+"mode": "overlap",
+"residual": 2661.3,
+"second": "cut",
+"second_residual": 2687.0,
+"mix_rms": 2887.3,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.046,
+"second": "cut",
+"second_error": 0.056,
+"margin": 0.009
+}
+},
+"sfx_1060>sfx_108b": {
+"wave": {
+"mode": "drop",
+"residual": 72.3,
+"second": "overlap",
+"second_residual": 918.1,
+"mix_rms": 2112.2,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.146,
+"margin": 0.146
+}
+},
+"sfx_108b>sfx_10d1": {
+"wave": {
+"mode": "overlap",
+"residual": 512.4,
+"second": "cut",
+"second_residual": 804.5,
+"mix_rms": 1651.3,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "cut",
+"second_error": 0.085,
+"margin": 0.077
+}
+},
+"sfx_1125>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1058.3,
+"second": "drop",
+"second_residual": 1342.7,
+"mix_rms": 3982.8,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.012,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_113b": {
+"wave": {
+"mode": "overlap",
+"residual": 682.4,
+"second": "cut",
+"second_residual": 860.9,
+"mix_rms": 2474.2,
+"latency_b": 13.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.032
+}
+},
+"sfx_114e>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 808.1,
+"second": "drop",
+"second_residual": 1200.3,
+"mix_rms": 4653.0,
+"latency_b": 10.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.01,
+"margin": 0.005
+}
+},
+"sfx_1020>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 496.0,
+"second": "drop",
+"second_residual": 701.6,
+"mix_rms": 3704.7,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.007,
+"margin": 0.004
+}
+},
+"sfx_105e>sfx_108b": {
+"wave": {
+"mode": "drop",
+"residual": 535.0,
+"second": "overlap",
+"second_residual": 847.3,
+"mix_rms": 2498.0,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.001,
+"second": "overlap",
+"second_error": 0.024,
+"margin": 0.023
+}
+},
+"sfx_108b>sfx_1020": {
+"wave": {
+"mode": "overlap",
+"residual": 1280.8,
+"second": "cut",
+"second_residual": 1310.6,
+"mix_rms": 3590.6,
+"latency_b": 15.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.045,
+"second": "cut",
+"second_error": 0.048,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_105e": {
+"wave": {
+"mode": "cut",
+"residual": 736.7,
+"second": "overlap",
+"second_residual": 822.9,
+"mix_rms": 2436.9,
+"latency_b": 15.0
+},
+"envelope": {
+"mode": "cut",
+"error": 0.04,
+"second": "overlap",
+"second_error": 0.063,
+"margin": 0.022
+}
+},
+"sfx_108b>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 377.1,
+"second": "overlap",
+"second_residual": 713.4,
+"mix_rms": 1123.5,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "cut",
+"error": 0.052,
+"second": "overlap",
+"second_error": 0.089,
+"margin": 0.038
+}
+},
+"sfx_108b>sfx_109e": {
+"wave": {
+"mode": "overlap",
+"residual": 1306.1,
+"second": "cut",
+"second_residual": 1330.8,
+"mix_rms": 1400.5,
+"latency_b": 8.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.152,
+"second": "cut",
+"second_error": 0.161,
+"margin": 0.008
+}
+},
+"sfx_108b>sfx_10ba": {
+"wave": {
+"mode": "drop",
+"residual": 2374.7,
+"second": "overlap",
+"second_residual": 2581.7,
+"mix_rms": 2417.0,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.065,
+"second": "cut",
+"second_error": 0.081,
+"margin": 0.015
+}
+},
+"sfx_108b>sfx_10ec": {
+"wave": {
+"mode": "overlap",
+"residual": 3640.3,
+"second": "cut",
+"second_residual": 3647.5,
+"mix_rms": 3875.9,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.049,
+"second": "cut",
+"second_error": 0.05,
+"margin": 0.0
+}
+},
+"sfx_108b>sfx_10ef": {
+"wave": {
+"mode": "drop",
+"residual": 3565.4,
+"second": "overlap",
+"second_residual": 4593.2,
+"mix_rms": 3607.3,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.036,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_1139": {
+"wave": {
+"mode": "overlap",
+"residual": 1441.1,
+"second": "cut",
+"second_residual": 1540.9,
+"mix_rms": 1942.0,
+"latency_b": 13.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "cut",
+"second_error": 0.02,
+"margin": 0.013
+}
+},
+"sfx_108b>sfx_1169": {
+"wave": {
+"mode": "overlap",
+"residual": 292.9,
+"second": "cut",
+"second_residual": 627.1,
+"mix_rms": 2398.3,
+"latency_b": 18.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.035,
+"margin": 0.004
+}
+},
+"sfx_109e>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1332.8,
+"second": "cut",
+"second_residual": 1350.7,
+"mix_rms": 1414.7,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.072,
+"second": "drop",
+"second_error": 0.092,
+"margin": 0.02
+}
+},
+"sfx_10ba>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 154.4,
+"second": "drop",
+"second_residual": 442.6,
+"mix_rms": 2476.2,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "drop",
+"second_error": 0.011,
+"margin": 0.007
+}
+},
+"sfx_10ec>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 3686.7,
+"second": "drop",
+"second_residual": 3699.4,
+"mix_rms": 3933.2,
+"latency_b": 16.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "drop",
+"second_error": 0.067,
+"margin": 0.001
+}
+},
+"sfx_10ef>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3701.5,
+"second": "overlap",
+"second_residual": 4732.4,
+"mix_rms": 3625.2,
+"latency_b": 12.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "drop",
+"second_error": 0.031,
+"margin": 0.001
+}
+},
+"sfx_1139>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 467.0,
+"second": "cut",
+"second_residual": 503.6,
+"mix_rms": 1883.0,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.043,
+"second": "cut",
+"second_error": 0.045,
+"margin": 0.002
+}
+},
+"sfx_1169>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 1814.8,
+"second": "overlap",
+"second_residual": 1817.8,
+"mix_rms": 2154.5,
+"latency_b": 13.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.039,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.011
+}
+},
+"sfx_108b>knife_hit": {
+"wave": {
+"mode": "overlap",
+"residual": 698.3,
+"second": "cut",
+"second_residual": 888.9,
+"mix_rms": 2044.0,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.026
+}
+},
+"pistol>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 615.4,
+"second": "cut",
+"second_residual": 1066.5,
+"mix_rms": 1733.5,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.143,
+"margin": 0.114
+}
+},
+"sfx_108b>rebel_1041": {
+"wave": {
+"mode": "overlap",
+"residual": 841.2,
+"second": "cut",
+"second_residual": 970.7,
+"mix_rms": 3953.2,
+"latency_b": 15.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.027,
+"margin": 0.011
+}
+},
+"sfx_1021>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 471.3,
+"second": "drop",
+"second_residual": 769.2,
+"mix_rms": 2982.6,
+"latency_b": 11.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.015,
+"margin": 0.008
+}
+},
+"sfx_108b>sfx_1025": {
+"wave": {
+"mode": "overlap",
+"residual": 326.9,
+"second": "cut",
+"second_residual": 564.7,
+"mix_rms": 2905.2,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "cut",
+"second_error": 0.015,
+"margin": 0.003
+}
+},
+"sfx_102c>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 252.1,
+"second": "drop",
+"second_residual": 729.9,
+"mix_rms": 2724.1,
+"latency_b": 15.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.019,
+"margin": 0.011
+}
+},
+"sfx_108b>sfx_1032": {
+"wave": {
+"mode": "overlap",
+"residual": 1148.4,
+"second": "cut",
+"second_residual": 1171.4,
+"mix_rms": 3818.8,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.067,
+"second": "cut",
+"second_error": 0.067,
+"margin": 0.001
+}
+},
+"sfx_1034>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 407.5,
+"second": "drop",
+"second_residual": 657.0,
+"mix_rms": 4458.2,
+"latency_b": 11.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.005,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_1048": {
+"wave": {
+"mode": "overlap",
+"residual": 205.1,
+"second": "cut",
+"second_residual": 631.9,
+"mix_rms": 1663.5,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.028,
+"second": "cut",
+"second_error": 0.06,
+"margin": 0.032
+}
+},
+"sfx_104a>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 156.0,
+"second": "drop",
+"second_residual": 816.1,
+"mix_rms": 4082.3,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "drop",
+"second_error": 0.009,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_1056": {
+"wave": {
+"mode": "overlap",
+"residual": 726.2,
+"second": "cut",
+"second_residual": 948.2,
+"mix_rms": 2426.6,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "cut",
+"second_error": 0.05,
+"margin": 0.039
+}
+},
+"sfx_105d>sfx_108b": {
+"wave": {
+"mode": "drop",
+"residual": 34.3,
+"second": "overlap",
+"second_residual": 641.3,
+"mix_rms": 2463.7,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.017,
+"margin": 0.017
+}
+},
+"sfx_108b>sfx_1067": {
+"wave": {
+"mode": "overlap",
+"residual": 482.9,
+"second": "cut",
+"second_residual": 634.6,
+"mix_rms": 2485.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.027,
+"margin": 0.004
+}
+},
+"sfx_1069>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 430.5,
+"second": "cut",
+"second_residual": 585.6,
+"mix_rms": 1553.9,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.038,
+"second": "cut",
+"second_error": 0.071,
+"margin": 0.034
+}
+},
+"sfx_108b>sfx_1073": {
+"wave": {
+"mode": "overlap",
+"residual": 303.3,
+"second": "cut",
+"second_residual": 410.7,
+"mix_rms": 3545.3,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.058,
+"second": "cut",
+"second_error": 0.062,
+"margin": 0.004
+}
+},
+"sfx_1074>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 289.5,
+"second": "drop",
+"second_residual": 632.0,
+"mix_rms": 2173.4,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.015,
+"margin": 0.009
+}
+},
+"sfx_108b>sfx_1084": {
+"wave": {
+"mode": "overlap",
+"residual": 789.1,
+"second": "cut",
+"second_residual": 917.4,
+"mix_rms": 1913.3,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.018,
+"margin": 0.005
+}
+},
+"sfx_108c>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 474.9,
+"second": "drop",
+"second_residual": 921.5,
+"mix_rms": 1772.7,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.153,
+"margin": 0.129
+}
+},
+"sfx_108b>sfx_108f": {
+"wave": {
+"mode": "drop",
+"residual": 255.5,
+"second": "overlap",
+"second_residual": 1760.4,
+"mix_rms": 877.9,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "cut",
+"second_error": 1.126,
+"margin": 1.126
+}
+},
+"sfx_1090>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 468.6,
+"second": "overlap",
+"second_residual": 1628.2,
+"mix_rms": 1667.9,
+"latency_b": 14.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.043,
+"second": "overlap",
+"second_error": 0.279,
+"margin": 0.236
+}
+},
+"sfx_108b>sfx_1092": {
+"wave": {
+"mode": "drop",
+"residual": 253.6,
+"second": "overlap",
+"second_residual": 1295.8,
+"mix_rms": 907.7,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.861,
+"margin": 0.861
+}
+},
+"sfx_109b>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 825.4,
+"second": "overlap",
+"second_residual": 999.8,
+"mix_rms": 1230.2,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.162,
+"margin": 0.136
+}
+},
+"sfx_108b>sfx_10a4": {
+"wave": {
+"mode": "drop",
+"residual": 1507.1,
+"second": "overlap",
+"second_residual": 1983.1,
+"mix_rms": 1749.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.031,
+"margin": 0.005
+}
+},
+"sfx_10a5>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1377.9,
+"second": "cut",
+"second_residual": 1393.9,
+"mix_rms": 1421.2,
+"latency_b": 17.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.083,
+"second": "drop",
+"second_error": 0.093,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_10c6": {
+"wave": {
+"mode": "drop",
+"residual": 2779.3,
+"second": "overlap",
+"second_residual": 3745.8,
+"mix_rms": 2863.1,
+"latency_b": null
+},
+"envelope": {
+"mode": "cut",
+"error": 0.052,
+"second": "overlap",
+"second_error": 0.052,
+"margin": 0.0
+}
+},
+"sfx_10e8>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1260.5,
+"second": "cut",
+"second_residual": 1349.8,
+"mix_rms": 1486.9,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.052,
+"second": "drop",
+"second_error": 0.08,
+"margin": 0.028
+}
+},
+"sfx_108b>sfx_10ea": {
+"wave": {
+"mode": "overlap",
+"residual": 2006.0,
+"second": "cut",
+"second_residual": 2041.7,
+"mix_rms": 2263.0,
+"latency_b": 14.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.034,
+"second": "cut",
+"second_error": 0.039,
+"margin": 0.005
+}
+},
+"sfx_10f2>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 394.4,
+"second": "drop",
+"second_residual": 826.3,
+"mix_rms": 3004.1,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.012,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_10f4": {
+"wave": {
+"mode": "overlap",
+"residual": 1135.5,
+"second": "cut",
+"second_residual": 1219.6,
+"mix_rms": 2067.6,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.019,
+"margin": 0.007
+}
+},
+"sfx_10f5>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 629.6,
+"second": "drop",
+"second_residual": 1053.9,
+"mix_rms": 2256.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.028,
+"margin": 0.013
+}
+},
+"sfx_108b>sfx_10f8": {
+"wave": {
+"mode": "overlap",
+"residual": 1014.1,
+"second": "cut",
+"second_residual": 1037.9,
+"mix_rms": 2071.0,
+"latency_b": 18.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.292,
+"second": "cut",
+"second_error": 0.293,
+"margin": 0.001
+}
+},
+"sfx_10f9>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1705.8,
+"second": "cut",
+"second_residual": 1718.1,
+"mix_rms": 2284.3,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.04,
+"second": "cut",
+"second_error": 0.06,
+"margin": 0.02
+}
+},
+"sfx_108b>sfx_10ff": {
+"wave": {
+"mode": "overlap",
+"residual": 156.5,
+"second": "cut",
+"second_residual": 532.5,
+"mix_rms": 2400.5,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.023,
+"margin": 0.008
+}
+},
+"sfx_1121>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1366.4,
+"second": "drop",
+"second_residual": 1635.2,
+"mix_rms": 2434.1,
+"latency_b": 17.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "drop",
+"second_error": 0.11,
+"margin": 0.088
+}
+},
+"sfx_108b>sfx_1124": {
+"wave": {
+"mode": "overlap",
+"residual": 2480.3,
+"second": "cut",
+"second_residual": 2512.4,
+"mix_rms": 3362.6,
+"latency_b": 15.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.047,
+"margin": 0.026
+}
+},
+"sfx_112c>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3201.6,
+"second": "overlap",
+"second_residual": 4572.8,
+"mix_rms": 3455.0,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.104,
+"margin": 0.092
+}
+},
+"sfx_108b>sfx_112e": {
+"wave": {
+"mode": "overlap",
+"residual": 2300.3,
+"second": "cut",
+"second_residual": 2331.3,
+"mix_rms": 3499.0,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.071,
+"second": "cut",
+"second_error": 0.09,
+"margin": 0.019
+}
+},
+"sfx_112f>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 3181.9,
+"second": "cut",
+"second_residual": 3205.8,
+"mix_rms": 3464.4,
+"latency_b": 16.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.078,
+"margin": 0.068
+}
+},
+"sfx_108b>sfx_1132": {
+"wave": {
+"mode": "overlap",
+"residual": 2421.6,
+"second": "cut",
+"second_residual": 2440.1,
+"mix_rms": 2957.2,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.024,
+"margin": 0.003
+}
+},
+"sfx_1137>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 436.2,
+"second": "drop",
+"second_residual": 727.3,
+"mix_rms": 3283.3,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "drop",
+"second_error": 0.011,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_1142": {
+"wave": {
+"mode": "overlap",
+"residual": 2179.9,
+"second": "cut",
+"second_residual": 2245.6,
+"mix_rms": 2580.2,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.004,
+"second": "cut",
+"second_error": 0.083,
+"margin": 0.079
+}
+},
+"sfx_1156>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3000.8,
+"second": "overlap",
+"second_residual": 3444.9,
+"mix_rms": 3258.9,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "drop",
+"second_error": 0.115,
+"margin": 0.1
+}
+},
+"sfx_108b>sfx_1159": {
+"wave": {
+"mode": "overlap",
+"residual": 2165.5,
+"second": "cut",
+"second_residual": 2189.6,
+"mix_rms": 3209.4,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.019
+}
+},
+"sfx_115a>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3516.9,
+"second": "overlap",
+"second_residual": 4841.4,
+"mix_rms": 3753.2,
+"latency_b": 11.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.069,
+"margin": 0.058
+}
+},
+"sfx_108b>sfx_1168": {
+"wave": {
+"mode": "overlap",
+"residual": 529.4,
+"second": "cut",
+"second_residual": 748.9,
+"mix_rms": 1218.1,
+"latency_b": 13.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.058,
+"margin": 0.038
+}
+},
+"sfx_116a>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 469.4,
+"second": "cut",
+"second_residual": 610.5,
+"mix_rms": 1646.6,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.06,
+"margin": 0.028
+}
+},
+"sfx_108b>vehicle_burst": {
+"wave": {
+"mode": "overlap",
+"residual": 1489.4,
+"second": "cut",
+"second_residual": 1525.5,
+"mix_rms": 4017.2,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.056,
+"second": "cut",
+"second_error": 0.056,
+"margin": 0.001
+}
+},
+"vehicle_hit>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 659.5,
+"second": "cut",
+"second_residual": 1031.4,
+"mix_rms": 2046.8,
+"latency_b": 15.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.089,
+"margin": 0.057
+}
+},
+"sfx_102d>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 350.3,
+"second": "drop",
+"second_residual": 795.6,
+"mix_rms": 2691.8,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.023,
+"margin": 0.014
+}
+},
+"sfx_1065>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 31.7,
+"second": "drop",
+"second_residual": 702.4,
+"mix_rms": 2835.9,
+"latency_b": 10.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "drop",
+"second_error": 0.011,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_1029": {
+"wave": {
+"mode": "overlap",
+"residual": 518.4,
+"second": "cut",
+"second_residual": 696.7,
+"mix_rms": 1463.0,
+"latency_b": 12.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "cut",
+"second_error": 0.02,
+"margin": 0.011
+}
+},
+"sfx_108b>sfx_1062": {
+"wave": {
+"mode": "overlap",
+"residual": 1086.1,
+"second": "cut",
+"second_residual": 1195.9,
+"mix_rms": 2702.8,
+"latency_b": 10.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.03,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_109a": {
+"wave": {
+"mode": "drop",
+"residual": 2441.4,
+"second": "overlap",
+"second_residual": 3370.2,
+"mix_rms": 2556.8,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.332,
+"second": "cut",
+"second_error": 0.412,
+"margin": 0.08
+}
+},
+"sfx_108b>sfx_109f": {
+"wave": {
+"mode": "drop",
+"residual": 1109.8,
+"second": "overlap",
+"second_residual": 1478.9,
+"mix_rms": 1351.3,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.042,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_10d5": {
+"wave": {
+"mode": "overlap",
+"residual": 1568.5,
+"second": "cut",
+"second_residual": 1642.3,
+"mix_rms": 2481.6,
+"latency_b": 12.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "cut",
+"second_error": 0.031,
+"margin": 0.024
+}
+},
+"sfx_108b>sfx_10ed": {
+"wave": {
+"mode": "overlap",
+"residual": 3575.6,
+"second": "cut",
+"second_residual": 3581.6,
+"mix_rms": 3628.4,
+"latency_b": 19.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "cut",
+"second_error": 0.068,
+"margin": 0.002
+}
+},
+"sfx_108b>sfx_10fc": {
+"wave": {
+"mode": "overlap",
+"residual": 635.6,
+"second": "drop",
+"second_residual": 699.5,
+"mix_rms": 1146.8,
+"latency_b": 10.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.031,
+"second": "cut",
+"second_error": 0.077,
+"margin": 0.046
+}
+},
+"sfx_108b>sfx_1153": {
+"wave": {
+"mode": "overlap",
+"residual": 2146.3,
+"second": "cut",
+"second_residual": 2182.4,
+"mix_rms": 3674.3,
+"latency_b": 11.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "cut",
+"second_error": 0.026,
+"margin": 0.016
+}
+},
+"sfx_108b>sfx_116d": {
+"wave": {
+"mode": "overlap",
+"residual": 898.4,
+"second": "cut",
+"second_residual": 1101.6,
+"mix_rms": 2318.3,
+"latency_b": 8.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.023,
+"margin": 0.004
+}
+},
+"sfx_109d>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1351.1,
+"second": "cut",
+"second_residual": 1367.9,
+"mix_rms": 1420.4,
+"latency_b": 14.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.087,
+"second": "drop",
+"second_error": 0.102,
+"margin": 0.015
+}
+},
+"sfx_10a1>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 1750.6,
+"second": "overlap",
+"second_residual": 2284.2,
+"mix_rms": 1728.7,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.025,
+"second": "drop",
+"second_error": 0.035,
+"margin": 0.01
+}
+},
+"sfx_10eb>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 4773.2,
+"second": "overlap",
+"second_residual": 5620.9,
+"mix_rms": 4716.2,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.069,
+"second": "drop",
+"second_error": 0.069,
+"margin": 0.001
+}
+},
+"sfx_10ee>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2825.1,
+"second": "drop",
+"second_residual": 2944.3,
+"mix_rms": 3193.1,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.034,
+"second": "drop",
+"second_error": 0.044,
+"margin": 0.01
+}
+},
+"sfx_1133>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 810.3,
+"second": "drop",
+"second_residual": 961.3,
+"mix_rms": 3119.1,
+"latency_b": 14.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.018,
+"margin": 0.008
+}
+},
+"sfx_1155>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3055.3,
+"second": "overlap",
+"second_residual": 4049.1,
+"mix_rms": 3343.5,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.093,
+"margin": 0.078
+}
+},
+"sfx_108b>explosion": {
+"wave": {
+"mode": "overlap",
+"residual": 554.9,
+"second": "cut",
+"second_residual": 753.0,
+"mix_rms": 1785.2,
+"latency_b": 13.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "cut",
+"second_error": 0.02,
+"margin": 0.007
+}
+},
+"knife_hit>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 193.2,
+"second": "drop",
+"second_residual": 918.0,
+"mix_rms": 1986.0,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.033,
+"second": "cut",
+"second_error": 0.114,
+"margin": 0.081
+}
+},
+"sfx_108b>rebel_103e": {
+"wave": {
+"mode": "overlap",
+"residual": 1193.1,
+"second": "cut",
+"second_residual": 1283.3,
+"mix_rms": 3892.7,
+"latency_b": 15.4
+},
+"envelope": {
+"mode": "cut",
+"error": 0.009,
+"second": "overlap",
+"second_error": 0.011,
+"margin": 0.001
+}
+},
+"rebel_1041>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 414.9,
+"second": "drop",
+"second_residual": 990.8,
+"mix_rms": 4148.5,
+"latency_b": 12.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "drop",
+"second_error": 0.135,
+"margin": 0.122
+}
+},
+"sfx_108b>sfx_1022": {
+"wave": {
+"mode": "overlap",
+"residual": 1062.4,
+"second": "cut",
+"second_residual": 1154.5,
+"mix_rms": 2123.1,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.02
+}
+},
+"sfx_1025>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 252.4,
+"second": "drop",
+"second_residual": 908.4,
+"mix_rms": 3127.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.016,
+"margin": 0.008
+}
+},
+"sfx_108b>sfx_102f": {
+"wave": {
+"mode": "overlap",
+"residual": 140.7,
+"second": "cut",
+"second_residual": 360.2,
+"mix_rms": 2971.7,
+"latency_b": 10.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.057,
+"second": "cut",
+"second_error": 0.058,
+"margin": 0.001
+}
+},
+"sfx_1032>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 192.8,
+"second": "drop",
+"second_residual": 448.1,
+"mix_rms": 3897.1,
+"latency_b": 10.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.002,
+"second": "drop",
+"second_error": 0.004,
+"margin": 0.002
+}
+},
+"sfx_108b>sfx_1035": {
+"wave": {
+"mode": "overlap",
+"residual": 1620.2,
+"second": "cut",
+"second_residual": 1678.5,
+"mix_rms": 3531.2,
+"latency_b": 13.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "cut",
+"second_error": 0.031,
+"margin": 0.004
+}
+},
+"sfx_1048>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 408.0,
+"second": "cut",
+"second_residual": 408.0,
+"mix_rms": 1534.4,
+"latency_b": 12.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.032,
+"margin": 0.0
+}
+},
+"sfx_108b>sfx_104f": {
+"wave": {
+"mode": "overlap",
+"residual": 522.3,
+"second": "cut",
+"second_residual": 690.5,
+"mix_rms": 2963.9,
+"latency_b": 12.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.021,
+"second": "cut",
+"second_error": 0.035,
+"margin": 0.014
+}
+},
+"sfx_1056>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 178.6,
+"second": "cut",
+"second_residual": 178.6,
+"mix_rms": 2159.3,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "cut",
+"second_error": 0.003,
+"margin": 0.0
+}
+},
+"sfx_108b>sfx_1064": {
+"wave": {
+"mode": "overlap",
+"residual": 990.7,
+"second": "cut",
+"second_residual": 1078.9,
+"mix_rms": 2545.3,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "cut",
+"second_error": 0.016,
+"margin": 0.005
+}
+},
+"sfx_1067>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 441.7,
+"second": "drop",
+"second_residual": 851.3,
+"mix_rms": 2618.8,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.018,
+"margin": 0.009
+}
+},
+"sfx_108b>sfx_1072": {
+"wave": {
+"mode": "cut",
+"residual": 1793.5,
+"second": "overlap",
+"second_residual": 1839.5,
+"mix_rms": 2565.8,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.055,
+"second": "overlap",
+"second_error": 0.061,
+"margin": 0.006
+}
+},
+"sfx_1073>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 282.9,
+"second": "drop",
+"second_residual": 535.5,
+"mix_rms": 3633.9,
+"latency_b": 15.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.012,
+"margin": 0.008
+}
+},
+"sfx_108b>sfx_1075": {
+"wave": {
+"mode": "overlap",
+"residual": 687.6,
+"second": "cut",
+"second_residual": 851.6,
+"mix_rms": 2036.6,
+"latency_b": 12.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.035,
+"margin": 0.015
+}
+},
+"sfx_1084>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 282.4,
+"second": "drop",
+"second_residual": 905.8,
+"mix_rms": 2049.8,
+"latency_b": 10.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "drop",
+"second_error": 0.06,
+"margin": 0.041
+}
+},
+"sfx_108b>sfx_108e": {
+"wave": {
+"mode": "cut",
+"residual": 655.9,
+"second": "overlap",
+"second_residual": 812.4,
+"mix_rms": 2117.3,
+"latency_b": 14.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.014,
+"second": "overlap",
+"second_error": 0.022,
+"margin": 0.008
+}
+},
+"sfx_108f>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 438.6,
+"second": "overlap",
+"second_residual": 1365.3,
+"mix_rms": 1603.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "cut",
+"error": 0.037,
+"second": "overlap",
+"second_error": 0.224,
+"margin": 0.187
+}
+},
+"sfx_108b>sfx_1091": {
+"wave": {
+"mode": "drop",
+"residual": 174.6,
+"second": "overlap",
+"second_residual": 1557.7,
+"mix_rms": 888.8,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.994,
+"margin": 0.993
+}
+},
+"sfx_1092>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 521.2,
+"second": "overlap",
+"second_residual": 943.6,
+"mix_rms": 1391.0,
+"latency_b": 15.3
+},
+"envelope": {
+"mode": "cut",
+"error": 0.04,
+"second": "overlap",
+"second_error": 0.133,
+"margin": 0.094
+}
+},
+"sfx_108b>sfx_10a3": {
+"wave": {
+"mode": "drop",
+"residual": 1902.5,
+"second": "overlap",
+"second_residual": 2576.7,
+"mix_rms": 1962.2,
+"latency_b": null
+},
+"envelope": {
+"mode": "cut",
+"error": 0.03,
+"second": "overlap",
+"second_error": 0.031,
+"margin": 0.0
+}
+},
+"sfx_10a4>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2059.0,
+"second": "overlap",
+"second_residual": 2219.0,
+"mix_rms": 1851.4,
+"latency_b": 14.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.063,
+"second": "cut",
+"second_error": 0.159,
+"margin": 0.096
+}
+},
+"sfx_108b>sfx_10a7": {
+"wave": {
+"mode": "drop",
+"residual": 1980.8,
+"second": "overlap",
+"second_residual": 2722.6,
+"mix_rms": 2037.9,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.031,
+"margin": 0.002
+}
+},
+"sfx_10c6>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3194.2,
+"second": "overlap",
+"second_residual": 4026.7,
+"mix_rms": 2971.4,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.055,
+"second": "drop",
+"second_error": 0.062,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_10e9": {
+"wave": {
+"mode": "overlap",
+"residual": 761.5,
+"second": "cut",
+"second_residual": 837.9,
+"mix_rms": 3542.7,
+"latency_b": 8.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "cut",
+"second_error": 0.016,
+"margin": 0.002
+}
+},
+"sfx_10ea>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2173.2,
+"second": "cut",
+"second_residual": 2195.6,
+"mix_rms": 2377.9,
+"latency_b": 11.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.044,
+"second": "drop",
+"second_error": 0.058,
+"margin": 0.014
+}
+},
+"sfx_108b>sfx_10f3": {
+"wave": {
+"mode": "overlap",
+"residual": 244.7,
+"second": "cut",
+"second_residual": 496.3,
+"mix_rms": 2190.0,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.024,
+"second": "cut",
+"second_error": 0.031,
+"margin": 0.007
+}
+},
+"sfx_10f4>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 605.8,
+"second": "drop",
+"second_residual": 930.9,
+"mix_rms": 2197.6,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.008,
+"second": "drop",
+"second_error": 0.027,
+"margin": 0.019
+}
+},
+"sfx_108b>sfx_10f6": {
+"wave": {
+"mode": "overlap",
+"residual": 688.3,
+"second": "cut",
+"second_residual": 799.1,
+"mix_rms": 2145.1,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.02,
+"margin": 0.003
+}
+},
+"sfx_10f8>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 1876.8,
+"second": "drop",
+"second_residual": 1918.8,
+"mix_rms": 2114.7,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.313,
+"second": "drop",
+"second_error": 0.322,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_10fb": {
+"wave": {
+"mode": "overlap",
+"residual": 1058.2,
+"second": "cut",
+"second_residual": 1206.4,
+"mix_rms": 1810.1,
+"latency_b": 11.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.06,
+"second": "cut",
+"second_error": 0.077,
+"margin": 0.018
+}
+},
+"sfx_10ff>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 475.2,
+"second": "drop",
+"second_residual": 933.7,
+"mix_rms": 2575.1,
+"latency_b": 12.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "drop",
+"second_error": 0.13,
+"margin": 0.114
+}
+},
+"sfx_108b>sfx_1123": {
+"wave": {
+"mode": "overlap",
+"residual": 1259.2,
+"second": "cut",
+"second_residual": 1322.3,
+"mix_rms": 3485.2,
+"latency_b": 14.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.097,
+"margin": 0.07
+}
+},
+"sfx_1124>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3230.9,
+"second": "overlap",
+"second_residual": 3768.7,
+"mix_rms": 3549.8,
+"latency_b": 15.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "drop",
+"second_error": 0.095,
+"margin": 0.08
+}
+},
+"sfx_108b>sfx_112d": {
+"wave": {
+"mode": "overlap",
+"residual": 2681.1,
+"second": "cut",
+"second_residual": 2701.6,
+"mix_rms": 3502.2,
+"latency_b": 11.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.038,
+"margin": 0.019
+}
+},
+"sfx_112e>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3423.8,
+"second": "overlap",
+"second_residual": 3879.3,
+"mix_rms": 3647.9,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.072,
+"margin": 0.06
+}
+},
+"sfx_108b>sfx_1130": {
+"wave": {
+"mode": "overlap",
+"residual": 2533.7,
+"second": "cut",
+"second_residual": 2562.1,
+"mix_rms": 3020.2,
+"latency_b": 14.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.042,
+"margin": 0.023
+}
+},
+"sfx_1132>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 250.6,
+"second": "drop",
+"second_residual": 597.3,
+"mix_rms": 3045.0,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.016,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_113a": {
+"wave": {
+"mode": "overlap",
+"residual": 1017.0,
+"second": "cut",
+"second_residual": 1130.2,
+"mix_rms": 1985.7,
+"latency_b": 16.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "cut",
+"second_error": 0.135,
+"margin": 0.13
+}
+},
+"sfx_1142>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 577.9,
+"second": "drop",
+"second_residual": 1045.7,
+"mix_rms": 2641.2,
+"latency_b": 12.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.229,
+"margin": 0.214
+}
+},
+"sfx_108b>sfx_1158": {
+"wave": {
+"mode": "overlap",
+"residual": 2566.5,
+"second": "cut",
+"second_residual": 2592.6,
+"mix_rms": 3633.1,
+"latency_b": 11.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.065,
+"second": "cut",
+"second_error": 0.086,
+"margin": 0.021
+}
+},
+"sfx_1159>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3084.2,
+"second": "overlap",
+"second_residual": 3924.6,
+"mix_rms": 3343.2,
+"latency_b": 12.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.074,
+"margin": 0.063
+}
+},
+"sfx_108b>sfx_115b": {
+"wave": {
+"mode": "overlap",
+"residual": 2519.7,
+"second": "cut",
+"second_residual": 2545.8,
+"mix_rms": 3079.4,
+"latency_b": 14.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.038,
+"margin": 0.022
+}
+},
+"sfx_1168>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 420.4,
+"second": "cut",
+"second_residual": 508.5,
+"mix_rms": 1210.7,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.052,
+"margin": 0.023
+}
+},
+"sfx_108b>sfx_116e": {
+"wave": {
+"mode": "cut",
+"residual": 431.3,
+"second": "overlap",
+"second_residual": 744.2,
+"mix_rms": 1454.8,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.008,
+"second": "overlap",
+"second_error": 0.094,
+"margin": 0.086
+}
+},
+"vehicle_burst>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 378.1,
+"second": "drop",
+"second_residual": 643.0,
+"mix_rms": 4134.7,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.006,
+"margin": 0.003
+}
+},
+"sfx_108b>vehicle_smoke": {
+"wave": {
+"mode": "overlap",
+"residual": 1507.8,
+"second": "cut",
+"second_residual": 1572.8,
+"mix_rms": 3030.3,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.016,
+"margin": 0.002
+}
+},
+"sfx_1029>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 380.6,
+"second": "cut",
+"second_residual": 686.7,
+"mix_rms": 1563.5,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.025,
+"second": "drop",
+"second_error": 0.166,
+"margin": 0.141
+}
+},
+"sfx_1062>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 189.0,
+"second": "drop",
+"second_residual": 853.3,
+"mix_rms": 2878.6,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.015,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_102d": {
+"wave": {
+"mode": "overlap",
+"residual": 926.8,
+"second": "cut",
+"second_residual": 1025.8,
+"mix_rms": 2514.2,
+"latency_b": 14.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.037,
+"margin": 0.011
+}
+},
+"sfx_108b>sfx_1065": {
+"wave": {
+"mode": "overlap",
+"residual": 499.0,
+"second": "cut",
+"second_residual": 651.3,
+"mix_rms": 2698.8,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.045,
+"second": "cut",
+"second_error": 0.049,
+"margin": 0.004
+}
+},
+"sfx_108b>sfx_109d": {
+"wave": {
+"mode": "overlap",
+"residual": 1334.1,
+"second": "cut",
+"second_residual": 1350.6,
+"mix_rms": 1400.2,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.105,
+"second": "cut",
+"second_error": 0.112,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_10a1": {
+"wave": {
+"mode": "drop",
+"residual": 1636.0,
+"second": "overlap",
+"second_residual": 2250.7,
+"mix_rms": 1693.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.025,
+"second": "cut",
+"second_error": 0.028,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_10eb": {
+"wave": {
+"mode": "drop",
+"residual": 4616.0,
+"second": "overlap",
+"second_residual": 5565.2,
+"mix_rms": 4640.7,
+"latency_b": null
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.066,
+"second": "cut",
+"second_error": 0.067,
+"margin": 0.0
+}
+},
+"sfx_108b>sfx_10ee": {
+"wave": {
+"mode": "overlap",
+"residual": 2658.6,
+"second": "cut",
+"second_residual": 2696.2,
+"mix_rms": 2976.9,
+"latency_b": 2.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "cut",
+"second_error": 0.05,
+"margin": 0.018
+}
+},
+"sfx_108b>sfx_1133": {
+"wave": {
+"mode": "overlap",
+"residual": 2521.4,
+"second": "cut",
+"second_residual": 2538.8,
+"mix_rms": 3029.8,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.022,
+"margin": 0.003
+}
+},
+"sfx_108b>sfx_1155": {
+"wave": {
+"mode": "overlap",
+"residual": 2705.7,
+"second": "cut",
+"second_residual": 2730.6,
+"mix_rms": 3164.3,
+"latency_b": 15.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.019,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.025
+}
+},
+"sfx_109a>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2079.9,
+"second": "drop",
+"second_residual": 2213.0,
+"mix_rms": 2770.9,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.03,
+"second": "drop",
+"second_error": 0.056,
+"margin": 0.026
+}
+},
+"sfx_109f>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 1465.7,
+"second": "overlap",
+"second_residual": 1575.7,
+"mix_rms": 1449.6,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.04,
+"second": "drop",
+"second_error": 0.167,
+"margin": 0.127
+}
+},
+"sfx_10d5>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2471.1,
+"second": "overlap",
+"second_residual": 2504.6,
+"mix_rms": 2656.2,
+"latency_b": 18.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.035,
+"second": "drop",
+"second_error": 0.16,
+"margin": 0.125
+}
+},
+"sfx_10ed>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 3648.0,
+"second": "drop",
+"second_residual": 3665.4,
+"mix_rms": 3702.9,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.064,
+"second": "drop",
+"second_error": 0.066,
+"margin": 0.001
+}
+},
+"sfx_10fc>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 575.6,
+"second": "cut",
+"second_residual": 577.8,
+"mix_rms": 1162.6,
+"latency_b": 13.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.041,
+"second": "cut",
+"second_error": 0.042,
+"margin": 0.0
+}
+},
+"sfx_1153>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3234.8,
+"second": "overlap",
+"second_residual": 3568.2,
+"mix_rms": 3837.7,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.016,
+"margin": 0.006
+}
+},
+"sfx_116d>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 504.9,
+"second": "cut",
+"second_residual": 823.4,
+"mix_rms": 2214.5,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.029,
+"second": "cut",
+"second_error": 0.078,
+"margin": 0.049
+}
+},
+"explosion>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 161.2,
+"second": "drop",
+"second_residual": 924.2,
+"mix_rms": 1941.6,
+"latency_b": 13.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "drop",
+"second_error": 0.095,
+"margin": 0.069
+}
+},
+"sfx_108b>pistol": {
+"wave": {
+"mode": "overlap",
+"residual": 205.9,
+"second": "cut",
+"second_residual": 573.4,
+"mix_rms": 1674.7,
+"latency_b": 12.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "cut",
+"second_error": 0.022,
+"margin": 0.014
+}
+},
+"rebel_103e>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 322.4,
+"second": "drop",
+"second_residual": 929.8,
+"mix_rms": 4238.1,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.012,
+"margin": 0.007
+}
+},
+"sfx_108b>sfx_1021": {
+"wave": {
+"mode": "overlap",
+"residual": 1271.6,
+"second": "cut",
+"second_residual": 1330.2,
+"mix_rms": 2831.1,
+"latency_b": 13.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.027,
+"second": "cut",
+"second_error": 0.039,
+"margin": 0.012
+}
+},
+"sfx_1022>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 251.2,
+"second": "drop",
+"second_residual": 912.3,
+"mix_rms": 2319.2,
+"latency_b": 15.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "drop",
+"second_error": 0.062,
+"margin": 0.045
+}
+},
+"sfx_108b>sfx_102c": {
+"wave": {
+"mode": "overlap",
+"residual": 1442.2,
+"second": "cut",
+"second_residual": 1514.6,
+"mix_rms": 2596.8,
+"latency_b": 9.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.042,
+"second": "cut",
+"second_error": 0.051,
+"margin": 0.008
+}
+},
+"sfx_102f>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 300.4,
+"second": "drop",
+"second_residual": 595.0,
+"mix_rms": 3059.8,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.005,
+"margin": 0.002
+}
+},
+"sfx_108b>sfx_1034": {
+"wave": {
+"mode": "overlap",
+"residual": 2441.5,
+"second": "cut",
+"second_residual": 2463.8,
+"mix_rms": 4310.3,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.014,
+"second": "cut",
+"second_error": 0.015,
+"margin": 0.001
+}
+},
+"sfx_1035>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 349.3,
+"second": "drop",
+"second_residual": 799.2,
+"mix_rms": 3730.1,
+"latency_b": 12.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.009,
+"margin": 0.004
+}
+},
+"sfx_108b>sfx_104a": {
+"wave": {
+"mode": "overlap",
+"residual": 1132.6,
+"second": "cut",
+"second_residual": 1218.8,
+"mix_rms": 3810.7,
+"latency_b": 15.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "cut",
+"second_error": 0.013,
+"margin": 0.006
+}
+},
+"sfx_104f>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 371.8,
+"second": "drop",
+"second_residual": 762.5,
+"mix_rms": 3131.7,
+"latency_b": 14.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.014,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_105d": {
+"wave": {
+"mode": "cut",
+"residual": 212.8,
+"second": "overlap",
+"second_residual": 415.3,
+"mix_rms": 2406.2,
+"latency_b": 14.5
+},
+"envelope": {
+"mode": "cut",
+"error": 0.07,
+"second": "overlap",
+"second_error": 0.08,
+"margin": 0.01
+}
+},
+"sfx_1064>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 456.4,
+"second": "drop",
+"second_residual": 831.5,
+"mix_rms": 2703.1,
+"latency_b": 14.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.007,
+"second": "drop",
+"second_error": 0.016,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_1069": {
+"wave": {
+"mode": "overlap",
+"residual": 453.9,
+"second": "cut",
+"second_residual": 710.1,
+"mix_rms": 1469.3,
+"latency_b": 9.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.041,
+"second": "cut",
+"second_error": 0.051,
+"margin": 0.01
+}
+},
+"sfx_1072>sfx_108b": {
+"wave": {
+"mode": "drop",
+"residual": 966.1,
+"second": "overlap",
+"second_residual": 1170.0,
+"mix_rms": 2646.1,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.001,
+"second": "overlap",
+"second_error": 0.019,
+"margin": 0.018
+}
+},
+"sfx_108b>sfx_1074": {
+"wave": {
+"mode": "overlap",
+"residual": 912.9,
+"second": "cut",
+"second_residual": 975.9,
+"mix_rms": 2087.8,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.023,
+"second": "cut",
+"second_error": 0.035,
+"margin": 0.012
+}
+},
+"sfx_1075>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 342.2,
+"second": "drop",
+"second_residual": 940.5,
+"mix_rms": 2174.7,
+"latency_b": 12.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "drop",
+"second_error": 0.188,
+"margin": 0.166
+}
+},
+"sfx_108b>sfx_108c": {
+"wave": {
+"mode": "overlap",
+"residual": 1049.7,
+"second": "cut",
+"second_residual": 1162.5,
+"mix_rms": 1662.7,
+"latency_b": 11.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.023,
+"margin": 0.01
+}
+},
+"sfx_108e>sfx_108b": {
+"wave": {
+"mode": "drop",
+"residual": 370.2,
+"second": "overlap",
+"second_residual": 953.3,
+"mix_rms": 2190.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "overlap",
+"second_error": 0.031,
+"margin": 0.03
+}
+},
+"sfx_108b>sfx_1090": {
+"wave": {
+"mode": "drop",
+"residual": 41.7,
+"second": "overlap",
+"second_residual": 1961.5,
+"mix_rms": 871.5,
+"latency_b": null
+},
+"envelope": {
+"mode": "drop",
+"error": 0.0,
+"second": "cut",
+"second_error": 1.193,
+"margin": 1.193
+}
+},
+"sfx_1091>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 454.0,
+"second": "overlap",
+"second_residual": 1081.1,
+"mix_rms": 1582.6,
+"latency_b": 13.6
+},
+"envelope": {
+"mode": "cut",
+"error": 0.041,
+"second": "overlap",
+"second_error": 0.153,
+"margin": 0.111
+}
+},
+"sfx_108b>sfx_109b": {
+"wave": {
+"mode": "overlap",
+"residual": 266.9,
+"second": "cut",
+"second_residual": 499.4,
+"mix_rms": 1133.7,
+"latency_b": 21.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.016,
+"second": "cut",
+"second_error": 0.121,
+"margin": 0.105
+}
+},
+"sfx_10a3>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2182.7,
+"second": "overlap",
+"second_residual": 2697.6,
+"mix_rms": 2045.9,
+"latency_b": 17.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.032,
+"second": "drop",
+"second_error": 0.037,
+"margin": 0.005
+}
+},
+"sfx_108b>sfx_10a5": {
+"wave": {
+"mode": "overlap",
+"residual": 1362.2,
+"second": "cut",
+"second_residual": 1373.4,
+"mix_rms": 1410.6,
+"latency_b": 10.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.098,
+"second": "cut",
+"second_error": 0.102,
+"margin": 0.004
+}
+},
+"sfx_10a7>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2052.2,
+"second": "overlap",
+"second_residual": 2746.4,
+"mix_rms": 2084.2,
+"latency_b": 13.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.026,
+"second": "drop",
+"second_error": 0.037,
+"margin": 0.01
+}
+},
+"sfx_108b>sfx_10e8": {
+"wave": {
+"mode": "overlap",
+"residual": 1197.3,
+"second": "cut",
+"second_residual": 1224.2,
+"mix_rms": 1422.6,
+"latency_b": 26.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.057,
+"second": "cut",
+"second_error": 0.098,
+"margin": 0.041
+}
+},
+"sfx_10e9>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2905.3,
+"second": "drop",
+"second_residual": 2949.8,
+"mix_rms": 3649.5,
+"latency_b": 13.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.062,
+"margin": 0.05
+}
+},
+"sfx_108b>sfx_10f2": {
+"wave": {
+"mode": "overlap",
+"residual": 767.6,
+"second": "cut",
+"second_residual": 891.5,
+"mix_rms": 2860.5,
+"latency_b": 10.4
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.068,
+"second": "cut",
+"second_error": 0.07,
+"margin": 0.002
+}
+},
+"sfx_10f3>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 365.7,
+"second": "drop",
+"second_residual": 782.2,
+"mix_rms": 2320.9,
+"latency_b": 14.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.021,
+"margin": 0.012
+}
+},
+"sfx_108b>sfx_10f5": {
+"wave": {
+"mode": "overlap",
+"residual": 1147.2,
+"second": "cut",
+"second_residual": 1239.8,
+"mix_rms": 2114.5,
+"latency_b": 14.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.038,
+"margin": 0.025
+}
+},
+"sfx_10f6>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 210.7,
+"second": "drop",
+"second_residual": 776.2,
+"mix_rms": 2278.5,
+"latency_b": 16.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "drop",
+"second_error": 0.037,
+"margin": 0.026
+}
+},
+"sfx_108b>sfx_10f9": {
+"wave": {
+"mode": "overlap",
+"residual": 917.2,
+"second": "cut",
+"second_residual": 1070.8,
+"mix_rms": 2356.2,
+"latency_b": 14.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.006,
+"second": "cut",
+"second_error": 0.017,
+"margin": 0.011
+}
+},
+"sfx_10fb>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 298.4,
+"second": "drop",
+"second_residual": 960.7,
+"mix_rms": 1899.0,
+"latency_b": 11.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.025,
+"second": "cut",
+"second_error": 0.14,
+"margin": 0.115
+}
+},
+"sfx_108b>sfx_1121": {
+"wave": {
+"mode": "overlap",
+"residual": 746.8,
+"second": "cut",
+"second_residual": 941.0,
+"mix_rms": 2257.1,
+"latency_b": 8.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.022,
+"second": "cut",
+"second_error": 0.029,
+"margin": 0.007
+}
+},
+"sfx_1123>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 431.1,
+"second": "drop",
+"second_residual": 794.4,
+"mix_rms": 3641.3,
+"latency_b": 10.8
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.003,
+"second": "drop",
+"second_error": 0.005,
+"margin": 0.001
+}
+},
+"sfx_108b>sfx_112c": {
+"wave": {
+"mode": "overlap",
+"residual": 2779.3,
+"second": "cut",
+"second_residual": 2798.9,
+"mix_rms": 3310.3,
+"latency_b": 12.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.02,
+"second": "cut",
+"second_error": 0.039,
+"margin": 0.019
+}
+},
+"sfx_112d>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 2695.5,
+"second": "drop",
+"second_residual": 2760.9,
+"mix_rms": 3644.7,
+"latency_b": 12.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.009,
+"second": "drop",
+"second_error": 0.081,
+"margin": 0.072
+}
+},
+"sfx_108b>sfx_112f": {
+"wave": {
+"mode": "overlap",
+"residual": 2677.8,
+"second": "cut",
+"second_residual": 2705.3,
+"mix_rms": 3300.8,
+"latency_b": 9.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.061,
+"second": "cut",
+"second_error": 0.082,
+"margin": 0.021
+}
+},
+"sfx_1130>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2911.6,
+"second": "overlap",
+"second_residual": 3111.0,
+"mix_rms": 3176.4,
+"latency_b": 14.6
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.011,
+"second": "drop",
+"second_error": 0.087,
+"margin": 0.077
+}
+},
+"sfx_108b>sfx_1137": {
+"wave": {
+"mode": "overlap",
+"residual": 1584.1,
+"second": "cut",
+"second_residual": 1623.3,
+"mix_rms": 3160.6,
+"latency_b": 14.3
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.017,
+"second": "cut",
+"second_error": 0.04,
+"margin": 0.022
+}
+},
+"sfx_113a>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 366.2,
+"second": "drop",
+"second_residual": 911.0,
+"mix_rms": 2154.0,
+"latency_b": 11.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.028,
+"second": "drop",
+"second_error": 0.149,
+"margin": 0.121
+}
+},
+"sfx_108b>sfx_1156": {
+"wave": {
+"mode": "overlap",
+"residual": 2368.5,
+"second": "cut",
+"second_residual": 2398.2,
+"mix_rms": 3111.9,
+"latency_b": 10.0
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.064,
+"second": "cut",
+"second_error": 0.086,
+"margin": 0.022
+}
+},
+"sfx_1158>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 3565.0,
+"second": "overlap",
+"second_residual": 4731.5,
+"mix_rms": 3793.5,
+"latency_b": 12.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.069,
+"margin": 0.057
+}
+},
+"sfx_108b>sfx_115a": {
+"wave": {
+"mode": "overlap",
+"residual": 2803.0,
+"second": "cut",
+"second_residual": 2827.3,
+"mix_rms": 3589.0,
+"latency_b": 11.5
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.015,
+"second": "cut",
+"second_error": 0.036,
+"margin": 0.021
+}
+},
+"sfx_115b>sfx_108b": {
+"wave": {
+"mode": "cut",
+"residual": 2930.1,
+"second": "overlap",
+"second_residual": 3669.3,
+"mix_rms": 3229.6,
+"latency_b": 16.1
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.012,
+"second": "drop",
+"second_error": 0.087,
+"margin": 0.075
+}
+},
+"sfx_108b>sfx_116a": {
+"wave": {
+"mode": "overlap",
+"residual": 327.2,
+"second": "cut",
+"second_residual": 641.8,
+"mix_rms": 1740.5,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.013,
+"second": "cut",
+"second_error": 0.051,
+"margin": 0.038
+}
+},
+"sfx_116e>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 968.8,
+"second": "cut",
+"second_residual": 968.8,
+"mix_rms": 1456.3,
+"latency_b": 15.7
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.043,
+"second": "cut",
+"second_error": 0.043,
+"margin": 0.0
+}
+},
+"sfx_108b>vehicle_hit": {
+"wave": {
+"mode": "overlap",
+"residual": 437.5,
+"second": "cut",
+"second_residual": 711.5,
+"mix_rms": 2203.3,
+"latency_b": 15.2
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.01,
+"second": "cut",
+"second_error": 0.019,
+"margin": 0.009
+}
+},
+"vehicle_smoke>sfx_108b": {
+"wave": {
+"mode": "overlap",
+"residual": 491.5,
+"second": "drop",
+"second_residual": 855.4,
+"mix_rms": 3201.7,
+"latency_b": 11.9
+},
+"envelope": {
+"mode": "overlap",
+"error": 0.005,
+"second": "drop",
+"second_error": 0.013,
+"margin": 0.007
+}
+}
+}
+}

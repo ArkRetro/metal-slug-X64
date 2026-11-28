@@ -44,9 +44,14 @@ marco_mount_result_t marco_mount_exit(neo_vslots_t *v,uint8_t *m,const marco_mou
         if (in->system) {marco_mount_eject_start(m);return MARCO_MOUNT_EJECT;}
         m[0x5a]=*cause;m[0x5f]|=0x80u;return MARCO_MOUNT_DIE;            /* 0C310E -> 0C2956 */
     case 2: *stop=0xc32d0;return MARCO_MOUNT_STOP;
-    case 3: *stop=0xc1f4a;return MARCO_MOUNT_STOP;
     case 4: *stop=0xc315a;return MARCO_MOUNT_STOP;
-    case 5: m[0x15]|=1u;*stop=0xc1f4a;return MARCO_MOUNT_STOP;
+    case 5: m[0x15]|=1u;                                                 /* 0C313C */
+        /* fall through */
+    case 3:                                                              /* 0C1F4A */
+        if (m[0x93]==2u && m[0x86]>=0x20u) {*stop=0xc1e94;return MARCO_MOUNT_STOP;}
+        m[0x9a]|=0x20u;m[0x7b]=0xff;m[0x7a]=0xff;ww(m,0x66,0x8834);ww(m,0x1e,0x8834);
+        wl(m,0x50,0x2d0aa8u);m[0x90]=0;wl(m,0x62,0);m[0x96]=0;
+        wl(m,0,0xc1fa6u);return MARCO_MOUNT_STAND;
     default: marco_mount_eject_start(m);return MARCO_MOUNT_EJECT;        /* 1 and the others: 0C3232 */
     }
 }

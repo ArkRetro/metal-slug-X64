@@ -57,6 +57,11 @@ local family_from=tonumber(os.getenv('MSX_WEAPONS_FAMILY_FROM') or '0')
 local family_to=tonumber(os.getenv('MSX_WEAPONS_FAMILY_TO') or '0')
 local assist_camera=tonumber(os.getenv('MSX_WEAPONS_ASSIST_CAMERA') or '0')
 local assisting=assist_camera>0
+-- MSX_WEAPONS_ASSIST_ID=<hex id> (default 3): the weapon the assist writes.
+-- With it set, the first assist frame also writes the cap 10C71C from ROM
+-- table 0C08A8 and the form request +94 from 0C0918 (as 0C0928 does).
+local assist_id=tonumber(os.getenv('MSX_WEAPONS_ASSIST_ID') or '3',16)
+local assist_first=os.getenv('MSX_WEAPONS_ASSIST_ID')~=nil
 -- MSX_WEAPONS_KEEP_TIMER=1: do not hold the mission timer 1013DE (HUD timer
 -- digits, docs/ARMAS_VEHICULOS.md §11); everything else as without it.
 local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
@@ -66,6 +71,12 @@ local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
 -- death/respawn fields every frame (docs/JEFE_MISION1.md, respawn).
 local mortal_camera=tonumber(os.getenv('MSX_WEAPONS_MORTAL_CAMERA') or '0')
 local mortal=false
+-- MSX_WEAPONS_GAUGE=frame:health,..: reference-only HUD gauge check
+-- (docs/ARMAS_VEHICULOS.md §11, B41): at each frame the P1 vehicle slot health
+-- +18 (10C620) is written, while a vehicle is ridden (slot +00 nonzero); the
+-- vehicle copies it to its +4E (0AAA74) and the gauge 0C9B94 shows it.
+local gauge_pokes={}
+for f,h in (os.getenv('MSX_WEAPONS_GAUGE') or ''):gmatch('(%d+):(%x+)') do gauge_pokes[tonumber(f)]=tonumber(h,16) end
 local frame=0
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local mstate=manager.machine.devices[':maincpu'].state
@@ -283,6 +294,20 @@ for _,port in pairs(manager.machine.ioport.ports) do
  for name,field in pairs(port.fields) do fields[name]=field end
 end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0}}
+-- MSX_WEAPONS_CHARACTER=n (player +6E: 0 Marco, 1 Tarma, 2 Eri, 3 Fio): chosen at SOLDIER
+-- SELECT with the controller as tools/mame/capture_marco_catalog.lua does
+-- (the ROM fixes +6E from the cursor when A confirms; screen order Marco,
+-- Eri, Tarma, Fio): Right once per place from 1700, A at 1800 instead of the
+-- A held 1550..1700 (the landing comes about 250 frames later).
+local character=tonumber(os.getenv('MSX_WEAPONS_CHARACTER') or '-1')
+local seek_routines=nil
+for h in string.gmatch(os.getenv('MSX_WEAPONS_SEEK') or '','(%x+)') do seek_routines=seek_routines or {};seek_routines[tonumber(h,16)]=true end
+local choice={}
+if character>=0 then
+ local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_WEAPONS_CHARACTER 0..3')
+ for k=0,place-1 do choice[1700+20*k]={'P1 Right',1};choice[1710+20*k]={'P1 Right',0} end
+ choice[1800]={'P1 A',1};choice[1810]={'P1 A',0}
+end
 local pressed={}
 local function button(name,value)
  pressed[name]=value
@@ -324,8 +349,12 @@ emu.register_frame_done(function()
  dbg:command(string.format('temp9=%x',frame))
  if frame==2000 then probes() end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
- if frame>=1550 and frame<=1700 then button('P1 A',1) end
- if frame==1710 then button('P1 A',0) end
+ if character>=0 then
+  if choice[frame] then button(choice[frame][1],choice[frame][2]) end
+ else
+  if frame>=1550 and frame<=1700 then button('P1 A',1) end
+  if frame==1710 then button('P1 A',0) end
+ end
  if frame>=2000 then
   if not keep_timer then cpu:write_u8(0x1013de,0x5a) end
   if mortal_camera>0 and not mortal and cpu:read_u16(0x102036)>=mortal_camera then
@@ -334,11 +363,17 @@ emu.register_frame_done(function()
   if not mortal then cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40) end -- P1 invulnerability, capture only.
   if not mortal then cpu:write_u8(0x101549,0x99) end -- P1 +84 low byte (invulnerability count), capture only.
   cpu:write_u8(0x101288,2)
+  if gauge_pokes[frame] and cpu:read_u16(0x10c608)~=0 then cpu:write_u16(0x10c620,gauge_pokes[frame]);print('GAUGE '..frame..' '..gauge_pokes[frame]) end
  end
  local camera=cpu:read_u16(0x102036)
  if assisting and frame>=2100 then
   if camera<assist_camera then
-   cpu:write_u8(0x10c71e,3);cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
+   if assist_first then
+    assist_first=false
+    cpu:write_u8(0x10c71c,cpu:read_u8(0x0c08a8+assist_id));cpu:write_u8(P1+0x94,cpu:read_u8(0x0c0918+assist_id))
+    print('ASSIST ID '..string.format('%x',assist_id)..' '..frame)
+   end
+   cpu:write_u8(0x10c71e,assist_id);cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
   else
    cpu:write_u16(0x10c724,0);cpu:write_u8(0x10c720,10);assisting=false
    print('ASSIST END '..frame..' camera '..camera)
@@ -401,6 +436,19 @@ emu.register_frame_done(function()
   local a=frame%12<6 and 1 or 0
   local b=(frame>3000 and frame%120>=6 and frame%120<12) and 1 or 0
   local c=(frame>2900 and frame%60<8) and 1 or 0
+  -- MSX_WEAPONS_SEEK=r1,r2..: on foot, a vehicle waiting in one of these
+  -- routines (hex, e.g. 345e0 the Camel) is walked to and jumped on (B every
+  -- 30 frames within 40 px, no fire): pad inputs only, no RAM write.
+  if seek_routines and not riding then
+   for n=ROOT,0x108000-0xb0,0xb0 do
+    if seek_routines[cpu:read_u32(n)] then
+     local dx=((cpu:read_u16(n+0x3c)-cpu:read_u16(P1+0x3c)+0x8000)&0xffff)-0x8000
+     right=dx>6 and 1 or 0;left=dx<-6 and 1 or 0;up=0;a=0;c=0
+     b=(dx>-40 and dx<40 and frame%30<4) and 1 or 0
+     break
+    end
+   end
+  end
   if riding then
    local t=frame-mounted_at
    b=0

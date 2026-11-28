@@ -1,0 +1,22 @@
+[
+ {"name":"walk_right","length":40,"inputs":["Right"]},
+ {"name":"turn_fire_u1","length":40,"inputs":["Left","fire"],"fire_at":[0,8]},
+ {"name":"turn_u2_lead","length":2,"inputs":["Right"]},
+ {"name":"turn_fire_u2","length":38,"inputs":["Right","fire"],"fire_at":[0,8]},
+ {"name":"turn_u3_lead","length":4,"inputs":["Left"]},
+ {"name":"turn_fire_u3","length":36,"inputs":["Left","fire"],"fire_at":[0,8]},
+ {"name":"turn_plain","length":40,"inputs":["Right"]},
+ {"name":"up_left","length":40,"inputs":["Left","Up"]},
+ {"name":"up_turn_right","length":40,"inputs":["Right","Up"]},
+ {"name":"up_turn_left_fire","length":40,"inputs":["Left","Up","fire"],"fire_at":[0,16]},
+ {"name":"up_stop","length":40,"inputs":["Up"]},
+ {"name":"run_right","length":40,"inputs":["Right"]},
+ {"name":"stop","length":40,"inputs":[]},
+ {"name":"short_run_left","length":6,"inputs":["Left"]},
+ {"name":"short_stop","length":40,"inputs":[]},
+ {"name":"run_right2","length":40,"inputs":["Right"]},
+ {"name":"stop_fire_u1","length":40,"inputs":["fire"],"fire_at":[0,16]},
+ {"name":"run_left","length":40,"inputs":["Left"]},
+ {"name":"stop_fire_u2","length":40,"inputs":["fire"],"fire_at":[2,16]},
+ {"name":"walk_right_end","length":32,"inputs":["Right"]}
+]

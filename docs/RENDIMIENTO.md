@@ -22,7 +22,7 @@ Se elimina por completo compilando con `MSX_EXTRA_CFLAGS=-DMSX_PROFILE=0`.
 
 | Campo | Contenido |
 | --- | --- |
-| `steps=N/M multi=K` | pasos de simulación en la ventana / máximo por fotograma / fotogramas con más de un paso (recuperación de `scene_clock`) |
+| `steps=N/M multi=K` | pasos de simulación en la ventana / máximo por fotograma (2: una actualización del original) / fotogramas con dos pasos (el fotograma anterior duró más de un vblank de la Neo Geo; sin deuda desde B88) |
 | `cpu` | todo `actor_draw`: simulación + preparación + construcción del render |
 | `build` | `begin`+`bgreq`+`bg`+`mesh`+`actors`+`hud`+`end` (lo que medía `CPU=`) |
 | `sim` | todos los `msx_game_update` del fotograma (mundo, soldados, jugador) |
@@ -434,7 +434,7 @@ actor a la vez (66 bloques nuevos).
    RAM ya cuenta) → caché de escena (`scene_assets_begin`) → logo → juego
    (`actor_init`). La caché se dimensiona la **última** con lo que queda del
    montón menos las reservas medidas de lo que se asigna después (tabla de
-   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 256 KB; con menos de
+   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 192 KB; con menos de
    208 ranuras falla con un `assertf` que da los KB. `scene_assets_check_budget`
    comprueba (assert) tras cargar el juego que queda la reserva de juego más
    medio margen, y la línea `MSX RDP` informa del mínimo de montón libre visto
@@ -476,14 +476,14 @@ La simulación no lee nada de esto (`make check`, -O0/-O2 idénticos).
   → audio del juego → caché de escena → logo NEOGEO (calentando la caché en
   su tiempo libre) → Misión 1.
 - **Con ellas** (`title-motion.*`, `entry.*`): logo → título X64
-  (`msx_title_intro`) → entrada en paracaídas → audio del juego → caché →
-  Misión 1 (`actor_begin_mission` con el traspaso medido de `entry.json`). El
-  título precarga su película (3,4 MB) y 16 fotogramas preparados (2,1 MB):
-  casi todo el montón, así que la caché no puede existir durante el logo ni
-  las cinemáticas; se dimensiona después, con lo que queda, y la parte
-  obligatoria (bancos y mapa, 50 bloques) se carga entonces (≈0,28 s); el
-  resto del calentamiento sigue en el tiempo libre del juego. La preparación
-  de fotogramas de la cinemática se limita además al montón libre (−256 KB).
+  (`msx_title_intro`) → HOW TO PLAY → SOLDIER SELECT → elección → entrada en
+  paracaídas → Misión 1 (`actor_begin_descent` con el traspaso medido de
+  `entry.json`). Lo que el juego carga se adelanta al tiempo libre de las
+  cinemáticas (sección «Cinemáticas sin parones»): efectos residentes, piezas
+  de Marco y copia de la ROM S del HUD desde SOLDIER SELECT; la caché de
+  escena empieza durante la elección con las ranuras que caben (calentadas
+  allí) y se completa al terminar la entrada, con el mismo tamaño que tendría
+  creada entonces.
 
 ### Presupuesto de RAM (8 MiB, ares 146, `mslugx-reference.z64`, líneas `MSX MEM`)
 
@@ -509,7 +509,7 @@ bloques) y las cinemáticas de arranque.
 | Margen | 256 | 256 | |
 
 Las reservas (`SCENE_RESERVE_LOGO_KB` 224, `SCENE_RESERVE_GAME_KB` 640,
-`SCENE_RESERVE_RUNTIME_KB` 320, `SCENE_HEAP_MARGIN_KB` 256) suman 1216 KB
+`SCENE_RESERVE_RUNTIME_KB` 320, `SCENE_HEAP_MARGIN_KB` 192) suman 1152 KB
 fuera de la caché. Lo que se cargue antes de dimensionarla (más efectos, otro
 audio) la reduce automáticamente; por debajo de 208 ranuras el arranque falla
 con un mensaje que da los KB. Con 4 MiB nada de esto se aplica: 32 ranuras,
@@ -633,3 +633,975 @@ cuesta ranuras: el número lo fija el total libre menos las reservas
 solo bloque o la caché antes que ellos no daría ninguna ranura más; para
 subir de 211–212 ranuras (mínimo 208) hay que bajar el margen (128 KB
 darían 8 ranuras) o reducir lo residente.
+
+## Bloques del fondo y montón (rama `work-m2eng3`)
+
+**Margen 192 KB.** Tras la fusión de los actores de la Misión 2 el ELF creció
+≈ 93 KB y el arranque fallaba (`RAM budget: 3295 KB left for the scene cache
+(minimum 3328 KB)`): `SCENE_HEAP_MARGIN_KB` baja de 256 a 192 (la salida que
+ya proponía la sección anterior). Medido en ares: 3344 KB de caché (209
+ranuras), 560 KB libres tras cargar el juego, mínimo en la etapa 2 de la
+Misión 2 302 KB.
+
+**Bloques del fondo liberados con el RSP escribiendo en ellos.** Tras
+ejecutar un bloque, libdragon deja que el RSP escriba los comandos RDP
+siguientes (el resto del fotograma, su `SYNC_FULL`, los fotogramas
+siguientes hasta otro bloque) en el espacio libre del último búfer estático
+de ese bloque (`__rdpq_block_end`); solo `rspq_wait` lo devuelve al búfer
+dinámico. `bg_collect` liberaba los bloques retirados en cuanto su
+fotograma terminaba, sin esa espera: el RSP escribía comandos en montón
+libre. Con un detector (`mallinfo` en cada grabación) el montón aparece
+corrupto ya en la etapa 1 de la Misión 2 (enlace de bloque = 0x0025A680, la
+dirección física de un framebuffer). En la etapa 2 los bloques se retiraban
+cada dos fotogramas (el juego actualiza uno de cada dos y la clave del fondo
+se repite una vez: se grababan las dos pasadas en cada repetición, 2 de cada
+3 ejecuciones eran grabaciones) y el cuelgue llegaba siempre: 20 `MSX rspq
+kick` y el diagnóstico de `display_get` (sin excepción; el inspector ni
+siquiera podía reservar sus búferes). Es probablemente también el origen
+de los cuelgues raros de recorridos largos de la Misión 1 que el *kick*
+intentaba despertar.
+
+Corrección (`scene_renderer.c`): tras cada `rspq_block_run` del fondo se
+ejecuta un bloque permanente `bg_tail` (el `rdpq_set_scissor(8,8,312,232)`
+que ya seguía), así el puntero de escritura del RSP queda siempre en un
+búfer que nunca se libera; `scene_renderer_stage_changed` ya libera tras
+`rspq_wait`. Además se graba solo cuando la clave se ha mantenido 3
+fotogramas (`BG_RECORD_HELD`, dos actualizaciones: el desplazamiento ya no
+graba) y nunca con menos de 192 KB libres (`BG_RECORD_MIN_FREE`: libdragon
+no comprueba los `malloc_uncached` de `rspq_block_begin` ni de
+`__rdpq_block_next_buffer`; un NULL escribiría en la dirección física 0).
+Comprobado en ares con el comportamiento antiguo de grabación más el
+detector: sin corrupción ni cuelgue hasta el final de la etapa 2.
+
+## Presupuesto de RAM por misión: imagen del programa reducida, margen 256 KB
+
+**Problema.** Cada misión nueva añade código C nativo y tablas a un único ELF
+que se carga entero en RDRAM. La caché de escena se dimensiona la última con
+lo que queda, así que cada KB de imagen es un KB menos de caché: con la
+misión 2 el arranque fallaba («RAM budget 3303 KB < 3328 KB», 208 ranuras) y
+el margen del montón se había bajado 256 → 192 → 160 KB para compensar.
+
+**Medida** (`mips64-elf-size`, `nm --size-sort` por objeto, `mslugx-explorer.elf`
+en `f30a292`): texto 826 KB, `.rodata` 1,18 MB, bss 158 KB. Lo grande de
+`.rodata`: `neo_world.o` 592 KB (programas de animación del banco P2 de la
+misión 1, `build/soldier_ai_tables.h`: 760 programas, 28.796 comandos de 16 B
+= 460 KB, más 115 KB de direcciones ROM por comando), `scene_assets.o` 344 KB
+(`build/scene_meta.h`: imágenes, celdas del mapa de la misión 1,
+descriptores), `neo_region.o` 96 KB, `neo_boss.o` 40 KB. El código propio de
+la misión 2 (`neo_rebel2/3`, `neo_m2boss`, `neo_gate`, `neo_drone`,
+`neo_hostage`, `neo_crate`, `neo_m2props`) son 57 KB; sus tablas de escena ya
+van en `mission2.pack` y se cargan en ranuras reservadas de la caché
+(`scene_stage_load`), sin coste en el ELF.
+
+**Cambios** (sin tocar la simulación; `make check` -O0/-O2 idéntico):
+
+1. **`neo_anim_command_t` de 16 a 12 B** (`src/neo_animation.h`,
+   `packed,aligned(4)`, `kind:8`): mismo orden de campos y mismos valores,
+   `asset` se lee sin alinear. Afecta a los programas de soldado, jefe y Marco.
+2. **Direcciones ROM de los programas de soldado solo en el host**
+   (`tools/compile_soldier_ai_tables.py`): únicamente `test_neo_family` las lee;
+   en N64 `address` es `NULL`. Las del jefe (`neo_boss.c` las usa) se quedan.
+3. **`-Os` para el código frío** (`Makefile`, `COLD_OBJS`): módulos de
+   actores, jefes, fin de misión, cinemáticas y logo. El núcleo por fotograma
+   (`HOT_SRCS`: mundo, IA de soldado, núcleo, animación, contacto, control,
+   cámara, guion…) y `gameplay`/`actor`/renderers siguen en -O2.
+4. **Margen del montón restaurado a 256 KB** (`SCENE_HEAP_MARGIN_KB`).
+
+| Imagen del programa (`mslugx-explorer.elf`) | Antes (`f30a292`) | Después |
+| --- | ---: | ---: |
+| texto | 826.360 B | 753.240 B |
+| datos (`.rodata`+`.data`) | 1.228.836 B | 985.180 B |
+| bss | 157.884 B | 157.884 B |
+| **total** | **2.213.080 B (2161 KB)** | **1.896.304 B (1852 KB, −309 KB)** |
+
+### Presupuesto con la misión 2 (8 MiB, ares 146, cartucho de lanzamiento con cinemáticas, líneas `MSX MEM`)
+
+| Concepto | Antes (KB) | Después (KB) | Notas |
+| --- | ---: | ---: | --- |
+| Imagen del programa | 2161 | 1852 | tabla de arriba |
+| **Montón total** | ≈5966 | **6275** | `sys_get_heap_stats` |
+| Pantalla, mezclador, rdpq | 452 | 452 | |
+| Audio del juego (efectos residentes) | ≈993 | 993 | `MSX MEM audio` − `title done` |
+| `actor_init` (Marco, HUD, índice del mapa, fuente) | — | 615 | `game loaded` − `scene cache`; reserva 640 |
+| Reservas fuera de la caché | 960+160 | 960+256 | juego 640 + juego en marcha 320 + margen |
+| **Caché de escena** | 3303 con margen 192 (falla, < 3328); 3335 con margen 160 | **3536 (221 ranuras) con margen 256** | mínimo 208 ranuras = 3328 KB |
+| Libre tras cargar el juego | — | 624 | assert ≥ 320 + 128 |
+| Margen | 160 | **256** | |
+
+**Holgura para misiones futuras.** Con margen 256 quedan 13 ranuras
+(208 KB) sobre el mínimo de 208. La misión 2 añadió 57 KB de código (≈52 KB
+con -Os), así que caben ≈4 misiones más de ese tamaño **siempre que sus datos
+no vayan al ELF**. Reglas para las misiones 3–6:
+
+- Tablas de escena y datos derivados de la ROM de una misión: en
+  `missionN.pack` (DFS), cargados en `scene_stage_load` en ranuras reservadas
+  de la caché, como la misión 2. Nada de cabeceras generadas con datos de
+  misión en `.rodata`.
+- Módulos de actores nuevos: a `WORLD_SRCS` y, salvo que estén en el camino de
+  cada fotograma, fuera de `HOT_SRCS` (-Os).
+- Revisar en cada misión `mips64-elf-size build/mslugx-explorer.elf` y la línea
+  `MSX MEM scene cache` (ranuras ≥ 208 con margen 256). Si un día no basta, el
+  siguiente paso es cargar el código de cada misión como módulo dinámico
+  (`dlopen` de un `.dso` en DFS; el libdragon fijado trae `n64dso`) en ranuras
+  liberadas de la caché al cambiar de misión: hoy no compensa (57 KB por
+  misión frente a la complejidad de exportar la API del mundo).
+
+Opciones medidas y no tomadas: `-Os` también en el núcleo por fotograma
+ahorraría ≈31 KB más (`neo_world` 9 KB, `neo_soldier_ai` 7 KB, `gameplay`
+4 KB…), a costa del tiempo de simulación del pico de 2336; sacar
+`scene_meta.h` de la misión 1 a DFS no libera nada mientras se juega la
+misión 1 (se necesita entero); los efectos residentes (≈850 KB) son una
+decisión del audio (`docs/AUDIO_JUEGO.md`).
+
+## Misión 2, etapa 3: fondo de la torre y subbloques de audio (rama `work-m2pol`)
+
+Recorrido de referencia en ares (`mslugx-m2-reference.z64`, `--stage-seconds
+400`, ventanas de 300 fotogramas). Antes: cpu media de la peor ventana 53.384
+µs, de ella `bg` 39.981 µs; 888 subbloques de audio en todo el recorrido (741
+en la subida a la torre). La línea nueva `MSX BG` (µs/dibujos/subidas/celdas
+visitadas por capa en el fotograma de muestra) mostró que el coste era de la
+CPU emitiendo celdas, no del RDP:
+
+- **El modo de profundidad no recortaba en vertical** (`depth_cell` solo
+  descarta por x): con el mapa de 272 filas de la etapa 3 todas las celdas de
+  las columnas visibles se dibujaban fuera de pantalla. Ahora las dos rutas
+  (clásica y de profundidad) saltan sin visitarlas las celdas de una columna
+  que quedan por encima (búsqueda binaria hasta la primera que alcanza la
+  pantalla) o por debajo (salto al final de la columna). Requisito: dentro de
+  un tramo del índice (`scene_cull.c`) cada columna está ordenada por y; el
+  tramo se parte también donde la y deja de crecer (18 sitios en el paquete
+  de la Misión 2). `tools/test_scene_cull.c` compara el salto con el recorrido
+  completo en 300 conjuntos aleatorios.
+- **Torre**: las piezas visibles se dibujaban celda a celda en orden de
+  pieza y cada celda volvía a subir su página (≈145–210 subidas de TMEM por
+  fotograma). Las celdas de la torre nunca se solapan (rejilla de 16 px,
+  piezas a 48 px), así que se agrupan por página y paleta y se fusionan las
+  tiras de una columna: 11–15 subidas. Las piezas fuera de pantalla también
+  se descartan en el modo de profundidad.
+
+Audio: `msx_audio_service` se llamaba una vez por fotograma con dos búferes de
+40 ms; un fotograma de más de ~80 ms (dos actualizaciones más el fondo
+completo) los vaciaba. Ahora hay una segunda llamada entre la simulación y el
+dibujo (`msx_audio_idle`, actor.c) y otra entre carga y carga de bloques en
+`scene_stage_load` (`scene_assets_set_load_idle`): las cargas de etapa (0,14 /
+0,29 / 0,64 s) ya no cortan la música.
+
+| Misión 2 (ares, referencia) | antes | después |
+|---|---|---|
+| cpu media, peor ventana | 53.384 µs | 24.727 µs |
+| `bg` medio, peor ventana | 39.981 µs | ≈11.200 µs |
+| subidas de TMEM por fotograma (torre) | 207 | 15–75 |
+| subbloques de audio (todo el recorrido) | 888 | 9 |
+
+Las cargas de etapa siguen siendo un fotograma de 0,3–1,07 s con la pantalla
+en negro (el fundido ya terminó, como en el original detrás de `3AED8`/
+`3AEF0`); lo que se oía (la música cortada) queda resuelto con el audio entre
+cargas. Hacerlas incrementales queda pendiente.
+
+## Cinemáticas sin parones (rama `work-introperf`)
+
+Informe de MiSTer (N64 real, Expansion Pak): la intro seguía con parones. En
+ares (`tools/test_logo_ares.py`, reloj emulado; el PI de MiSTer es otro, por
+eso las correcciones quitan trabajo bloqueante en vez de ajustar tiempos) el
+arranque tenía estas pausas y saltos:
+
+| Tramo | Antes | Después |
+|---|---|---|
+| logo → título | 1881 ms en negro (la preparación del título seguía en la lectura) | 0 ms (título leído y 17 fotogramas hechos durante el logo); `gap_vb=3` (los 2 negros del final del logo) |
+| logo (fotogramas tardíos propios) | 2 | 0 |
+| título | 0 saltados | 0 saltados, `max_vb=1` |
+| título → HOW TO PLAY | 140 ms (apertura síncrona en streaming) | `gap_vb=1` (sin pausa) |
+| HOW TO PLAY | 35 fotogramas saltados (descodificación de hasta 160 ms en el fundido 2638–2667; 1878, 2310) | 0 |
+| HOW TO PLAY → SOLDIER SELECT | 654 ms (preparación atascada) | `gap_vb=1` |
+| SOLDIER SELECT | 12 saltados | 0 |
+| elección | 4 saltados | 0 |
+| elección → entrada | 509 ms | `gap_vb=1` |
+| entrada → juego | 1133 ms (`gap_vb=68`: audio 340, caché 310, Marco 306, HUD 40, reinicio 60…) | ≈130 ms (`gap_vb=7–8`: reinicio del mundo 60, renderizador 17, audio 17, primer fotograma 29) |
+| primeros 2 s de juego | 22 de 120 fotogramas tardíos | 3–8 |
+| 8 s siguientes | 0 | 0 |
+
+`gap_vb`/`late` son las líneas nuevas `MSX FRAMES <tramo>` (`msx_perf.c`):
+blancos verticales entre el último fotograma de un tramo y el primero del
+siguiente (1 = sin pausa) y fotogramas que llegaron 2 o más blancos después
+del anterior. `test_logo_ares.py` las guarda en `presentation` y exige
+`late=0` en cada película.
+
+### Causas
+
+1. **Preparación que no avanzaba.** Cada paso de la preparación en tiempo
+   libre (lectura+LZ4 de un paquete, CRC, aplicar) era indivisible y se
+   rechazaba si no cabía; los fotogramas clave (≈110 KB: en ares ~17 ms de
+   LZ4, ~19 ms de CRC por byte, ~20 ms de aplicación) nunca cabían en los
+   ~5 ms libres del logo, así que la apertura lo hacía todo de golpe
+   (1,9 s, 0,65 s, 0,5 s).
+2. **HOW TO PLAY en streaming** (4,7 MB sin comprimir no entraban en caché):
+   cada fotograma leía del PI con espera, descomprimía, hacía CRC y aplicaba
+   en el tiempo del propio fotograma; los fotogramas clave costaban 70 ms.
+3. **Copias de 136 KB por CPU** (`memcpy` ≈12 ms en ares) tras cada
+   fotograma preparado.
+4. **Traspaso al juego síncrono**: 1 MB de efectos, 585 piezas de Marco, la
+   ROM S del HUD y 50 bloques de la caché de escena leídos con la pantalla
+   quieta; el reinicio del mundo se hacía dos veces.
+5. **Calentamiento en el tiempo del fotograma**: tras el traspaso,
+   `scene_service` descodificaba un bloque de la lista de calentamiento
+   (≈5 ms) en cada fotograma de los primeros ~70.
+6. **Elección del fotograma tras mezclar audio**: con el tiempo libre ya
+   usado, mezclar 2–3 ms antes de `display_get` retrasaba la elección del
+   fotograma y saltaba uno.
+
+### Correcciones
+
+- **Reproductor nuevo (`src/cinematic.c`)**: por película, un *cargador*
+  (DMA asíncrono del PI en trozos de 8 KB a un anillo de paquetes v1, LZ4 en
+  sitio reanudable con CRC por trozos y validación por trozos:
+  `src/cinematic_stream.h`) y un *productor* que decodifica fotogramas
+  completos por adelantado en un conjunto de lienzos (el RDP copia el
+  anterior —copia de 4 píxeles/ciclo— y la CPU aplica el paquete por trozos;
+  los paquetes «sin cambio» comparten lienzo). Todo trabajo corre en piezas
+  de 2–4 KB hasta el plazo del blanco siguiente (coste por KB aprendido, que
+  sube enseguida y baja despacio); mostrar un fotograma solo elige su lienzo.
+  El anillo ocupa la película entera si cabe (título bajo el logo: 3 MB) o
+  2 MB (HOW TO PLAY: el fundido de 650 KB de 2638 se carga antes); una
+  película preparada al lado de otra crece al abrirse. Los lienzos por
+  película salen de sus paquetes pesados (>16 KB): 4 para la elección,
+  8 para las demás. El título prepara HOW TO PLAY en su tiempo libre.
+- **CRC de 4 en 4 bytes** (tablas de 4 KB) y **aplicación con `memcpy`/
+  relleno por palabras**; CRC del primer y último fotograma calculados en
+  segundo plano (la comprobación de la entrada y los registros costaban
+  20 ms en el corte).
+- **Las películas acaban en su último fotograma** sin una vuelta más de
+  trabajo libre, y el fotograma se elige justo tras el blanco, antes de
+  mezclar audio (`main.c`, `title_intro.c`).
+- **Carga del juego adelantada** (`main.c`): desde SOLDIER SELECT,
+  `msx_ramfs_preload` lee por DMA asíncrono los 60 efectos y `fixed.bin`
+  (la ROM S del HUD, usada tal cual), `marco_renderer_preload` carga piezas
+  de Marco mientras caben antes del blanco, y la lista de calentamiento de la
+  caché se calcula en pasos (`scene_assets_plan_step`, 27 ms de golpe antes).
+  Durante la elección, `scene_assets_begin_early` crea la caché con las
+  ranuras que caben dejando sitio a las películas, la calienta en tiempo
+  libre (`scene_assets_idle`) y crece al cerrarse la elección;
+  `scene_assets_begin` la completa tras la entrada comprobando el tamaño
+  contra el montón de entonces. Lo ya cargado de `actor_init` se descuenta de
+  su reserva (`scene_assets_game_preloaded`), así que la caché y el montón
+  libre final son los de antes (214–217 ranuras, ≥ 448 KB libres).
+- `actor_prepare_descent`: el reinicio de `actor_init` ya empieza la bajada y
+  `actor_begin_descent` no la repite.
+- `scene_service` deja los bloques de calentamiento (los que nadie pidió) al
+  tiempo libre antes del blanco; una petición o una espera síncrona los toma
+  igual.
+
+Píxeles: idénticos (CRC de cada película igual que antes en ares:
+título `c0a8e830`, HOW TO PLAY `47fe0a98`, selección `ad129003`, elección
+`342b3c8e`, entrada `be25a626`; `cinematic-regression.z64` compara los 30
+fotogramas de la entrada; `make check-cinematic` compara LZ4/CRC/validación/
+aplicación por trozos con las formas de una pasada en cada paquete).
+
+Queda: el traspaso al juego son ~8 blancos (el reinicio del mundo, 60 ms en
+N64 y despreciable en el host, y el primer dibujado del HUD, 19 ms); en los
+primeros 2 s del juego, 3–8 fotogramas tardíos por la grabación de los
+bloques del fondo (≈7 ms cada uno mientras la cámara baja) y algunas
+peticiones de bloques de soldados aún no calentados.
+
+## RAM de la caché de escena recuperada (rama `work-diag`, base `ab76871`)
+
+`ab76871` ya no arrancaba la M1 en las ROM de referencia: `RAM budget: 3326 KB
+left for the scene cache (minimum 3328 KB)`, es decir, 207 ranuras. ROM 20
+(`5b49ffb`) tenía 214–219.
+
+**Qué creció desde ROM 20** (montón total de `MSX MEM display`: 6258 KB en
+ROM 20, 6141 KB en `ab76871` con objetos limpios; la referencia, 6136 KB):
+
+| Origen | Crecimiento |
+| --- | ---: |
+| Código `5b49ffb..ab76871` con las mismas entradas (ELF de referencia 2.009.504 → 2.033.680 B): `neo_world.o` +11,3 KB (programas de soldado y código), `neo_drone` +3,8, `neo_hostage` +2,3, `marco_visual` +1,8, `gameplay` +1,2, `neo_prisoner` +1,1, `neo_m2props` +1,0, `actor` +0,8 | +24 KB |
+| Entradas privadas regeneradas (`rest-native.json`, catálogo de Marco; diferencia restante del montón) | ≈ +95 KB |
+| Efectos residentes: 1.031.042 B (61) → 1.215.338 B (63) | +184 KB |
+| Registros de ranura reservados de más: `sizeof(cache_slot_t)` × 1007 trozos, cuando solo se crean las ranuras usadas | 16 KB |
+
+**Recuperado sin quitar funciones** (la imagen de la referencia sin
+diagnóstico pasa de 2.033.680 a 1.889.632 B, −141 KB):
+
+- `neo_anim_command_t` de 12 a 10 bytes: `asset` es un campo con signo de 24
+  bits junto al tipo (direcciones 68K y constantes `SET/WRITE_LONG`
+  extendidas en signo; los generadores comprueban el rango). 34.220
+  órdenes: −67 KB.
+- Programas de soldado que son la cola de otro apuntan a su tabla
+  (`compile_soldier_ai_tables.py`; los saltos son relativos y las órdenes
+  idénticas): 1062 órdenes, −10,6 KB.
+- Celdas del mapa de 22 a 8 bytes (`scene_map_cell_t`: imagen de la primera
+  fase y patrón de deltas compartido; la M1 tiene uno, la M2 uno). Se
+  comprobó que las 4699 celdas de la M1 dan las mismas 8 imágenes que antes;
+  las de los paquetes de misión se convierten al cargar la etapa: −61 KB.
+- Cálculo de la caché con los registros de las ranuras que se crean: +12 KB.
+
+Ni `SCENE_EXPANDED_MIN_SLOTS` (208) ni el margen de 256 KB cambian. Nueva
+línea `MSX CACHE slots=N` al cargar el juego:
+
+| ROM (ares, arranque completo) | Antes | Después |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64` | sin medir (≈210) | **218** |
+| `mslugx-reference.z64` (con `MSX_DIAG`) | 207 (aserción) | **217** |
+| `mslugx-m2-reference.z64` (con `MSX_DIAG`) | 207 (aserción) | **217** |
+| Con `work-laser` (`686c0fd`) fusionada, sus entradas de `/home/user/ws-m3`: referencia / normal | 206 (3310 KB) | **215 / 216** |
+
+`sfx_10a5` y `sfx_1026` siguen sin empaquetar: son bucles (motor),
+`pack_game_audio.py` los descarta a propósito. Con 1–3 ranuras sobre 214
+hay sitio para ellos (≈14 KB cada uno a 24 kHz VADPCM si se hacen bucles
+residentes).
+
+## Modo de diagnóstico (`MSX_DIAG`, rama `work-diag`)
+
+Coste, recorrido completo de la M1 en ares, `mslugx-reference.z64` del mismo
+código con `MSX_REFERENCE_DIAG=0` (sin diagnóstico) y con él. Media de las
+medias por ventana de 300 fotogramas (sin la de arranque), µs:
+
+| Fase | Sin diagnóstico (58 ventanas) | Con diagnóstico (47 ventanas) |
+| --- | ---: | ---: |
+| `sim` (lógica) | 2890 | 2929 (+39) |
+| `prep` (incluye `msx_diag_game`) | 1923 | 2033 (+110) |
+| `build` (render) | 6869 | 6053 |
+| `cpu` | 11683 | 11016 |
+
+El coste propio es ≈0,15 ms por fotograma (≈0,9 % de 16,7 ms): el recorrido
+de los pools del mundo y la comparación de contadores. `build` y `cpu`
+varían más entre recorridos (ruta del piloto, ritmo de ares) que esa cifra.
+Imagen: +11,5 KB (código y anillo de 1,5 KB). La ROM normal no lleva nada.
+
+**Lo que mide (recorrido con diagnóstico, 208 ranuras, antes de recuperar
+la RAM):**
+
+1. **Montón.** Pico usado en juego 5891 KB; **mínimo libre 238 KB**, por
+   debajo del margen de 256 KB, en la zona del jefe. El juego crece ≈263 KB
+   sobre los 512 KB libres al cargar (reserva 320). Pico de arranque 5628
+   KB. Tras la recuperación (217 ranuras, recorrido PASS) el pico usado es 6036 KB y el mínimo libre **234 KB** al final del jefe: las ranuras ganadas salen del mismo montón, así que el crecimiento en juego (≈263 KB, reserva 320) es ahora la cota.
+2. **Pools.** Actores genéricos con pico **91/96** (95 %) antes del jefe
+   (cámara ≈3192–3376): el siguiente en rechazar. Balas de pistola **8/8
+   con 5 rechazos** (ráfagas de disparo). Lista de nodos 92/160, nodos del
+   jefe 45/96, dibujos 61/160; el resto por debajo del 25 %. Ninguna parada
+   explícita salvo 18 apariciones de familias sin portar (`02A3CE`).
+3. **Fotogramas lentos: render, no lógica.** Los cinco peores son de
+   render con descodificación síncrona: 44,6 ms en 1920 (render 40,0 ms,
+   `asset` 26,1 ms), 42,7 ms en 3030 (34,7 / 25,3), 40,9 ms en 2336 (lógica
+   9,5, render 27,4), 40,8 ms en 3041, 38,8 ms en 3432. Lógica máxima 15,5
+   ms (dos pasos en 2336).
+
+## Título sin saltos y margen del montón en juego (rama `work-perf21`, base `1afa21a`)
+
+### Salto del título en la ROM 21 (B21)
+
+`test_logo_ares.py` fallaba con la ROM de `/home/user/ws-logo`:
+`MSX TITLE miss from=2 to=4 audio_us=2878`, `dropped=1`, `late=1`, y justo
+antes `MSX CINEMATIC rom:/howto.msxc step past the blank margin by 2989 us
+(loader 0 producer 0)`. El mismo `1afa21a` compilado limpio pasaba, así que
+no hay un commit culpable entre `ab76871` y `1afa21a`: la ROM se reconstruyó
+byte a byte en `/home/user/ws-world` y la diferencia eran **diez objetos
+fríos (`neo_hud`, `marco_*`, `neo_vslot`…) aún compilados -O2** de antes de
+`38ceb91` (make no ve un cambio de opciones; +4,5 KB de imagen) y
+`mission3.pack`. Con ellos el logo gasta ≈0,7 ms más por fotograma, el
+título no termina de cargarse bajo el logo (`loaded_before=374` de 601) y
+su trabajo libre sigue durante el título.
+
+Lo que pasaba el blanco era el paso `L_TABLE` del cargador de HOW TO PLAY:
+la comprobación de sus tablas (2691 entradas, v2) y la reserva del anillo
+se hacían de una vez, sin plazo: **3,4 ms** medidos (título 0,9 ms).
+
+Corrección:
+
+- `cinematic.c`: las tablas se comprueban en trozos de 256 entradas con
+  coste aprendido (`check_part`, `cost_check`) y la reserva del anillo y los
+  lienzos solo empieza con ≥ 700 µs antes del plazo. Reserva medida tras el
+  cambio: 100–560 µs. `ensure()` (sin plazo) lo sigue haciendo todo junto.
+- `Makefile`: `build/cold-objs.flags` guarda la lista -Os; los objetos del
+  mundo, cinemáticas, título y logo dependen de él, así que cambiar la lista
+  recompila (la siguiente compilación en `/home/user/ws-logo` rehace los diez
+  objetos).
+
+Con la ROM idéntica a la que fallaba más la corrección: 2/2 PASS, 0
+saltados, `late=0` en todas las películas; ROM normal limpia: PASS.
+
+### Montón en juego (B22)
+
+`MSX_DIAG` (ROM de referencia) daba 234 KB libres al final del jefe de la
+M1, bajo el margen de 256. La nueva cuenta por partes de `MSX actor_init`
+(`heap +N KB (scene … renderer … hud …)`) mostró por qué: la reserva de
+`actor_init` (640 KB, de cuando medía 560) no incluía la **tira del HUD**
+(`hud_renderer.c`, 304×224 RGBA16 = 133 KB). Total real 719 KB (Marco y
+`fixed.bin` precargados 559, renderer 28, HUD 133): el juego empezaba con
+510 KB libres en vez de 576 (320 de crecimiento + 256 de margen). El
+crecimiento en juego (≈263 KB) es casi todo bloques grabados del fondo, que
+se grababan mientras quedaran 192 KB.
+
+Correcciones:
+
+- Tira del HUD en **CI8** (índice = paleta << 4 | pluma, las 256 entradas de
+  la capa fija como TLUT; copia con TLUT): 67 KB. Píxeles del HUD iguales en
+  la captura de `test_logo_ares.py`.
+- `SCENE_RESERVE_GAME_KB` 640 → **672** (medido 654).
+- `BG_RECORD_MIN_FREE` 192 → **288 KB**: margen + un bloque (`bgmax`, nuevo
+  en `MSX RDP` con `MSX_DIAG`: 23 KB el mayor en la M1).
+
+| Recorrido (ares, `MSX_DIAG`) | Antes | Después |
+| --- | ---: | ---: |
+| M1 referencia: ranuras | 217 (ROM obsoleta) / 215 | **213** |
+| M1: libre al cargar | 510 KB | 607 KB |
+| M1: mínimo libre (recorrido PASS) | 234 KB | **344 KB** |
+| M2 referencia (`test_mission2_ares.py` PASS): ranuras / mínimo libre | 215 / — | **213 / 283 KB** |
+| ROM normal: ranuras | 216 | **214** (libre 608 KB) |
+
+Paso intermedio medido: reserva 736 con la tira RGBA16 daba 209 ranuras y
+342 KB de mínimo; la tira CI8 devuelve 4 ranuras.
+
+### Balas de la pistola (B23)
+
+El pool de 8 rechazaba disparos en ráfagas. En el arcade la pistola no
+tiene tope propio: `0C0D64` concede si `10C71A < 10C71C` y `10C71C` es
+`0C08A8[0]` = `FF` (sin límite); la bala `01B782` sale del pool de objetos
+con `00411C`. A 6 px por tick y una pulsación cada 4 ticks caben hasta 10 en
+pantalla. `MSX_BULLETS` = 16: pico **10/16** en el recorrido M1 y **14/16**
+en la M2 de referencia, 0 rechazos (antes 8/8 con 3–5).
+
+## Fondo de la Misión 2: listas por capa y subidas de página directas (B47, rama `work-m3step3`)
+
+**Síntoma (B47).** En la M2 el juego se aceleraba a ratos: `MSX multi-step`
+(línea nueva de `msx_perf.c`: cámara y coste del fotograma anterior a cada
+fotograma de dos pasos) señalaba al **fondo**: `bg` 12,6–18,9 ms con las dos
+capas de la etapa 2 o la 3 a la vista, no la simulación.
+
+**Medida (línea `MSX BG`, ares, `MSX_DIAG`).** Con el tiempo de las
+subidas de textura y de los rectángulos contado aparte, el coste del fondo
+no estaba en los comandos RDP sino en el **recorrido del índice de celdas**:
+la capa 2 de la etapa 1 tardaba 3,2 ms por fotograma de los que 1,2 ms eran
+`rdpq_tex_upload_sub` + `rdpq_texture_rectangle` (187 dibujos, 13
+subidas); el resto, visitar 280 celdas (lecturas aleatorias de 8 bytes, su
+imagen, la fusión de columnas de `column_run`) y las dos búsquedas binarias
+de cada *run* (~2 µs por celda visitada; la capa 3 de la etapa 3, con 0
+dibujos y 1941 celdas visitadas, costaba 1,9 ms).
+
+**Corrección.**
+
+- `scene_strips.c` (nuevo, comprobable en el anfitrión): por capa, una
+  **lista de dibujo** (*strip*) con las columnas ya fusionadas (posición,
+  imagen, celdas) de una ventana 96 px mayor que la pantalla por cada lado,
+  agrupadas como los *runs* del índice (x no decrece dentro de un grupo).
+  Cada fotograma descarta un grupo por su rango de x o encuentra sus
+  elementos visibles con una búsqueda binaria sobre un vector compacto
+  (8 bytes por elemento). La lista se reconstruye cuando la cámara sale de
+  su ventana (cada ~96 px de desplazamiento de esa capa), al cambiar el
+  estado de reemplazo (`collapsed`, `patched`, parches de mapa) o la etapa;
+  una capa por fotograma se reconstruye por adelantado (mitad del margen)
+  para que las capas 2 y 3, que se desplazan juntas, no coincidan. *Pool*
+  de 2048 elementos y 512 grupos (20 KB) con compactación, reservado con
+  las tablas de la etapa cargada (`scene_stage_t`, ranuras de la caché:
+  +2 ranuras de tablas por etapa), no en la imagen del programa, que con
+  las familias de la Misión 3 ya dejaba el presupuesto en el suelo (3314 KB
+  con el *pool* estático: `RAM budget` falla por debajo de 3332); la Misión
+  1, sin etapa, sigue con el recorrido directo. Si una capa no cabe ni sin
+  margen, esa capa dibuja con el recorrido directo (`draw_layer_direct`,
+  el código anterior, que sigue siendo la referencia).
+- **Subidas de página directas** (`page_upload`): los mismos comandos que
+  `rdpq_tex_upload_sub` emite para las tres superficies fijas (64×64 CI4,
+  32×32 RGBA16, 16×256 CI4: `SET_TEXTURE_IMAGE`, dos `SET_TILE`,
+  `LOAD_BLOCK`, `SET_TILE_SIZE`), sin su preparación por llamada y sin
+  repetir los descriptores de *tile* mientras formato y ranura de paleta
+  son los de la subida anterior.
+- Torre de la etapa 3 (`draw_tower`): la lista ordenada (`qsort` de hasta
+  300 celdas por fotograma) se conserva mientras no cambien las piezas que
+  llegan a la pantalla, la fase de vídeo ni la cámara horizontal.
+
+**Comprobaciones.** `tools/test_scene_strips.c` (`make check`): para el
+mapa de la Misión 1 (todas las cámaras) y 200 mapas aleatorios al estilo de
+los packs (páginas altas, columnas de códigos consecutivos, celdas animadas,
+columnas reemplazadas) los elementos de la lista dibujan exactamente los
+texels del recorrido directo bajo cada celda en pantalla, en todas las
+fases. En ares, compilación local `MSX_EXTRA_CFLAGS=-DMSX_BG_CRC=1`: cada 97
+fotogramas se dibujan las dos pasadas con la lista + subidas directas y con
+el recorrido + `rdpq_tex_upload_sub`, y se compara el *hash* del
+framebuffer: **312 comparaciones iguales** en el recorrido completo de la M2
+(`test_mission2_ares.py` PASS).
+
+**Resultado (ares 146, `MSX PERF` por ventanas de 300 fotogramas; `multi`
+= fotogramas de dos pasos por ventana, `bg` media/máximo).**
+
+| Tramo | Antes | Después |
+| --- | --- | --- |
+| Etapa 1 (capas 2+3) | `multi` 121–171, `bg` 4,8–6,3 / 15–26 ms | `multi` 0–44, `bg` 0,9–2,9 / 6–14 ms |
+| Etapa 2 (capa 3, propias) | `multi` 5–30, `bg` 1,2–2,5 / 8–11 ms | `multi` 0–10, `bg` 0,8–2 / 1–7 ms |
+| Etapa 3, arranque (capas 0+3 densas) | `multi` 272–300, `cpu` 26 ms media, `bg` 10–13 / 21–24 ms | `multi` 159–217, `cpu` 16–19 ms media, `bg` 4,3–5,6 / 12–22 ms |
+| Etapa 3, torre | `bg` 3,1 / 22 ms | `bg` 1,4 / 14 ms |
+
+Por capa (línea `MSX BG`, medias por fotograma): etapa 1, capa 2 3,2 → 2,1
+ms (187 dibujos, 15 subidas), capa 3 3,6 → 2,0 ms; etapa 3, capa 0 7,6 → 2,0–2,5
+ms (183–208 dibujos). Lo que queda es casi todo el coste de los comandos
+RDP (`upload` 0,3–0,5 ms, `rect` 1,1–1,4 ms) más la espera del RSP/RDP
+dentro de ellos. Las reconstrucciones de las listas cuestan 2–6 ms cada una
+(una capa por fotograma, 6–9 por ventana de 300 en la etapa 3). El arranque
+de la etapa 3 sigue en dos pasos: `sim` 7,4 ms de media (dos pasos),
+`prep` 2,5 ms, actores 2 ms y el fondo 4–6 ms.
+
+Probado y descartado: el **modo copia** del RDP para las capas 1:1
+(`rdpq_set_mode_copy`, 4 píxeles por ciclo). En ares no cambia el coste
+por capa (2,2 ms con copia, 2,1 sin) y la comparación `MSX_BG_CRC` da
+píxeles distintos en 18 de 26 fotogramas (solo RGB, aun con el *scissor*
+reasignado tras cada cambio de modo, que el RSP corrige según el modo);
+queda como opción para hardware real si se identifica la diferencia.
+
+Ares añade su propia espera de pantalla (`wait` 6–16 ms), así que la
+medida real sigue siendo la del usuario.
+
+## Fondos pre-renderizados (prototipo) (rama `work-prebg`)
+
+*Estado: en producción (ver «En producción» al final de esta sección).*
+
+**Pregunta.** Con la RAM en el suelo (208 ranuras, 486–496 KB libres tras
+cargar), ¿libera RAM sustituir las celdas del fondo (mapa entero fijado en la
+caché de escena) por las capas de cada etapa pre-renderizadas y leídas del
+cartucho por columnas según avanza la cámara?
+
+**Estimación** (`tools/prerender_stage.py estimate romfs/mission2.pack
+romfs/mission3.pack`; «fijado»: fragmentos de 16 KiB del mapa que la etapa
+fija hoy; «resto»: los que siguen haciendo falta para las celdas animadas
+(LSPC) y las de parches, que comparten fragmentos con las fijas; «denso»: esas
+mismas imágenes reempaquetadas sin huecos; ROM: celdas estáticas sin la
+deduplicación de páginas; anillo: 26–29 columnas de 16 px por capa,
+304 px + 64 px de margen a cada lado, o una ventana 2-D de 352 px de alto en
+las capas altas):
+
+| Etapa | Fijado hoy | Resto / denso | ROM CI4 (CI8) | Anillo | Balance |
+| --- | ---: | ---: | ---: | ---: | --- |
+| M2 e1 (4 capas, 138 celdas animadas, parches) | 14 (224 KB) | 14 / 10 | 113 KB (223) | 114–135 KB | pierde |
+| M2 e2 (capas 2+3, sin animadas) | 25 (400 KB) | 5 / 1 | 499 KB (986) | 139–175 KB | **gana 9 ranuras (medido)** |
+| M2 e3 (torre, 559 animadas en la capa 3) | 54 (864 KB) | 35 / 32 | 1060 KB (2106) | 168 KB (2-D) | gana ≈ 8 ranuras con anillo 2-D |
+| M3 e1 (1232 animadas en la capa 3) | 44 (704 KB) | 28 / 25 | 758 KB (1479) | 158 KB | gana ≈ 6 ranuras |
+
+CI8 por capa duplica la ROM y, con la TLUT de 256 entradas, solo deja 2 KB de
+TMEM (16×128 texeles por subida): CI4 con una paleta por *run* conserva los
+mismos texeles y las mismas subidas de 2048 bytes que hoy. Crecimiento del
+cartucho para las misiones 2 y 3 en CI4: ≈ 2,4 MB (sin comprimir; gzip deja
+M2 e2 en 193 KB de 501).
+
+**Lo que el pre-renderizado no cubre directamente.**
+- *Celdas animadas (auto-animación del LSPC):* fuera de las columnas, por el
+  camino de las celdas; sus fragmentos siguen fijados (en M2 e1, e3 y M3 son la
+  mayoría). Reempaquetarlas densas (columna «denso») apenas reduce: hay 8
+  imágenes por celda. Alternativa: una variante de columna por fase (×8 en ROM
+  de esas columnas) o dejarlas en la caché.
+- *Paletas y fundidos:* sin cambio (las columnas guardan índices CI4 y el id de
+  paleta; la TLUT se sube con `scene_render_fade_palette`).
+- *Parches del mapa (puertas, roca, capas de la M3), derrumbe, tienda:* las
+  celdas sustitutas siguen por el camino de las celdas; en las columnas, una
+  columna que un parche activo puede tapar se dibuja celda a celda con el mismo
+  `hidden()` (probado en la e2 de la M2).
+- *Desplazamiento vertical (torre de la M2 e3, M3):* las columnas enteras de la
+  e3 ocupan 23 KB (capa 0) y 12,6 KB (capa 3) cada una: el anillo de columnas
+  llegaría a 1,1 MB; hace falta un anillo 2-D de bloques (≈ 84 KB por capa).
+- *Modo de profundidad de la M1:* las etapas de los packs usan vistas 1:1, que
+  el prototipo dibuja igual; la M1 (tablas compiladas, planos escalados) queda
+  fuera.
+- *Tren y capas dinámicas (M3, `MSXR`):* mapas que el juego reescribe en
+  tiempo de ejecución; no se pueden pre-renderizar, siguen como celdas.
+
+**Prototipo** (M2 e2, la más sencilla: dos capas, ninguna celda animada).
+`tools/prerender_stage.py render romfs/mission2.pack 2 romfs/m2s2.bgp`
+(privado, `romfs/` no se versiona) escribe las celdas estáticas de cada capa
+por columnas de 16 px (*runs* de celdas consecutivas con una paleta, texeles
+CI4 con la misma disposición de las páginas). `src/scene_prerender.c`
+(solo con `MSX_EXTRA_CFLAGS=-DMSX_BG_PRERENDER=1`; sin la marca no entra en
+la imagen) lee la cabecera al cargar la etapa, reserva tablas y anillos
+(32 columnas por capa) en las ranuras de la etapa en lugar de fijar sus
+fragmentos estáticos, adelanta por DMA asíncrona del PI las columnas que
+entran en el margen y, si una no ha llegado, la lee en el acto (contada).
+`draw_layer_prerender` sube cada *run* con `page_upload` y dibuja un
+rectángulo; las celdas animadas y de parche siguen por su camino.
+
+**Medidas** (ares 146, `mslugx-m2-reference.z64` con `MSX_REFERENCE_DIAG=0`,
+`tools/test_mission2_ares.py`; local: con estos datos privados ese cartucho
+reserva 207 ranuras y falla el mínimo de 208 también sin el prototipo, así que
+las tres compilaciones se midieron con el mínimo bajado a 200, sin publicar).
+- Píxeles: con `-DMSX_BG_CRC=1` cada 97 fotogramas la pasada con columnas se
+  compara con la de recorrido directo + `rdpq_tex_upload_sub`: **140
+  comparaciones iguales, 0 distintas** (M2 e1 8, e2 132, cámara de la e2 0–2368).
+- RAM, e2: fragmentos fijados del mapa 25 → 5 y tablas 22 → 33 ranuras
+  (+11 del anillo, 175 KB): **47 → 38 ranuras (−144 KB)** para la caché de
+  actores; carga de la etapa 328 → 131 ms; lecturas síncronas 0 (232
+  columnas leídas por adelantado en el recorrido). e1: 14 fijados siguen
+  (animadas y parches) + 8 ranuras de anillo: **pierde 128 KB**; en la
+  versión sin prototipo se descarta.
+- CPU, e2 (`MSX BG`, media por fotograma en ventanas de 300): capa 2
+  217 → 79 µs, capa 3 486 → 278 µs (menos rectángulos: *runs* de hasta 16
+  celdas por paleta, sin recorrer índice ni listas); `bg` 1917 → 1746 µs,
+  `cpu` 8523 → 8294 µs, `multi` 17 → 12.
+
+**Recomendación: parcial.** Solo capas sin celdas animadas y que no se
+reescriben: M2 e2 (−9 ranuras, ≈ 0,5 MB de ROM) y, con un anillo 2-D, la
+capa 0 de la torre de la M2 e3 y la capa 1 de la M3 e1 (≈ −8 y −6 ranuras,
+1,1 y 0,5 MB de ROM). No compensa en la M2 e1 ni en capas dominadas por
+celdas animadas (capa 3 de la M2 e3 y de la M3), y la migración completa
+liberaría ≈ 8 ranuras en la etapa peor (la e3 de la M2 fija el
+suelo de la misión): ayuda, pero no saca la RAM del suelo por sí sola.
+
+**En producción** (decisión del usuario: solo donde ahorra). `MSX_BG_PRERENDER`
+vale 1 por defecto. El Makefile genera `build/bgp/` desde los packs privados
+(`tools/prerender_stage.py build`, `PRERENDER_SPECS`: M2 etapa 2 y todas las
+de la M3) y solo copia al cartucho esos ficheros; sin packs no hay ninguno.
+`build` elige por etapa, de forma voraz, las capas cuyas columnas liberan más
+fragmentos de los que cuesta su anillo: M2 e2 capas 2+3 (175 KB), M3 e1 capa 1
+(90 KB; la 3, con 1232 celdas animadas, no ahorra). M2 e1 y e3 se quedan con
+las teselas (en la e3, con columnas enteras, el anillo no compensa; el
+anillo 2-D queda pendiente). La M1 no cambia (no tiene etapa).
+
+Ranuras de los cartuchos de referencia: con los datos de la Misión 3 paso 5
+la M2 y la M3 se quedaban en 207 (3313 KB de 3332). Ahora se piden ≥ 210. Para
+llegar, `10A3` (voz del derrumbe de la cúpula y del destello del cohete,
+43 KB, una vez por partida) y `1034` (destrucción del tanque, el Slugnoid y
+los vehículos de la M3, 34 KB, una vez por vehículo) se leen de `rom:/`, como
+los demás efectos raros (`game_audio.c`): **211 ranuras** (3376 KB) en las
+dos.
+
+Medidas (ares 146, referencias con `MSX_DIAG`):
+- Píxeles con `-DMSX_BG_CRC=1`: en la M2 e2, 130 iguales y 0 distintas
+  (cámara 0–2368); en la M3 e1, 236 iguales y 0 distintas (cámara 0–4393,
+  `test_mission3_ares.py` PASS).
+- M2 e2: mapa fijado 25 → 5 fragmentos, 0 lecturas síncronas.
+- M3 e1: mapa fijado 44 → 31 fragmentos, a cambio de 6 ranuras de anillo.
+
+## Caché de instrucciones: el logo tras la fusión de ccr (12-XI, rama `work-m5`)
+
+**Síntoma.** Tras fusionar ccr `6e0e2d9` en `work-m5` (`2cb2aa0`), `tools/test_logo_ares.py` fallaba siempre igual:
+`late=211`, `cpu_mean_us=11986` (cartucho de `ws-m4`: 7310), 335 fotogramas en 9,15 s. Antes de la fusión, PASS.
+
+**Bisección (una hipótesis cada vez, mismo código, solo se mueve la imagen).**
+
+| Variante sobre `2cb2aa0` | qué se mueve | `cpu_mean_us` | `late` |
+| --- | --- | --- | --- |
+| tal cual | — | 11986 | 211 |
+| 0x32E0 bytes de `.text` entre el juego y libdragon (libdragon ≡ `ws-m4` módulo 16 KB) | código de libdragon y datos | 7148 | 0 |
+| 0x32E0 bytes en `keep.text` (tras todo el código) | solo datos | 11625 | 0 |
+| 0x400 bytes entre el juego y libdragon | código de libdragon y datos | 7215 | 0 |
+
+(Las variantes con relleno no caben en el presupuesto de RAM de la escena: solo valen para el logo.) Es la caché de
+instrucciones (16 KB, mapeo directo, líneas de 32 bytes). Por vértice el logo ejecuta `project`, `metal`, `gradient`,
+`draw_cap`/`draw_sides` y `rdpq_triangle_rsp` de libdragon, que llama a `floor` y `floorf` de libm. libm se compila sin
+`-ffunction-sections`: su `.text` simple va al principio del programa (0x80000800), mientras libdragon va detrás del
+código del juego. Con el tamaño del juego de `2cb2aa0`, `floorf` (0x80000BB0) y `rdpq_triangle_rsp` (0x801349C0)
+compartían 9 conjuntos de la caché y se expulsaban en cada vértice. 0x400 bytes bastan para separarlos.
+
+Quedaba un segundo efecto, en la caché de datos (8 KB, mapeo directo): con el arreglo de abajo `cpu_mean_us` era 8744,
+y 7103 con 0x400 bytes solo en los datos. `TRIFMT_ZBUF_SHADE` (`.rodata` de libdragon, 0x801D5D48) caía en las mismas
+líneas que el marco de pila de `rdpq_triangle_rsp` (0x807FFCD8..0x807FFDC0, fijo en lo alto de la RAM), y se lee en
+cada triángulo.
+
+**Corrección.**
+- `floor` y `floorf` se sacan de `libm.a` del propio toolchain y se enlazan con su sección renombrada a
+  `keep.text.libm_*` (`LIBM_KEEP_OBJS` en el Makefile; mismo código máquina, solo cambia la sección), primeros del
+  bloque `keep.text`, que el guion de enlace pone detrás de todo.
+- Todo `src/neogeo_logo.c` va a `keep.text.neogeo_logo`. Así el camino por vértice entero (logo, `floor`, `floorf`,
+  `rdpq_triangle_rsp`) queda a una distancia fija entre sí: ya no depende del tamaño del código del juego.
+- Las dos copias de color por arista son asignaciones (antes `memcpy`, que está al principio del programa).
+- El logo pasa a `rdpq_triangle` una copia de `TRIFMT_ZBUF_SHADE` en su propia pila, contigua al marco de
+  `rdpq_triangle_rsp`.
+
+Resultado en ares (`--skip title,entry`): 6911, 6996, 6958 y 6938 µs con el cartucho tal cual, con 0x400 bytes solo
+en los datos, y con 0x400 y 0xA60 bytes antes de libdragon. `late=0` en las cuatro. La prueba completa del logo da
+PASS con 6876 µs (`late=0`).
+
+**Lo que lo detecta.** `tools/check_icache.py` se ejecuta tras enlazar `mslugx-explorer` y `mslugx-m1end` (regla
+`$(BUILD_DIR)/%.icache`, de la que depende cada `.z64`). Falla si dos funciones del camino por vértice ocupan el mismo
+conjunto de la caché de instrucciones en líneas distintas, o si llaman a código de fuera del camino (permitidos:
+`rspq_next_buffer`, una vez por búfer, y el `memset` de entrada de `draw_sides`, una vez por fotograma, que pone
+`-ftrivial-auto-var-init=pattern`). Con el ELF de `2cb2aa0` informa de las 9 líneas compartidas entre
+`rdpq_triangle_rsp` y `floorf`.
+
+## Superposiciones de código: los cuatro jefes de misión comparten una región (19-XI, rama `work-mem`)
+
+**Problema.** Con `neo_m6boss.c` (44 KB de código a `-Os`) residente, ares arrancaba con 3307 KB para la caché de
+escena y el suelo es 3332 KB (208 ranuras): el módulo estaba apagado en el cartucho (`MSX_M6BOSS`=0, `docs/MISION6.md`).
+
+**Medida** (`mips64-elf-size` por objeto, `-Os`; texto+`.rodata`, sin datos escribibles salvo la tabla constante
+`d[4]` de `neo_m6boss` en `.sdata`): `neo_m3enemy` 136 KB, `neo_m6boss` 44 KB, `neo_m3boss` 30 KB, `neo_m4boss` 25 KB,
+`neo_m5boss` 21 KB, `neo_m6enemy` 22 KB, `neo_m6props` 23 KB. `neo_m3enemy` no sirve: `neo_m5mech.c` llama a su
+`neo_m3enemy_death_40846` y `neo_m6boss.c` a `neo_m3enemy_death_406b6` (código compartido entre misiones). Los cuatro
+jefes exportan solo dos funciones (`neo_mXboss_routine`, `neo_mXboss_tick`), no tienen `.data`/`.bss`, no guardan
+punteros a su propio código o datos fuera de la llamada (las retrollamadas a `ga_anim_step` son síncronas; ninguna
+reubicación `R_MIPS_32` fuera de la depuración), y solo los llama `neo_region_tick`. Es el mínimo que basta: una
+región del tamaño del mayor (`neo_m6boss`) y los otros tres gratis.
+
+**Mecanismo** (solo en la consola; el anfitrión enlaza todo como antes, `make check` no cambia):
+- `src/msx_overlay.c`: `msx_overlay_region[43824]` en `.bss` (alineada a 32). `neo_region_tick` llama a los jefes por
+  `msx_overlay_tick(id)`, que copia la imagen del jefe a la región si no está (DMA desde la ROM, `inst_cache_hit_invalidate`)
+  y llama a su `tick`. El programa principal ya no referencia los `_tick`: `--gc-sections` los quita y deja las
+  `_routine` (que todo despacho consulta). `actor.c` (`enter_mission`) precarga el jefe de la misión 3..6 tras el
+  paquete, en los fotogramas negros de la carga. Una copia pedida mientras corre código de la superposición
+  (reentrada por `neo_region_tick` hacia otro jefe) es una aserción; nunca se sobrescribe código en uso.
+- `tools/link_overlays.py`, en la regla `.z64` (la de libdragon con un paso más): enlaza cada jefe en la dirección de
+  la región contra los símbolos del ELF recién enlazado (`--just-symbols`), a partir del mismo `.o` que usó el
+  enlace principal (lo lee del mapa: `build/src` o `build/diag`); solo `_tick` queda global (lo demás se enlaza local).
+  Las imágenes van al rompak como `<elf>.ovl` tras el DFS (`rompak_search_ext`); el cargador comprueba firma,
+  dirección y tamaño de la región. Los ELF de cada imagen se guardan (`build/<cart>.elf.neo_mXboss.elf`) para `addr2line`.
+- Los cuatro objetos se compilan `-G0` (sin datos relativos a `$gp`; la herramienta falla si queda alguna reubicación
+  `GPREL`). Lo que llaman en el programa principal se conserva con la lista `EXTERN` (`build/ovl-src.externs`,
+  `build/ovl-diag.externs`: los símbolos que dejan sin definir); si faltase uno, el enlace de la superposición falla.
+- Tamaño de la región exacto (`MSX_OVERLAY_BYTES`, `src/msx_overlay.h`): si un jefe crece, el enlace falla con el
+  tamaño de cada imagen y hay que subir la constante.
+
+| Imagen del programa (`mslugx-explorer.elf`) | Antes (`bcc3849`, sin `neo_m6boss`) | Después (con `neo_m6boss`) |
+| --- | ---: | ---: |
+| texto (+`.rodata`) | 1.383.272 B | 1.310.248 B |
+| datos | 564.772 B | 565.340 B |
+| bss | 285.692 B | 329.628 B (región 43.824 B) |
+| **total** | **2.233.736 B** | **2.205.216 B (−28,5 KB)** |
+
+Imágenes (release y diag iguales): `neo_m3boss` 30.160 B, `neo_m4boss` 24.704 B, `neo_m5boss` 20.912 B,
+`neo_m6boss` 43.824 B. Frente a tener `neo_m6boss` residente (+44 KB sobre «antes») son ~72 KB menos.
+
+**Arranque en ares** (`tools/test_logo_ares.py`, `mslugx-explorer.z64` con `neo_m6boss`): PASS, `late=0`,
+`cpu_mean_us=7014`; `MSX MEM scene cache ... cache=3360 KB` (**210 ranuras**, suelo 3332 KB / 208; antes 3307 KB
+con el jefe residente). `tools/check_icache.py`: sin líneas compartidas en `mslugx-explorer` ni `mslugx-m1end`.
+`make check`: verde (311 PASS, 0 FAIL; el anfitrión no cambia).
+
+**Matriz completa** (`tools/regression_ares.py`, 19/20-XI, `mslugx-explorer.z64` + `mslugx-m1end.z64` de `42d49b7`,
+contra `data/regression_baseline.json`): `logo`, `pause`, `chars`, `options`, `m4`, `m5s1`, `m5s2`, `m5s3`, `m5boss`,
+`m6s1`, `m6s1end`, `m6s2`, `m6s2end`, `m6s3`, `veh` y `m1m2` PASS; ninguna aserción. Cada jefe se copia una vez
+(`MSX OVL 1`: 24 704 B en 4,8 ms; `MSX OVL 2`: 20 912 B en 4,1 ms; `MSX OVL 3`: 43 824 B en 8,5 ms, en los fotogramas
+negros de la carga); en `m4boss` la M4 y luego la M5 (2 copias en todo el recorrido, sin vaivén). `m6s3`: el
+constructor `04153E` ya es nativo en la consola (`native 1`), caché 3376 KB. Dos diferencias con la base, **comprobadas
+con el cartucho de control `bcc3849`** (sin superposiciones, mismos paquetes, misma pantalla):
+- `m4boss` FAIL en ambos (rama: `missing_draw` 3818; control: 4897; base 2061): el jefe cae y la M5 empieza, pero el
+  mando ciego baja del SV-001 antes de recibir un golpe (`hit while mounted False`), y los dibujos sin descriptor tras
+  `16929E` son el fallo abierto de `docs/FALLOS.md` (M4 con BLOOD OFF). No es de esta rama.
+- `m5boss` PASS con `missing_draw` 42 (control: 8): los 34 de más son la paleta `20C` (la llama final `099268` del
+  soldado quemado, sin captura: pendiente de `docs/MISION5.md`), que solo aparece si un soldado quemado llega a ella
+  en esa pasada (en el control ninguno llegó). El soldado quemado es código de `neo_m5boss` (`burnt_tick`), el mismo
+  objeto en la superposición y en el anfitrión (`make check`, familias `m5boss*`); la paleta falta en el paquete, no en el código.
+La línea base no se reescribe (`m4boss` sigue abierto).
+
+**20-XI (agente S): `work-chars` unido.** `neo_m6boss` crece a **62 240 B** (la muerte `04180A..`, la huida `04677A` y
+el combate de fondo `037404`): `MSX_OVERLAY_BYTES` = 62240; las otras tres imágenes no cambian (30 160 / 24 704 /
+20 912). Programa `mslugx-explorer.elf`: texto 1 323 240, datos 566 244, bss 348 204 (con la región de 62 240). Arranque
+en ares: `MSX CACHE slots=208..209 (3328..3344 KB, floor 208)`: **queda una ranura de margen como mucho** (antes 210).
+El siguiente módulo que crezca necesita memoria: candidatos medidos (`mips64-elf-size`, sin datos escribibles, una sola
+misión): `neo_m3mid` 23 KB (M3), `neo_m6enemy` 22 KB y `neo_m6props` 23 KB (M6; cabrían junto al jefe solo con una
+segunda región), `neo_ending` 12 KB (tras la M6). No hecho en esta sesión.
+
+## Caché de escena intermitente: la precarga de `fixed.bin` cortada (B81, 21-XI, `work-mem`)
+
+Síntoma (otro agente): un arranque paró en `scene_assets.c:506` («RAM budget: 3224 KB left for the scene cache
+(minimum 3332 KB)») y el mismo cartucho, repetido, arrancó con 209 ranuras. Registros comparados (`ezo_fail1` frente a
+`ezo`/`ezoff`): en el fallo Start cortó las películas de arranque (HOW TO PLAY con 39 fotogramas dibujados), la caché no
+empezó antes («begun early» ausente) y la reserva salió en 1216 KB frente a 962 KB.
+
+Causa (código): `msx_ramfs_preload("fixed.bin")` es lo primero de la cola de precarga (`main.c`), y `fixed.bin` nunca
+pasa por `msx_ramfs_load` (el HUD usa `msx_ramfs_data` o lee la ROM). Si la lectura en segundo plano había empezado y no
+acabado cuando `game_audio_init` llama a `msx_ramfs_preload_end`, la cola se liberaba con el búfer de 128 KB ya
+reservado y sin nadie que lo apuntara: 128 KB perdidos para siempre, y el HUD reservaba otra copia; además
+`scene_assets_game_preloaded` no lo contaba, así que la reserva del juego seguía incluyéndolo. Depende del fotograma en
+que llega Start respecto a la lectura: intermitente.
+
+Arreglo: `msx_ramfs_preload_end` termina (lectura síncrona del resto) y publica toda precarga empezada; `main.c` cuenta
+lo precargado **después** de `game_audio_init`. Sin pérdida: los mismos bytes, una sola copia.
+Cuenta del peor arranque registrado con el arreglo: 3224 + 128 (sin la fuga) + 128 (ya no reservado) = 3480 KB → 216
+ranuras de 16 KB más registros (≥ 8 sobre el suelo de 208). **Pendiente de medir en ares** (la máquina está cargada;
+orden del coordinador): arranque con Start inmediato y arranque normal, líneas `MSX CACHE slots=` y `MSX MEM audio`.
+La región de superposición (62 432 B) es el tamaño de `neo_m6boss` (la mayor); no se ha reducido.
+
+## Carril de optimización: inventario y segunda región de superposición (26-XI, rama `work-opt`)
+
+**Inventario medido** (`build/mslugx-explorer.map` tras `--gc-sections`, base ccr `da031c2`, mismos datos privados que
+el cartucho de `ws-m4`, 66 682 880 B). Programa: texto 1 329 952 B, `.rodata` 513 358 B, datos 16 197 B, bss
+355 721 B. Los mayores:
+
+| Módulo | texto | `.rodata` | bss | Nota |
+| --- | ---: | ---: | ---: | --- |
+| `neo_m3enemy` | 135 876 | 712 | 0 | compartido M3/M5/M6 (`neo_m5mech`, `neo_m6boss` llaman a sus muertes): residente |
+| `neo_world` | 61 120 | 14 022 | 4 964 | bucle del mundo (caliente) |
+| `gameplay` | 43 200 | 866 | 2 | |
+| `neo_boss` | 36 240 | 31 080 | 716 | |
+| `neo_heli` | 35 452 | 256 | 0 | |
+| `neo_soldier_ai` | 32 800 | 1 574 | 16 | |
+| `scene_renderer` | 32 704 | 132 | 32 592 | |
+| `actor` | 25 312 | 38 | 85 309 | `game` 83 680 B |
+| `scene_assets` | 23 648 | **267 639** | 14 681 | tablas generadas: `scene_images` 104 640, `scene_native_descriptors` 49 104, `scene_map_images` 47 352, `scene_map_cells_data` 35 832, `scene_chunks` 16 608 |
+| `main` | 6 644 | 50 348 | 96 | `marco_commands` 25 910, `marco_parts` 9 228, `marco_poses` 8 928 |
+| `neo_region` | 4 164 | 50 430 | 1 905 | |
+| `program_file` | 1 144 | 0 | 115 139 | `arena` 114 688 B |
+| libc `_vfprintf_r`+`_svfprintf_r` | 20 836 | | | los registros `debugf` de los que vive la matriz: no se quitan |
+
+Código de una sola misión que seguía residente (texto+`.rodata` de cada `.o` a `-Os`, sin `.data`/`.bss` y sin
+punteros a sí mismos guardados fuera de la llamada): M2 `neo_m2boss`, `neo_m2props`, `neo_m2traps`, `neo_m2creature`;
+M3 `neo_m3mid`, `neo_m3veh`, `neo_m3props`; M4 `neo_m4props`, `neo_m4veh`; M5 `neo_m5enemy`, `neo_m5mech`,
+`neo_m5props`, `neo_m5sewer`, `neo_m5train`; M6 `neo_m6enemy`, `neo_m6props`. Solo `neo_region_tick` llama a sus
+`_tick`; en el programa quedan las `_routine` (y `neo_m4props_reset`, `neo_m2gate_routine`, `neo_layerobj_*`, que no
+tienen estado).
+
+Montón al arrancar (arranque normal, `MSX MEM`): pantalla 459 KB, logo +175, título/entrada (liberados al acabar),
+efectos residentes 956 KB (110 ficheros), caché de escena el resto menos la reserva de juego (576 KB = reserva 320 +
+margen 256).
+
+**Cambio.** Segunda región (`msx_overlay_code_region`, 76 016 B = la imagen de la M5) con una imagen por misión
+(`m2code`..`m6code`, varias `_tick` por imagen: cabecera de 36 B con hasta 5 entradas, ranura fija por módulo en
+`neo_region.c`); `msx_overlay_mission` copia el jefe (región 0) y el código de la misión (región 1) en los fotogramas
+negros de la carga. La región 0 sube 16 B (cabecera). Mecanismo igual que el de los jefes (`-G0`, `--just-symbols`,
+`EXTERN`); el anfitrión no cambia.
+
+| | Antes (`da031c2`) | Después |
+| --- | ---: | ---: |
+| texto (+`.rodata`) | 1 845 892 B | 1 616 020 B |
+| datos | 16 424 B | 16 360 B |
+| bss | 356 036 B | 432 180 B (regiones 62 448 + 76 016) |
+| **programa** | **2 218 352 B** | **2 064 560 B (−150 KB)** |
+| montón (`MSX MEM display`) | 5961 KB | 6111 KB |
+| caché, Start desde el primer fotograma | 208 ranuras (3328 KB) | **218** (3488 KB) |
+| caché, arranque normal | 208 ranuras | **218** |
+| cartucho | 66 682 880 B | 66 535 424 B |
+
+Imágenes: `m2code` 35 296, `m3code` 46 448, `m4code` 34 896, `m5code` 76 016, `m6code` 44 416; jefes 30 192 /
+24 736 / 20 928 / 62 448, final 20 768. El zoom del final (~14 KB) cabe en la imagen `neo_ending` (región 0: 20 768 +
+14 KB < 62 448) sin tocar el programa principal.
+
+Pendientes medidos, no hechos: las tablas de `scene_assets` (≈270 KB de `.rodata` en RAM) podrían leerse del
+cartucho por trozos (≈16 ranuras), pero se consultan en el dibujo: hace falta medir el coste por fotograma antes;
+`neo_m3enemy` (136 KB) solo se puede partir separando las dos muertes compartidas.
+
+## Reloj de la simulación: el original ralentiza, no recupera (B88, B90, B92)
+
+### El bucle del 68K (P-ROM de `mslugx`, desensamblado de MAME 0.264)
+
+    0036EE  IRQ de vblank: move.b 10F009,d0; addq.b #1,d0; bcs 003702; move.b d0,10F009
+    003A42  move.b 10F009,10008A     ; vblanks que duró la vuelta anterior
+    003A48  move.b #0,10F009         ; el contador se borra al empezar la vuelta
+    003A58  jsr 0026FA / jsr 03CB3A  ; mandos (una lectura por vuelta) ... actualización
+    003AE0  cmpi.b #2,10F009 / bcs 003AE0   ; espera a que pasen 2 vblanks
+    003AE8  bra 003A42
+    (en pausa, 003A80: tst.b 10F009 / beq: espera 1 vblank por turno)
+
+- Una actualización dura **al menos 2 vblanks**; si su trabajo dura más, la
+  siguiente empieza en cuanto acaba y `003A48` borra los vblanks de más. No
+  hay deuda: el juego **se ralentiza** y no acelera después.
+- El único lector de `10008A` es `003B4C` (llamado desde `059FA8`, una
+  espera de esa tarea): ninguna lógica escala por los vblanks perdidos.
+  Búsqueda de `0010008A`, `(808A,A5)`, `7009` y `00003B4C` en P1 y P2
+  (P2 con los bytes de cada palabra intercambiados, como lo carga MAME).
+- En MAME 0.264 (`docs/TAS.md`): en todo el TAS hay 23159 vueltas de 2
+  vblanks, 3300 de 3 y 288 de 4 o más; el TAS solo sincroniza por
+  actualización, no por fotograma, justamente porque las vueltas largas no
+  se compensan.
+
+### El port
+
+`src/scene_clock.h` conservaba la deuda (hasta 8 pasos por llamada y
+`scene_clock_defer` para los que pasaban de 2): tras cada fotograma lento
+los siguientes corrían dos pasos por fotograma hasta pagarla. Esa era la
+aceleración (B88). Ahora `scene_clock_steps(..., limit)` da como mucho
+`MSX_FRAME_STEPS` = 2 pasos (una actualización del original, `003AE0`) y
+**descarta los vblanks enteros de más**, como `003A48`; solo queda la
+fracción del vblank siguiente (el vblank llega a su hora). Sin constantes
+nuevas: 2 es el `cmpi.b #2` de `003AE0`. Prueba: `tools/test_scene_clock.c`
+(en `make check-core`), que compara con un modelo del bucle del original
+(fotogramas de 3 vblanks: una actualización cada 3 vblanks; fotograma de 1 s:
+un solo paso doble y ninguna recuperación después).
+
+### Picos de `sim` (m5s2)
+
+Medido con sondas temporales (no integradas) en ares:
+
+- El `sim` de 1 077 440 µs es el primer fotograma de la prueba: el salto de
+  `MSX_REFERENCE_START_MISSION` (carga del paquete de la M5, `enter_mission`)
+  que cae en la fase `sim` de `MSX PERF` (todo `actor_draw` hasta el último
+  paso). El de 297 046 µs es el reinicio tras GAME OVER. Son cargas, no
+  juego; el reloj ya se reiniciaba después (`scene_clock_reset`).
+- En juego (cámara 80, saltando y disparando, B90): la actualización del
+  mundo (`neo_world_tick`) llega a 8,6–9,6 ms en un paso par, casi todo en el
+  bucle de actores (`run_gactor`, 8–9 ms con unos 20 actores genéricos:
+  0,2–0,9 ms cada uno; ninguno domina). `neo_kernel_sweep` ≈ 70 µs por
+  llamada (15–23 por paso), `ga_air_kind` ≈ 120 µs, `ga_anim_step` ≈ 50 µs.
+  Compilar `neo_gactor.c` y `neo_region.c` con `-O2` en vez de `-Os` no
+  cambió la cifra (8,0–8,7 ms): no se integró. Con el fondo (5–10 ms) el
+  fotograma pasa de 16,9 ms y sale `multi`.
+
+### 59,19 Hz frente al VI de la N64 (medido; decidido: opción 3)
+
+Ventanas estables de la matriz `gates4` (124 con `multi=0`): 84 con 297
+pasos y 37 con 296 por 300 fotogramas → 0,98897 pasos por fotograma, es
+decir un VI de 59,846 Hz en ares frente a 59,185606 Hz de la Neo Geo
+(6 MHz / 384 / 264). Un fotograma sin paso cada ≈ 91 fotogramas (≈ 1,5 s).
+Opciones:
+
+1. Dejarlo así: velocidad exacta del original; una imagen repetida cada
+   ≈ 1,5 s (tirón periódico).
+2. Un paso por VI: imagen fluida, juego un 1,1 % más rápido que el
+   original (la música, que va por su cuenta, se desfasa de los eventos).
+3. Programar el VI a la frecuencia de la Neo Geo (registros de sincronismo
+   del VI): fluido y exacto, pero fuera de norma NTSC; habría que probar
+   televisores, MiSTer y emuladores.
+
+### VI a la frecuencia de la Neo Geo (opción 3, elegida por el usuario)
+
+`src/msx_vi.h` / `src/msx_vi.c`: tras cada `display_init` se reescriben
+`VI_V_SYNC`, `VI_H_SYNC` y `VI_H_SYNC_LEAP` (solo NTSC; PAL y MPAL quedan
+con el preajuste de libdragon y el reloj de CPU).
+
+Derivación (sin valores a ojo):
+- Neo Geo, MAME 0.264 (`neogeo.h`, `set_raw` de `neogeo.cpp`): reloj de
+  píxel 24 MHz / 4, 384 píxeles por línea, 264 líneas por campo →
+  6 000 000 / 101 376 = **59,185606 Hz**.
+- VI NTSC: reloj 48 681 812 Hz; una línea dura `H_SYNC + 1` relojes (el
+  preajuste NTSC de libdragon, 0xC15, da 3094 relojes = 15 734,26 Hz, la
+  línea NTSC) y un campo progresivo `(V_SYNC + 1) / 2` líneas (0x20D → 263
+  líneas, 59,826 Hz).
+- Un campo debe durar 48 681 812 / 59,185606 = 822 527,9 relojes. Buscando
+  todas las combinaciones de 261..270 líneas y 3000..3200 relojes, la más
+  cercana es **265 líneas × 3104 relojes = 822 560**: `V_SYNC = 529`
+  (0x211, dos líneas más de blanking vertical), `H_SYNC = 3103` (0xC1F, diez
+  relojes más de blanking horizontal; anchura de sincronismo y patrón de leap
+  0 como en NTSC), `H_SYNC_LEAP = 0x0C1F0C1F` (las dos longitudes de leap
+  iguales a la línea: ninguna línea del campo es distinta).
+- Resultado: **59,183296 Hz**, 39 ppm (−0,0039 %) más lento que la Neo Geo:
+  un paso doble cada 25 621 campos (≈ 7,2 min). La siguiente candidata,
+  263 líneas (geometría vertical intacta) de 3127 o 3128 relojes, queda a 154
+  o 165 ppm y alarga la línea un 1,1 %. No se puede afinar más: los registros
+  son enteros (líneas enteras, relojes enteros por línea); la única
+  granularidad más fina sería el leap, que el hardware solo aplica a las
+  líneas de sincronismo vertical con un patrón de 5 campos poco documentado
+  y que ares 146 ignora (`vi.cpp` calcula `lineDuration` con el leap pero
+  avanza `quarterLineDuration`), así que no se puede medir ni probar.
+- Ventana visible, escalas, burst y `V_INTR` sin cambio (los de libdragon).
+- `scene_clock_rate_steps` cuenta campos del VI con la razón exacta
+  401 640 625 / 401 624 949 (pasos de la Neo Geo por campo); sigue sin deuda
+  (como 003A48: como máximo 2 pasos, los vblanks de más se tiran).
+  `tools/test_scene_clock.c` comprueba la razón contra los registros y 25 000
+  campos seguidos con exactamente un paso cada uno.
+
+Riesgos: línea a 15 683,6 Hz (−0,32 % frente a NTSC) y campo de 265 líneas
+(la Neo Geo usa 264): dentro de lo que aceptan los televisores de 60 Hz y la
+Neo Geo misma, pero fuera de la norma NTSC; sin probar todavía en MiSTer ni
+en televisores (lo confirma el usuario). ares usa 48 681 818 Hz y `H_SYNC`
+sin el +1: allí el campo es 59,2024 Hz (0,99972 pasos por campo, un
+fotograma sin paso cada ≈ 3530 campos). `src/neogeo_logo.c` (logo con
+`VI_HZ 59.826`) y los bucles de `main.c`/`mission_main.c`/`title_intro.c`
+cuentan tiempo de CPU, no campos: su duración no cambia.
+
+Medida (ares, `:96`, `m5s2`, `pause`, `m6s1`, todas PASS, mismos recuentos
+que la referencia): `m5s2`, 9 ventanas estables con `multi=0` y **300 pasos
+por 300 fotogramas** (antes 295..298: un fotograma sin paso cada ≈ 91);
+`m6s1`, 7 ventanas de 600/300 (cada fotograma dura dos campos; antes
+586..596); `pause`, una ventana estable de 300/300 (antes 297). Caché de
+escena 216 ranuras.
+
+### Resultados (ares, matriz completa salvo `m4boss`, frente a `gates4`)
+
+- `make check`: todo pasa salvo los 2 pasos bloqueados por datos
+  (`test_bgp_share.py`, `check_mission_descriptors.py 6`); `check-core` pasa
+  (incluye `test_scene_clock`). Caché de escena: **216 ranuras** en los dos
+  arranques (normal y con Start).
+- Matriz: todas PASS; `pause` pasa (en `gates4` fallaba). `m6s2end` da 698
+  `native draw missing` (456 en `gates4`): las mismas entradas, más
+  fotogramas (142 ventanas frente a 134), porque ya no se recupera.
+- `multi` (fotogramas con dos pasos, suma de la prueba), antes → después:
+  m5s1 700 → 556, m5s2 67 → 57, m5s3 1527 → 1419, m6boss 21405 → 17395,
+  m6s1end 1989 → 1470, m6s2end 24876 → 16906, slugnoid 4627 → 4448,
+  pause 15 → 12; m4 348 → 351, m6s1 2399 → 2625, veh 270 → 335,
+  ending 276 → 317. **No llega a 0**: los fotogramas que duran más de un
+  vblank de la Neo Geo (mundo + fondo > 16,9 ms) siguen corriendo dos pasos,
+  y eso es lo que haría el original (una actualización = 2 vblanks); lo que
+  ya no hay es la tanda de pasos dobles para pagar la deuda.
+- `sim` máximo, sin cambio (1 076 901 µs en m5s2): es la carga del salto de
+  misión de la prueba, no juego.

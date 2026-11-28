@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../src/neo_hud.h"
+#include "../src/neo_vslot.h"
 #include "hud_fixture.h"
 
 static unsigned hexbyte(const char *s) {unsigned v;sscanf(s,"%2x",&v);return v;}
@@ -63,11 +64,7 @@ int main(void) {
             uint32_t routine=(uint32_t)hexbyte(s+142)<<24|(uint32_t)hexbyte(s+144)<<16|(uint32_t)hexbyte(s+146)<<8|hexbyte(s+148);
             uint8_t f5f=(uint8_t)hexbyte(s+150);
             in.timer_running=routine!=0x3f1e&&!(f5f&0x80)&&(f[7]&0x80)&&!f[8]&&f[3]&&!f[1]&&!f[9];
-            if (slot[0]|slot[1]) {
-                uint8_t kind=slot[0x21];
-                in.gauge=kind==1||kind==3||kind==4||kind>=8;
-                in.gauge_health=(uint16_t)(slot[0x18]<<8|slot[0x19]);in.gauge_max=(uint16_t)(slot[0x14]<<8|slot[0x15]);
-            }
+            in.gauge=neo_vslot_gauge(slot,0,&in.gauge_health,&in.gauge_max);   /* 0AAAE0 */
             neo_hud_frame(&h,&in);
             if (v->frozen) h.timer=(uint16_t)(0x5a00|(h.timer&0xff));
             /* Script spawns 01913C run after the mission actor's count-down

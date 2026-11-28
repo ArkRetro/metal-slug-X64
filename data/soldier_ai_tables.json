@@ -534,6 +534,18 @@
   "klass": 0,
   "damage": 16
  },
+ "attack_wait": {
+  "rom": "0xae9b0",
+  "rect": [
+   -16,
+   8,
+   32,
+   32
+  ],
+  "kind": 19,
+  "klass": 1,
+  "damage": 0
+ },
  "pistol": [
   {
    "rom": "0x1b4c2",
@@ -861,6 +873,28 @@
    4,
    16,
    28
+  ]
+ },
+ "player_crouch_hurtbox": {
+  "rom": "0x2d0ab4",
+  "type": 5,
+  "flags": 1,
+  "rect": [
+   -8,
+   0,
+   19,
+   14
+  ]
+ },
+ "player_jump_hurtbox": {
+  "rom": "0x2d0ac0",
+  "type": 5,
+  "flags": 1,
+  "rect": [
+   -10,
+   14,
+   17,
+   24
   ]
  },
  "hit_matrix": {
@@ -4700,6 +4734,7 @@
    "0x320": "0x000403A0",
    "0x338": "0x0009F682",
    "0x340": "0x00033C98",
+   "0x348": "0x00029184",
    "0x354": "0x8003FC5A",
    "0x358": "0x800400AA",
    "0x36c": "0x8001913C",

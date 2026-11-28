@@ -10,7 +10,7 @@ static uint16_t lw(const neo_camera_t *c,unsigned o) {
 }
 static uint32_t ll(const neo_camera_t *c,unsigned o) {return (uint32_t)lw(c,o)<<16|lw(c,o+2);}
 static void event(neo_camera_t *c,uint8_t kind,uint32_t address,uint16_t value) {
-    if (c->event_count<NEO_CAMERA_EVENTS) c->events[c->event_count++]=(neo_camera_event_t){kind,address,value,neo_camera_progress(c)};
+    if (c->event_count<NEO_CAMERA_EVENTS) c->events[c->event_count++]=(neo_camera_event_t){kind,address,value,neo_camera_progress(c),c->command};
     else c->event_dropped++;
 }
 void neo_camera_init(neo_camera_t *c,const uint8_t *list,uint16_t size,uint32_t base) {
@@ -125,7 +125,23 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
                 if (d7>c->progress) return;
             } else if (op==8) {
                 set_target(c,(uint32_t)lw(c,a+4)<<16);c->held=true;return;
-            } else {c->unsupported++;c->unsupported_at=c->list_base+a;return;} /* op 4: 0C84BE not used */
+            } else {
+                /* 0C84BE (Mission 2's lists): wait until every present
+                 * player's +3C/+40 is inside the rectangle (+8/+A relative
+                 * to the layer object's +14/+18, size +C/+E). The layer is
+                 * 10C72E in every list; its +14/+18 are the scene root's
+                 * words (run4 RAM: -camera x and 256 - camera y). */
+                int16_t lx=(int16_t)((uint32_t)NEG(c->x)>>16),ly=(int16_t)((0x01000000u-(uint32_t)c->y)>>16);
+                uint16_t d2=(uint16_t)(lw(c,a+8)+(uint16_t)lx),d3=(uint16_t)(lw(c,a+10)+(uint16_t)ly),w=lw(c,a+12),h=lw(c,a+14);
+                bool in[2],any=false;
+                for (unsigned i=0;i<2;i++) {
+                    /* 0C8524: +5F bit 7 clear, +15 bit 6 set (on the ground), then the rectangle
+                     * (Mission 4, 0E757A: MAME waits for the landing, run4 152253). */
+                    in[i]=!c->op4_players[i].alive || (c->op4_players[i].rect_ok && (uint16_t)(c->op4_players[i].px-d2)<w && (uint16_t)(c->op4_players[i].py-d3)<h);
+                    any|=c->op4_players[i].alive;
+                }
+                if (!any || !in[0] || !in[1]) return;
+            }
         } else switch (op) {
         case 0x0c: event(c,NEO_CAMERA_EV_PALETTE,ll(c,a+4),0);break;
         case 0x10: c->mode=lw(c,a+4);break;
@@ -133,16 +149,22 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
             c->path_x=(int32_t)((uint32_t)lw(c,a+4)<<16);c->path_y=(int32_t)((uint32_t)lw(c,a+6)<<16);
             c->x=c->path_x;c->y=c->path_y;event(c,NEO_CAMERA_EV_REBASE_LAYER,0,0);break;
         }
-        case 0x18: case 0x1c: case 0x20: case 0x24: case 0x28: case 0x44: case 0x48:
+        case 0x1c: event(c,(uint8_t)op,ll(c,a+4),lw(c,a+8));break;   /* 0C86C8: +26 (x factor) of the layer */
+        case 0x18: case 0x20: case 0x24: case 0x28: case 0x44: case 0x48:
             event(c,(uint8_t)op,ll(c,a+4),0);break;
-        case 0x2c: event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),0);break;
+        case 0x2c:
+            /* 0C8764 calls the routine with A0 = the command + 8. 0B8EBC
+             * (Mission 3: the bridge 122145, the gap 123924..126262, the
+             * end 132302/141008): MOVE.L (A0),6960 = the autoscroll y. */
+            if (ll(c,a+4)==0x0B8EBCu) c->auto_vy=(int32_t)ll(c,a+8);
+            event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),lw(c,a+8));break;   /* value: the word at A0 (0BA8BA's index) */
         case 0x30: for (unsigned i=0;i<4;i++) c->bounds[i]=(int16_t)lw(c,a+4+2*i);break;
         case 0x34: *p8=lw(c,a+4);*pa=lw(c,a+6);break;
-        case 0x38: event(c,NEO_CAMERA_EV_SOUND,0,lw(c,a+4));break;
+        case 0x38: event(c,NEO_CAMERA_EV_ANIM_SPEED,0,lw(c,a+4));break;   /* 0C85AC -> 002802 */
         case 0x3c: for (unsigned i=0;i<4;i++) c->layer_flags[i]=(uint8_t)(lw(c,a+4+(i&2))>>((i&1)?0:8));event(c,NEO_CAMERA_EV_LAYER_FLAGS,0,0);break;
         case 0x40: c->auto_mode=(uint8_t)(lw(c,a+4)>>8);break;
         case 0x4c: event(c,NEO_CAMERA_EV_GRAPHICS,ll(c,a+4),0);break;
-        case 0x50: break; /* RAM 10C00E long: not read by the ported code */
+        case 0x50: c->l400e=ll(c,a+4);break; /* RAM 10C00E long: the cell group map (neo_world) */
         case 0x54: if (((uint32_t)c->restart<<16)>=c->target) event(c,NEO_CAMERA_EV_COND_CALL,ll(c,a+4),0);break;
         case 0x58: if (((uint32_t)c->restart<<16)<c->target) event(c,NEO_CAMERA_EV_COND_CALL,ll(c,a+4),0);break;
         default: c->unsupported++;c->unsupported_at=c->list_base+a;return;
@@ -205,6 +227,7 @@ void neo_camera_finish(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
     neo_camera_commands(c,p8,pa);
 }
 void neo_camera_update(neo_camera_t *c,const neo_camera_player_t players[2],bool follow,uint16_t *p8,uint16_t *pa) {
+    for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=players[i].alive;c->op4_players[i].px=players[i].px;c->op4_players[i].py=players[i].py;c->op4_players[i].rect_ok=players[i].rect_ok;}
     neo_camera_track(c,players,follow,*p8,*pa);
     neo_camera_finish(c,p8,pa);
 }

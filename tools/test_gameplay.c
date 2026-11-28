@@ -8,7 +8,9 @@
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
 #include "../src/scene_cull.h"
+#include "../src/neo_soldier_ai.h"
 #include "../src/neo_region.h"
+#include "../src/neo_pause.h"
 #include "scene_meta.h"
 /* Every native draw must find its descriptor and logical palette in the
  * scene pack (src/actor.c and boss_renderer.c log "native draw missing"
@@ -51,7 +53,7 @@ static int armored_x(const msx_game_t *g) {
 static void release_run(unsigned seed) {
     static msx_game_t g;unsigned steps;
     unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
-    unsigned hold=0,hold_max=0,arena_lives=0;
+    unsigned hold=0,hold_max=0,arena_lives=0,death_voices=0;
     for (steps=0;steps<80000 && !g.complete;steps++) {
         /* Camera stop 1304: the script waits at 2D67CA for the armoured
          * vehicle 087E36 (group 1) and the prone soldier riding it. */
@@ -93,8 +95,11 @@ static void release_run(unsigned seed) {
              * into the arena (the captures' deaths were all at 3520). */
             assert(g.grounded && 56*MSX_UNIT-g.y==64*MSX_UNIT && px>=56 && px<=58);
         }check_draws(&g);
+        /* B30: every death (0C2956/0C2D6A) requests Marco's voice 1123. */
+        for (unsigned i=0;i<g.world.sound_count;i++) death_voices+=g.world.sounds[i]==0x1123u;
         g.world.sound_count=0;
     }
+    assert(death_voices==g.deaths);
     printf("release run %u: continues=%u steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u arena lives=%u\n",seed,g.continues,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
         g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenades,g.expiries,
         g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max,arena_lives);fflush(stdout);
@@ -104,18 +109,35 @@ static void release_run(unsigned seed) {
          * tally 0308C0 (0188B0 waits for its +60), 0188F4 (0xA0, subq/bcc)
          * and 018916 (0x20, subq/bcc) entered in the same update as the
          * previous wait ends: 30 + tally + 160 + 32 updates. */
-        static msx_game_t e;e=g;unsigned updates=0,tally=0;
+        /* The copy's world runs on through the mission end: the boss
+         * services' context is the copy's world. */
+        static msx_game_t e;e=g;e.world.boss.services.context=&e.world;unsigned updates=0,tally=0,jingle=0,voice=0;
         uint16_t rescued=g.world.ga_flags.rescued[0];
         uint8_t before[4];memcpy(before,g.world.pickup.score[0],4);
         while (e.mission_end!=MSX_END_DONE && updates<4000) {
-            bool started=e.end_started;msx_game_update(&e,0,false,false);
+            bool started=e.end_started;e.world.sound_count=0;msx_game_update(&e,0,false,false);
             if (started && !(e.ticks&1)) {updates++;if (e.mission_end==MSX_END_TALLY) tally++;}
+            /* 0188B8: 0x0020 then 0x1137, once, in the update that creates
+             * the letters (the first of the 0xA0 wait). */
+            for (unsigned i=0;i<e.world.sound_count;i++) {
+                uint16_t w=e.world.sounds[i];
+                if (w==0x0020) {assert(!jingle && i+1<e.world.sound_count && e.world.sounds[i+1]==0x1137);jingle=updates;}
+                if (w==0x1137) {assert(!voice && e.mission_end==MSX_END_LETTERS && e.end_timer==0x9f);voice=updates;}
+            }
         }
+        /* The 30th update ends 018870's wait and starts the tally (counted in
+         * tally); 0188B0 sees its +60 in the update after the last tally
+         * one and goes on to 0188B8 in that update: 30 + tally. */
+        assert(jingle && jingle==voice && jingle==30+tally);
         /* The tally ran natively to its end with no explicit stop: every
          * prisoner counted (10C5FC back to 0) and 10000 each (30000 for a
          * special one) plus 100000 for ten or more added to the score. */
         assert(e.mission_end==MSX_END_DONE && !e.end_stops && !e.end.unsupported && !e.end_ram.unsupported_text);
         assert(updates==30+tally+160+32 && tally>0);
+        /* 01891E: Mission 2's first stage record 017212 (descriptor 016DDE:
+         * map list 0B6D2A, script entry 0x804, stage 1), entry kind 0. */
+        assert(e.flow.mission==1 && e.flow.record==0x17212 && e.flow.descriptor==0x16DDE && e.flow.stage==1 && e.flow.load);
+        assert(e.flow.routine==0x184B4 && neo_mission_map_list(&e.flow)==0xB6D2A && neo_mission_script_entry(&e.flow)==0x804 && e.flow.cleared[0]==1);
         assert(!e.world.ga_flags.rescued[0]);
         {
             uint32_t bonus=0;
@@ -126,7 +148,7 @@ static void release_run(unsigned seed) {
             uint32_t bcd=0;for (unsigned k=0,v=bonus;k<8;k++,v/=10) bcd|=(v%10u)<<(4*k);
             neo_item_add_score(want,bcd);
             assert(!memcmp(want,e.world.pickup.score[0],4));
-            printf("release run %u: mission end %u prisoners (%u special), tally %u updates, score %02x%02x%02x%02x -> %02x%02x%02x%02x\n",seed,rescued,special,tally,
+            printf("release run %u: mission end %u prisoners (%u special), tally %u updates, 0020+1137 at update %u, score %02x%02x%02x%02x -> %02x%02x%02x%02x\n",seed,rescued,special,tally,jingle,
                 before[0],before[1],before[2],before[3],e.world.pickup.score[0][0],e.world.pickup.score[0][1],e.world.pickup.score[0][2],e.world.pickup.score[0][3]);
         }
         /* Fade 9C0A (E1,E1,E1, 0x20): -248 per update, -31 at the last step. */
@@ -135,6 +157,31 @@ static void release_run(unsigned seed) {
         /* The letters 06090A all arrive and leave (17 nodes, the root sets
          * the mission actor's +60) after the tally's nodes. */
         assert(e.end.mission60==1 && !e.end.unsupported);
+        /* B24: Mission 2's boss 026254 ends its sinking with 018F40 (026E4A,
+         * flags.stage_done) in the last stage. Its next record (017274, type
+         * 4 with +4 = 0) is the mission end 018846 (MAME run4's mission flow
+         * fixture: 0186A0 -> 018870 at frame 117325): the same sequence as
+         * above, then 01891E selects Mission 3 (record 0173F6, stage bits
+         * 0F). The stage step used to take it as a stage exit and wait for
+         * a stage load that never came. */
+        static msx_game_t m;m=e;m.world.boss.services.context=&m.world;
+        for (unsigned stage=1;stage<=3;stage++) {
+            for (unsigned k=0;k<200 && m.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&m.flow);   /* the wipes 3AED8/3AEF0: 35 updates */
+            assert(m.flow.state==NEO_MISSION_PLAYING && m.flow.mission==1 && m.flow.stage==stage);
+            assert(neo_mission_ends_after_stage(&m.flow)==(stage==3));
+            if (stage<3) {m.flow.end=0;neo_mission_stage_done(&m.flow);}
+        }
+        m.complete=false;m.end_started=false;m.mission_end=MSX_END_NONE;m.stage_step=0;m.end.count=0;
+        m.world.mission_step=0;m.world.ga_flags.stage_done=1;
+        unsigned calls=0,end_updates=0;
+        while (m.mission_end!=MSX_END_DONE && calls<8000) {
+            bool started=m.end_started;msx_game_update(&m,0,false,false);calls++;
+            if (started && !(m.ticks&1)) end_updates++;
+            assert(!m.stage_step);
+        }
+        assert(m.complete && m.mission_complete && m.mission_end==MSX_END_DONE && !m.end_stops && !m.end.unsupported);
+        assert(m.flow.mission==2 && m.flow.record==0x173F6 && m.flow.load && m.flow.cleared[0]==0x0f);
+        printf("release run %u: Mission 2 boss 018F40 -> mission end 018846 in %u updates -> Mission 3 record %06X\n",seed,end_updates,(unsigned)m.flow.record);
     }
     assert(!g.world.unsupported && !g.world.boss_unsupported);   /* no node stops (the turret gun's fire 08FA1A is native) */
     // The random policy (deaths, respawns on the ledge or the vehicle's
@@ -231,7 +278,8 @@ static unsigned stand_2336(int at) {
  * (064128 -> blast 06371E) and kill. */
 static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
-    unsigned blasts=0,trails=0,grants=0,rockets=0;bool seen[NEO_WORLD_GACTORS]={false};
+    unsigned stops_before=neo_soldier_death_stops;
+    unsigned blasts=0,trails=0,grants=0,rockets=0,rolls=0,beams=0,sparks=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
         if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
             uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound)) grants++;
@@ -247,22 +295,131 @@ static void chaser_run_id(uint8_t id) {
         msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
-            bool blast=a->active && (r==0x63740u || r==0x63756u);
-            if (a->active && r==0x6381cu) rockets++;
+            bool blast=a->active && (r==0x63740u || r==0x63756u || r==0x86450u || r==0x86466u);
+            if (a->active && (r==0x86260u || r==0x861e2u)) rolls++;
+            if (a->active && (r==0x6381cu || r==0x641ecu)) rockets++;
+            if (a->active && (r==0x1e28eu || r==0x1e2fcu || r==0x1e3b2u || r==0x1e41cu)) beams++;
+            if (a->active && r==0x1e604u) sparks++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
-    printf("%s run: grants=%u shells=%u rockets=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        id==3?"R":"C",grants,g.c_shots,rockets,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
-    assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
-    assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
-    if (id==3) assert(rockets>=40);
+    printf("%s run: grants=%u shells=%u rockets=%u rolls=%u beam calls=%u beams=%u beam updates=%u spark updates=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        id==3?"R":id==8?"R8":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":id==6?"06":id==0x0b?"0B":"C",grants,g.c_shots,rockets,rolls,g.laser_calls,g.world.lasers,beams,sparks,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    if (id==6 || id==0x0b) assert(g.laser_calls>=40 && g.world.lasers>0 && beams>0 && sparks>0 && grants>=1 && g.kills>0);
+    else assert(g.c_shots>=40 && grants>=1 && g.kills>0);
+    if (id==3 || id==8 || id==0x0c) assert(blasts>0 && trails>0);
+    if (id==0x0d) assert(blasts>0 && rolls>0);
+    /* Weapons 02/07 (rows of kind 0A/0B) and 04/09 (kind 7): a soldier
+     * killed by them takes the death entries 040AF6/040A7C/040A40 of
+     * 0406EA/040750/0407F4 (native): no death stop, nothing else stops. */
+    if (id==2 || id==7 || id==4 || id==9) printf("  soldier death stops (kinds %08lx): %u\n",(unsigned long)neo_soldier_death_stop_kinds,neo_soldier_death_stops-stops_before);
+    assert(neo_soldier_death_stops==stops_before && !g.world.unsupported);
+    assert(!missing_draws && !g.weapon_stops);
+    if (id==3 || id==8) assert(rockets>=40);
+    assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
 }
 /* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
  * flash; MiSTer report: no rockets drawn). */
-static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);}
+/* Weapon 0D (the ball 08606A, neo_pweapon.c: rolls, bursts and blasts)
+ * fired with the same programs and flash. */
+/* Weapon 8 (item kind 51, the prisoner of 2D70C4 at the camera 3224 before
+ * the boss): the rocket 0641EC, bigger, with the R's fire programs. */
+static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id(8);chaser_run_id(0x0d);}
+/* Weapons 02 / 07 (the blasts 0644C4 / 0646B0) and 04 / 09 (the flames
+ * 0A71F8 / 0A716E, neo_pweapon.c) with their own fire programs: native,
+ * no stop, every descriptor in the scene pack, and they kill. */
+/* Weapons 06 / 0B: the beam 01E22C (neo_pweapon.c) made by the steps of
+ * its fire programs (0C46D6), its sparks. */
+/* B25: weapons 02/07 fired facing left. 0C4434 (01AC94) copies the
+ * player's +15 & 3 to the blast 0644C4/0646B0: MAME s2/s7 (the sgun2/sgun7
+ * families, 23 blasts each) have +15 = 01 for each of the 12 shots facing
+ * left (+6E = 80 level, 40 up, C0 down) and 00 facing right (00, 40, C0).
+ * The port made every blast with +15 = 0: facing left it was drawn and hit
+ * (row E1412, mirrored by +15 bit 0) towards the right. */
+static void sgun_left_run(uint8_t id) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned checked[2][3]={{0}},bad=0;bool seen[NEO_WORLD_GACTORS]={false};
+    /* The facing of the update that fired: the blast shows up an update
+     * later, and while a fire program has not written +76 (+98 = 2) the
+     * walk's turn flips the facing at once (0C28C8..0C28D2, A3). */
+    bool facing_at[4]={false};
+    for (unsigned steps=0;steps<4000;steps++) {
+        facing_at[steps&3]=g.facing<0;
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound);
+        }
+        /* Walk right, then turn round every 400 steps; aim up a quarter of
+         * the time, jump with Down held a quarter of the time. */
+        bool leftward=(steps/400)%2==1;unsigned u=steps%400;
+        int dir=u<8?(leftward?-1:1):0;g.aim_up=u>=100 && u<200;
+        bool jump=u>=300 && (u%40)<4;g.crouch=u>=300 && (u%40)>=8;
+        msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
+            bool blast=a->active && (r==0x64556u || r==0x645d2u || r==0x645e0u);
+            if (blast && !seen[i]) {
+                uint8_t f15=ga_b(a,0x15)&1u,angle=ga_b(a,0x6e);
+                bool left=g.facing<0;
+                for (unsigned back=0;back<4;back++) if (facing_at[(steps-back)&3]==(f15!=0)) left=f15!=0;
+                /* 064556 toggles +15 bit 1 for the down row; bit 0 stays. */
+                unsigned aim=angle==0x40?1:angle==0xc0?2:0;
+                bool good=f15==(left?1u:0u) && (aim || angle==(left?0x80u:0u));
+                checked[left][aim]++;if (!good) bad++;
+            }
+            seen[i]=blast;
+        }
+    }
+    printf("%02X left/right: level %u/%u, up %u/%u, down %u/%u blasts checked, %u with the wrong facing\n",id,
+        checked[1][0],checked[0][0],checked[1][1],checked[0][1],checked[1][2],checked[0][2],bad);fflush(stdout);
+    assert(!bad && checked[1][0] && checked[0][0] && checked[1][1] && checked[0][1] && checked[1][2] && !g.world.unsupported);
+}
+/* B26: the sprite windows and layers of each stage in SCB slot order
+ * (msx_draw_order, from MAME run4's RAM 10B954/10B95C and the layer
+ * objects' +2C) and player 1's +1E (0x8834 - +40 on the ground: run4
+ * 19860, +40 = 312 -> 86FC; 26040, 362 -> 86CA). Mission 1 and Mission 2
+ * stage 3 keep the port's order (layers 0..2, bit-2 sprites, 3..4, the
+ * others); stage 1 draws the bottom strip 10E83E (layer 0) over window A
+ * and the exit marker 0B6F6A (+15 bit 2) over it; stage 2 the layer
+ * 10D7B6 (1/2) over window A and the gate's frame 03A82E over it. */
+static void draw_order_run(void) {
+    msx_draw_order_t o=msx_draw_order(0,0);assert(o.known && o.back==0x07 && o.front==0x18 && !o.normal_mid);
+    o=msx_draw_order(1,1);assert(o.known && o.back==0x1e && o.front==0x01 && o.normal_mid);
+    o=msx_draw_order(1,2);assert(o.known && o.back==0x18 && o.front==0x06 && o.normal_mid);
+    o=msx_draw_order(1,3);assert(o.known && o.back==0x01 && o.front==0x18 && !o.normal_mid);
+    o=msx_draw_order(2,4);assert(!o.known && o.back==0x07 && o.front==0x18 && !o.normal_mid);
+    static msx_game_t g;msx_game_init(&g);
+    unsigned grounded=0,air=0;uint16_t last=0xffff;
+    for (unsigned steps=0;steps<3000;steps++) {
+        msx_game_update(&g,1,(steps%200)<4,steps%8<4);g.invulnerable=2;
+        if (!g.world_enabled || (g.ticks&1)) continue;
+        uint16_t px,py;msx_game_projected(&g,&px,&py);
+        if (g.life.phase==MARCO_ALIVE && !g.descent && g.grounded) {assert(msx_game_depth(&g)==(uint16_t)(0x8834u-py));grounded++;}
+        else if (g.life.phase==MARCO_ALIVE && !g.descent && last<0xe000u) {if (msx_game_depth(&g)!=last) fprintf(stderr,"step %u depth %04x last %04x py %u grounded %d\n",steps,msx_game_depth(&g),last,py,g.grounded);assert(msx_game_depth(&g)==last);air++;}
+        last=msx_game_depth(&g);
+    }
+    printf("draw order: Mission 2 stage 1 back %02x front %02x, stage 2 back %02x front %02x; player +1E on the ground %u updates, kept in the air %u\n",
+        msx_draw_order(1,1).back,msx_draw_order(1,1).front,msx_draw_order(1,2).back,msx_draw_order(1,2).front,grounded,air);fflush(stdout);
+    assert(grounded>100 && air>10);
+}
+/* B40 (ROM 25: the L's gun gone in the crypt): the player actor keeps its
+ * form +93 and combo +95 across a stage load (MAME run4 26130/26160:
+ * weapon 9, +93 = 1, +95 = 47 on both sides of the stage 2 -> 3 load). */
+static void stage_form_run(void) {
+    static msx_game_t g;msx_game_init(&g);g.flow.record_index=1;
+    for (unsigned id=0;id<MARCO_WEAPON_IDS;id++) {
+        if (!marco_weapons_grant(&g.world.weapons,0,(uint8_t)id,&g.world.weapon_player,NULL)) continue;
+        g.world.weapon_player.form93=g.world.weapon_player.form94==0xff?0:g.world.weapon_player.form94;
+        g.world.weapon_player.form94=0xff;g.world.weapon_player.combo95=0x47;
+        marco_weapon_player_t before=g.world.weapon_player;
+        neo_world_stage_t st={0};msx_game_begin_stage(&g,&st,0x68,0);
+        assert(marco_weapons_id(&g.world.weapons,0)==id && !memcmp(&before,&g.world.weapon_player,sizeof(before)));
+        g.flow.record_index=1;
+    }
+    printf("stage form: +93/+94/+95 kept across a stage load for every weapon\n");fflush(stdout);
+}
+static void pweapon_run(void) {sgun_left_run(2);sgun_left_run(7);chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);chaser_run_id(6);chaser_run_id(0x0b);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
  * (0C3B46/0C419E) instead of firing, and the cuts kill. */
@@ -275,6 +432,127 @@ static void knife_run(void) {
     printf("knife run: cuts=%u hits=%u kills=%u shots=%u camera=%d unsupported=%u\n",g.knife_cuts,g.knife_hits,g.kills,g.shots,g.camera,g.world.unsupported);fflush(stdout);
     assert(g.knife_cuts>0 && g.knife_hits>0 && !g.world.unsupported && !missing_draws);
     (void)kills_at_cut;
+}
+/* Form 3, the mummy (MiSTer report: a mummy's breath must turn Marco into
+ * a mummy). A contact of kind 0x10 (the breath 061E8C) requests +94 = 3 and
+ * resets the weapon; the transformation (19 updates, MAME marco-mz1) holds
+ * the player; then 0x5A updates of protection; the mummy walks at half
+ * speed (0x18000), the grant 0C0928 refuses weapons, and a second breath
+ * kills (0C2956). */
+static void mummy_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned s=0;
+    for (;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE);
+    uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,0x0a,&g.world.weapon_player,&sound);
+    for (unsigned k=0;k<4;k++) msx_game_update(&g,0,false,false);
+    g.invulnerable=0;g.world.hit_kind=0x10;msx_game_hurt(&g,0);
+    assert(g.life.phase==MARCO_ALIVE && g.mummy_breaths==1 && g.world.weapon_player.form94==3 && marco_weapons_id(&g.world.weapons,0)==0);
+    int x0=g.x;
+    for (unsigned k=0;k<36;k++) {msx_game_update(&g,1,false,true);g.invulnerable=0;}
+    assert(g.x==x0 && g.mummy_transform && g.world.weapon_player.form93==3);   /* held still */
+    for (unsigned k=0;k<2;k++) msx_game_update(&g,0,false,false);
+    assert(!g.mummy_transform && g.mummy_guard==0x5a);
+    g.world.hit_kind=0x10;msx_game_hurt(&g,0);assert(g.life.phase==MARCO_ALIVE);   /* protected */
+    assert(!marco_weapons_grant(&g.world.weapons,0,0x0a,&g.world.weapon_player,&sound));
+    x0=g.x;
+    for (unsigned k=0;k<40;k++) msx_game_update(&g,1,false,false);
+    int walked=g.x-x0;
+    while (g.mummy_guard) msx_game_update(&g,0,false,false);
+    g.invulnerable=0;g.world.hit_kind=0x10;msx_game_hurt(&g,0);
+    printf("mummy: breaths=%u walked %d.%04d px in 20 updates (0x18000 each: 30) form=%u phase=%d\n",
+        g.mummy_breaths,walked/65536,(walked%65536)*10000/65536,g.world.weapon_player.form93,(int)g.life.phase);fflush(stdout);
+    assert(walked>=28*65536 && walked<=30*65536 && g.life.phase!=MARCO_ALIVE);
+}
+/* Thin fire cadence (docs/APROXIMACIONES.md A2): the C (id 0C, level
+ * 253A56: +76 in update 5) fires in update 5 + 2 = 7 after its shot while
+ * presses come (MAME thinfire, MSX_FAT_THIN=1 from sec01_19391: shells at
+ * 21387, 21401, 21415, presses every 4 frames). The first two shots are
+ * taken (cap 3), so the cap does not stop them. */
+static void thin_cadence_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    for (unsigned s=0;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE && g.world.weapon_player.form93!=2);
+    uint16_t snd=0;assert(marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&snd));
+    for (unsigned k=0;k<40;k++) msx_game_update(&g,0,false,false);
+    unsigned at[3],n=0,fires0=g.c_fires;
+    for (unsigned k=0;k<64 && n<3;k++) {
+        unsigned before=g.c_fires;msx_game_update(&g,0,false,(k&3)<2);g.invulnerable=2;
+        if (g.c_fires!=before) at[n++]=k;
+    }
+    printf("thin C cadence: shots at %u %u %u (%u fires)\n",at[0],at[1],at[2],g.c_fires-fires0);fflush(stdout);
+    assert(n==3 && at[1]-at[0]==14 && at[2]-at[1]==14);
+}
+/* Form 2, fat Marco (0C0BF4 / 0C32E4 rule 2 / 0C33AE): +94 = 2 on the
+ * ground runs the transformation 0C1D70 (19 updates without control, +84 =
+ * 0x5A); in form 2 the food counter 10C718+0x10 counts down and at 0 the
+ * form +94 = 0 (thin again: 0C1D82 not captured, counted in fat_stops). */
+static void fat_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    for (unsigned s=0;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE);
+    g.world.pickup.mission=4;g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=80;g.world.weapon_player.form94=2;
+    for (unsigned k=0;k<2;k++) msx_game_update(&g,0,false,false);
+    assert(g.world.weapon_player.form93==2 && g.fat_transform && g.mummy_guard && g.fat_starts==1);
+    int x0=g.x;
+    for (unsigned k=0;k<30;k++) msx_game_update(&g,1,false,false);
+    assert(g.x==x0 && g.fat_transform);   /* held still */
+    while (g.fat_transform) msx_game_update(&g,0,false,false);
+    /* The fat fire 0C436A: the R's rocket 063AEE (table 0C42EA), one per
+     * press every 10 ticks at most. */
+    uint16_t snd=0;marco_weapons_grant(&g.world.weapons,0,0x03,&g.world.weapon_player,&snd);
+    assert(g.world.weapon_player.form93==2);
+    for (unsigned k=0;k<16;k++) {msx_game_update(&g,0,false,(k&3)==0);g.invulnerable=2;}
+    assert(g.fat_shots>=1 && g.fat_shots<=2 && !g.world.unsupported);
+    /* Every weapon fat Marco can hold creates its native projectile
+     * (MAME capture_fat_weapons.lua, G21): pistol 01B62C, S 0646C8, R
+     * 063AEE, F 0A7226, H 01BDD2 (bursts), beam, C 063F10, E 0DE4FE;
+     * presses every 4 ticks give a shot every 10 ticks (5 updates) up to
+     * the weapon's cap of active projectiles (0C08A8). */
+    static const uint8_t ids[]={0,2,3,4,0x0a,6,0x0c,0x0e};
+    for (unsigned w=0;w<sizeof ids;w++) {
+        g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=200;
+        if (ids[w]) marco_weapons_grant(&g.world.weapons,0,ids[w],&g.world.weapon_player,&snd);
+        else marco_weapons_life(&g.world.weapons,0,&g.world.weapon_player),g.world.weapon_player.form93=2,g.world.weapon_player.form94=0xff;
+        unsigned shots0=g.world.player_shots,lasers0=g.world.lasers,stops0=g.weapon_stops,fat0=g.fat_shots;
+        for (unsigned k=0;k<80;k++) {msx_game_update(&g,0,false,(k&3)==0);g.invulnerable=2;}
+        unsigned made=g.world.player_shots-shots0+g.world.lasers-lasers0;
+        printf("fat weapon %02X: %u projectiles, %u fat shots, %u stops\n",ids[w],made,g.fat_shots-fat0,g.weapon_stops-stops0);fflush(stdout);
+        assert(g.world.weapon_player.form93==2 && made>=1 && g.weapon_stops==stops0 && !g.world.unsupported);
+        if (!ids[w]) assert(g.fat_shots-fat0==8);   /* uncapped: 80 ticks / 10 */
+        if (ids[w]==0x0a) assert(made>=16);            /* H bursts */
+    }
+    for (unsigned k=0;k<1000 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
+    printf("fat: starts=%u stops=%u shots=%u form=%u\n",g.fat_starts,g.fat_stops,g.fat_shots,g.world.weapon_player.form93);fflush(stdout);
+    /* 0C1D82: thin again with the hold of the transformation. */
+    assert(g.world.weapon_player.form93==0 && g.fat_stops==0 && g.fat_transform);
+    int x1=g.x;
+    for (unsigned k=0;k<20;k++) msx_game_update(&g,1,false,false);
+    assert(g.x==x1);
+}
+/* Aiming up with the pistol (B53): the native 01B782 at angle 40 in both
+ * facings, standing and in the air; each bullet climbs 16 px per update
+ * (+72 = 0x100000 along 40) until 01945C culls it on the screen. */
+static void pistol_up_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned seen=0,climbs=0,bad=0;int32_t last_y[NEO_WORLD_GACTORS];memset(last_y,0,sizeof(last_y));
+    for (unsigned steps=0;steps<2400;steps++) {
+        unsigned j=steps%120;g.aim_up=steps>400;g.crouch=false;
+        int stick=steps<1400?((steps/200)&1?-1:1)*(j<30):0;
+        msx_game_update(&g,stick,steps>1400 && j<6,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (g.ticks&1) continue;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0)!=0x1b882u) {last_y[i]=0;continue;}
+            if (ga_b(a,0x6e)!=0x40u) bad++;
+            int32_t y=(int32_t)ga_l(a,0x2c);
+            if (last_y[i] && y-last_y[i]==0x100000) climbs++;
+            if (!last_y[i]) seen++;
+            last_y[i]=y;
+        }
+    }
+    printf("pistol up: shots=%u bullets=%u climbs=%u wrong angle=%u unsupported=%u missing draws=%u\n",g.up_shots,seen,climbs,bad,g.world.unsupported,missing_draws);fflush(stdout);
+    assert(g.up_shots>0 && seen>0 && climbs>0 && !bad && !g.world.unsupported && !missing_draws);
 }
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
@@ -362,12 +640,188 @@ static void fall_run(unsigned cut_at,unsigned left_from,bool print) {
     assert(g.x>=(g.camera+28)*MSX_UNIT);
     if (left_from<1200) assert(g.x==(g.camera+28)*MSX_UNIT);   /* MAME: x 28.0, feet on the floor */
 }
+/* Optional life bar (B42, not arcade). The same run (stand at the first
+ * spawn until the soldier's knife hits, then keep the input) with the flag
+ * off and on: the game state (position, camera, actors, score, timer,
+ * lives) is identical up to the hit; off, the hit
+ * kills (the arcade); on, it takes one of 10 hits with the 2*0x78 blink.
+ * Then the rules: 10 hits kill, kinds 8/0x12 kill at once, a new life
+ * restores 10, food gives max(1, points/100) up to 10, the HUD gauge shows
+ * hits/10 on foot. */
+static uint32_t observe(const msx_game_t *g) {
+    uint32_t h=2166136261u;
+    #define MIX(v) do { uint32_t x=(uint32_t)(v);for (int b=0;b<4;b++) {h^=(x>>(8*b))&0xffu;h*=16777619u;} } while (0)
+    MIX(g->x);MIX(g->y);MIX(g->camera);MIX(g->ticks);MIX(g->deaths);MIX(g->world.player_hits);MIX(g->kills);MIX(g->invulnerable);MIX(g->life.phase);
+    for (unsigned i=0;i<4;i++) MIX(g->world.pickup.score[0][i]);
+    MIX(g->hud.timer);MIX(g->hud.panel[0].f84);   /* the fix map differs by the gauge itself */
+    for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (g->world.gactors[i].active) {MIX(i);MIX(ga_l(&g->world.gactors[i],0));MIX(ga_w(&g->world.gactors[i],0x3c));}
+    #undef MIX
+    return h;
+}
+/* The original's pause (src/neo_pause.c, docs/PAUSA.md).
+ * 1. data/pause_fixture.json (build/pause_fixture.h): the turns of the MAME
+ *    0.264 capture of 015520 (SELECT pauses, 150 paused turns, SELECT
+ *    resumes): owner 10C2BF, blink 10C2C2, results 10008D / 10008E, the
+ *    fade 10991A.. with its count and the five fix cells 725A.. after
+ *    every turn.
+ * 2. The game through a pause: the turn that pauses and the paused turns
+ *    run no update and leave the game untouched but for what the pause
+ *    itself owns (the fade, the LSPC switch, the fix cells of PAUSE and
+ *    the panels' +88); with the same buttons held at the resume as at the
+ *    pause the run goes on as the run without pauses (same hash after
+ *    every update), and a button first held during the pause is a new
+ *    press of the resuming update (0156FA). */
+#include "pause_fixture.h"
+static void pause_fixture_run(void) {
+    static neo_hud_t hud;neo_pause_t p;neo_fade_t fade;neo_lspc_t lspc;
+    memset(&hud,0,sizeof hud);memset(&p,0,sizeof p);memset(&fade,0,sizeof fade);memset(&lspc,0,sizeof lspc);
+    neo_pause_init(&p);
+    for (unsigned i=0;i<5;i++) hud.fix[0x25a+i*32]=pause_fixture_before[i];
+    for (unsigned i=0;i<3;i++) {fade.current[i]=(int16_t)pause_fixture_fade0[i];fade.target[i]=(int16_t)pause_fixture_fade0[3+i];fade.step[i]=(int16_t)pause_fixture_fade0[6+i];}
+    fade.count=0;lspc.speed=pause_fixture_lspc0[0];lspc.disabled=(pause_fixture_lspc0[1]&8u)!=0;
+    unsigned paused=0,shown=0;
+    for (unsigned t=0;t<PAUSE_FIXTURE_TURNS;t++) {
+        const pause_fixture_turn_t *f=&pause_fixture[t];
+        neo_pause_input_t in={f->select,0,{1,0},{0,0}};uint8_t pressed[2]={0,0};
+        bool run=neo_pause_turn(&p,&in,pressed,&hud,&fade,&lspc);
+        if (run) neo_fade_step(&fade);   /* the update of a turn that runs: its list head 003918 -> 00698C */
+        assert(run==(f->last!=0) && p.owner==f->owner && p.last==f->last && p.resumed==f->resumed);
+        if (p.owner || f->resumed) assert(p.blink==f->blink);
+        for (unsigned i=0;i<3;i++) assert((uint16_t)fade.current[i]==f->fade[i] && (uint16_t)fade.target[i]==f->fade[3+i]);
+        assert(fade.count==f->count);
+        for (unsigned i=0;i<5;i++) assert(hud.fix[0x25a+i*32]==f->cells[i]);
+        assert(lspc.speed==f->lspc[0] && lspc.disabled==((f->lspc[1]&8u)!=0));
+        paused+=!run;shown+=hud.fix[0x25a]==0x0350;
+    }
+    assert(paused>=100 && shown>=50);
+    printf("PASS: pause 015520 against MAME: %u turns (%u paused, PAUSE shown on %u), owner, blink, results, fade, LSPC and fix cells equal\n",(unsigned)PAUSE_FIXTURE_TURNS,paused,shown);
+}
+typedef struct {int dir;bool a,b,up,down,z,start;} pause_in_t;
+static uint8_t pause_bits(const pause_in_t *in) {
+    return (uint8_t)((in->up?1u:0u)|(in->down?2u:0u)|(in->dir<0?4u:0u)|(in->dir>0?8u:0u)|(in->b?0x10u:0u)|(in->a?0x20u:0u)|(in->z?0x40u:0u));
+}
+/* One original update (two steps) as actor.c runs it. */
+static void pause_update(msx_game_t *g,const pause_in_t *in) {
+    g->start_edge|=in->start;
+    for (unsigned s=0;s<2;s++) {g->aim_up=in->up;g->crouch=in->down;g->grenade=in->z;msx_game_update(g,in->dir,in->a,in->b);}
+}
+static unsigned pause_rand(unsigned *r) {*r=*r*1103515245u+12345u;return *r>>16;}
+static void pause_input(const msx_game_t *g,unsigned i,unsigned *r,pause_in_t *in) {
+    unsigned v=pause_rand(r);
+    in->dir=v%10<6?1:v%10<8?0:-1;in->a=(v>>4)%7==0;in->b=(v>>7)%3!=0;in->up=(v>>9)%5==0;in->down=(v>>11)%9==0;in->z=(v>>13)%61==0;
+    in->start=g->awaiting_continue && i%4==0;   /* the continue: the original's START */
+}
+static uint32_t pause_trace[6000];
+static void pause_run(void) {
+    pause_fixture_run();
+    static msx_game_t g,snap,before;neo_pause_t p;
+    enum { UPDATES=6000 };
+    unsigned r=7,deaths;pause_in_t in,last={0};
+    msx_game_init(&g);
+    for (unsigned i=0;i<UPDATES;i++) {pause_input(&g,i,&r,&in);pause_update(&g,&in);pause_trace[i]=observe(&g);}
+    memcpy(&snap,&g,sizeof g);deaths=g.deaths;unsigned continues=g.continues;
+    msx_game_init(&g);neo_pause_init(&p);r=7;
+    unsigned junk=99,blocks=0,turns=0,refused=0,presses=0;
+    for (unsigned i=0;i<UPDATES;i++) {
+        bool play=g.hud.panel[0].state==NEO_PANEL_PLAY && !g.awaiting_continue;
+        uint8_t pressed[2]={0,0};
+        if (i%259==3 && play) {
+            /* SELECT with the buttons of the last update still held. */
+            neo_pause_input_t pin={2,g.flow.pause_off,{g.hud.mode[0],g.hud.mode[1]},{pause_bits(&last),0}};
+            memcpy(&before,&g,sizeof g);
+            bool run=neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc);
+            if (g.flow.pause_off || g.hud.mode[0]==0 || g.hud.mode[0]==3) {assert(run && !memcmp(&before,&g,sizeof g));refused++;}
+            else {
+                assert(!run && p.owner==1);
+                unsigned n=1+pause_rand(&junk)%200;pin.select=0;
+                for (unsigned k=0;k<n;k++) {assert(!neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc));turns++;}
+                /* Nothing of the game moved: only the pause's own things. */
+                static msx_game_t now;memcpy(&now,&g,sizeof g);
+                now.hud=before.hud;now.fade=before.fade;now.lspc=before.lspc;
+                assert(!memcmp(&before,&now,sizeof g));
+                assert(neo_fade_offset(&g.fade,0)==(int8_t)(n>=3?-8:-2*(int)(n+1)) || before.fade.count);
+                assert(g.lspc.disabled);
+                pin.select=2;pressed[0]=pressed[1]=0;
+                assert(neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc) && !p.owner && p.resumed==0xff && !pressed[0]);
+                assert(g.lspc.disabled==before.lspc.disabled && g.lspc.speed==(before.lspc.disabled?0:before.lspc.speed));
+                msx_game_resume_inputs(&g,pin.held[0]);
+                /* The palette is the one before the pause from the next fade step on (009BD4). */
+                assert(g.fade.count>=1);
+                if (!before.fade.count) {neo_fade_t f=g.fade;neo_fade_step(&f);assert(!memcmp(f.current,before.fade.current,sizeof f.current));g.fade=before.fade;}
+                g.hud=before.hud;   /* the cells of PAUSE and the panels' redraw (+88) are the pause's */
+                g.lspc=before.lspc; /* 002802 with the saved speed: equal but for the speed byte of a switched-off LSPC */
+                blocks++;
+            }
+        }
+        pause_input(&g,i,&r,&in);pause_update(&g,&in);last=in;
+        assert(observe(&g)==pause_trace[i]);
+    }
+    assert(!memcmp(&snap,&g,sizeof g));
+    assert(blocks>=8 && deaths>0 && continues>0 && turns>0);
+    /* 0156FA: a button first held during the pause is a new press at the resume. */
+    {neo_pause_t q;static neo_hud_t hud;neo_fade_t f;neo_lspc_t l;memset(&hud,0,sizeof hud);memset(&f,0,sizeof f);memset(&l,0,sizeof l);
+     neo_pause_init(&q);hud.mode[0]=1;
+     neo_pause_input_t pin={2,0,{1,0},{0x10,0}};uint8_t pr[2]={0,0};
+     assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && q.held[0]==0x10);
+     pin.select=0;pin.held[0]=0x30;pr[0]=0x20;assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l));
+     pin.select=2;pin.held[0]=0x70;pr[0]=0x40;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && pr[0]==0x60);presses++;
+     /* 10C2BD and the BIOS modes 0 and 3 refuse the pause; START (bit 0) is no SELECT. */
+     pin.off=0xff;pr[0]=0;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);pin.off=0;
+     pin.mode[0]=3;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);pin.mode[0]=0;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);
+     pin.mode[0]=1;pin.select=1;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);
+     pin.select=2;assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && q.owner==1);}
+    printf("PASS: pause 015520 in the game: %u pauses (%u paused turns, %u refused by 10C2BD or the mode) in a %u-update run (camera %d, %u kills, %u deaths, %u continues by START): the game stands while paused and goes on as the run without pauses\n",blocks,turns,refused,UPDATES,g.camera,g.kills,deaths,continues);
+}
+static void lifebar_run(void) {
+    static msx_game_t off,on;static uint32_t trace[1300];
+    msx_lifebar_request=false;msx_game_init(&off);
+    msx_lifebar_request=true;msx_game_init(&on);msx_lifebar_request=false;
+    assert(!off.lifebar && on.lifebar && on.life_hits==MSX_LIFEBAR_HITS);
+    unsigned hit_off=0,hit_on=0;
+    for (unsigned i=0;i<1200 && !hit_off;i++) {msx_game_update(&off,i<170?1:0,false,false);trace[i]=observe(&off);if (off.world.player_hits) hit_off=i;}
+    for (unsigned i=0;i<1200 && !hit_on;i++) {
+        msx_game_update(&on,i<170?1:0,false,false);
+        if (on.world.player_hits) hit_on=i; else assert(observe(&on)==trace[i]);   /* identical until the hit */
+    }
+    assert(hit_off && hit_off==hit_on);
+    assert(off.deaths==1 && off.life.phase==MARCO_DYING);                       /* arcade: one hit kills */
+    assert(on.deaths==0 && on.life.phase==MARCO_ALIVE && on.life_hits==9 && on.invulnerable==2*0x78-0 && on.lifebar_absorbed==1);
+    /* The HUD gauge (0C9B94) shows 9/10 on foot: target +7E = 9*0x3000/10. */
+    msx_game_update(&on,0,false,false);msx_game_update(&on,0,false,false);
+    assert(on.hud.panel[0].f7e==(uint16_t)(9u*0x3000u/10u));
+    /* Protected while blinking; then each hit takes one; the 10th kills. */
+    on.world.hit_kind=1;msx_game_hurt(&on,0);assert(on.life_hits==9);
+    for (unsigned k=0;k<8;k++) {on.invulnerable=0;on.world.hit_kind=1;msx_game_hurt(&on,0);}
+    assert(on.life_hits==1 && on.deaths==0 && on.life.phase==MARCO_ALIVE);
+    /* Food: 10 points -> 1, 300 -> 3, 1000 -> capped at 10. */
+    uint32_t pts[3]={0x10,0x300,0x1000};uint8_t want[3]={2,5,10};
+    for (unsigned k=0;k<3;k++) {
+        on.invulnerable=2*0x78;   /* the soldier still stabs: protected here */
+        on.world.pickup.foods[0]++;on.world.pickup.food_points[0]=pts[k];msx_game_update(&on,0,false,false);msx_game_update(&on,0,false,false);
+        if (on.life_hits!=want[k]) fprintf(stderr,"food %u: hits %u phase %d refills %u\n",k,on.life_hits,(int)on.life.phase,on.lifebar_refills);
+        assert(on.life_hits==want[k]);
+    }
+    assert(msx_lifebar_food_hits(0)==1 && msx_lifebar_food_hits(0x100)==1 && msx_lifebar_food_hits(0x500)==5 && msx_lifebar_food_hits(0x50000)==10);
+    on.invulnerable=0;on.world.hit_kind=8;msx_game_hurt(&on,0);                 /* kind 8: still lethal */
+    assert(on.deaths==1 && on.life.phase==MARCO_DYING && on.life_hits==10);
+    unsigned s=0;for (;s<2000 && on.life.phase!=MARCO_ALIVE;s++) msx_game_update(&on,0,false,false);
+    assert(on.life.phase==MARCO_ALIVE && on.life_hits==MSX_LIFEBAR_HITS);      /* new life: 10 */
+    for (unsigned k=0;k<10;k++) {on.invulnerable=0;on.world.hit_kind=1;msx_game_hurt(&on,0);}
+    assert(on.deaths==2 && on.life_hits==0);                                    /* the 10th hit kills */
+    printf("PASS: life bar (B42): arcade run identical up to the hit at update %u (one-hit death with the flag off); 10 hits, kinds 8/0x12 lethal, food refill, HUD gauge\n",hit_on);
+}
 int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"fall")) {fall_run(argc>2?(unsigned)atoi(argv[2]):0,argc>3?(unsigned)atoi(argv[3]):0,argc>4);return 0;}
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pistolup")) {pistol_up_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pweapon")) {pweapon_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"thin")) {thin_cadence_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"lifebar")) {lifebar_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pause")) {pause_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -460,7 +914,7 @@ int main(int argc,char **argv) {
         // Sound requests of the native world: every one has a packed render.
         for (unsigned i=0;i<g.world.sound_count;i++) {
             int id=msx_sfx_lookup(g.world.sounds[i]);requests++;
-            if (id>=0) {mapped++;voices+=msx_sfx_defs[id].channel==MSX_SFX_CH_VOICE;}
+            if (id>=0) {mapped++;voices+=msx_sfx_defs[id].group==0x02;}   // the driver's voice group
             // Not rendered yet (docs/AUDIO_JUEGO.md): vehicle engine loop 10A5,
             // 10E8 of the generic actors and the boss's own requests.
             else pending++;
@@ -482,7 +936,7 @@ int main(int argc,char **argv) {
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     /* Every H shot is native; the other weapons the prisoners give (their
      * shots are not ported) stop explicitly at their constructor, counted. */
-    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots && !g.world.shot_dropped);
+    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots+g.up_shots && !g.world.shot_dropped);
     assert(g.weapon_stops==g.weapon_shots-g.h_shots-g.c_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
     /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
@@ -514,9 +968,16 @@ int main(int argc,char **argv) {
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    draw_order_run();
+    stage_form_run();
     chaser_run();
+    pweapon_run();
     knife_run();
+    mummy_run();
+    thin_cadence_run();
+    fat_run();
     air_down_run();
+    pistol_up_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
@@ -630,5 +1091,7 @@ int main(int argc,char **argv) {
     unsigned hit_at=0;
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
     assert(hit_at && g.deaths==1 && g.life.phase==MARCO_DYING && g.world.player_hits==1);
+    lifebar_run();
+    pause_run();
     puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

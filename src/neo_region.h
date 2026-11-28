@@ -5,9 +5,98 @@
 /* Families of generic actors of the Mission 1 region (camera 0..1920). Each
  * family file exports a tick (one update of the actor, dispatched by its
  * routine label +00) and a predicate naming the routine labels it owns. */
+ga_result_t neo_goarrow_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_goarrow_routine(uint32_t routine);
+ga_result_t neo_rebel2_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_rebel2_routine(uint32_t routine);
+ga_result_t neo_rebel3_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_gate_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_gate_routine(uint32_t routine);
+bool neo_crate_routine(uint32_t routine);
+ga_result_t neo_crate_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m2props_routine(uint32_t routine);
+bool neo_m2gate_routine(uint32_t routine);
+ga_result_t neo_m2props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m3props_routine(uint32_t routine);
+bool neo_m4props_routine(uint32_t routine);
+bool neo_m5props_routine(uint32_t routine);
+ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m6props_routine(uint32_t routine);   /* Mission 6 stage 1 props (neo_m6props.c) */
+ga_result_t neo_m6props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m6enemy_routine(uint32_t routine);   /* Mission 6 stage 2 enemies (neo_m6enemy.c) */
+ga_result_t neo_m6enemy_tick(neo_gactor_t *a,neo_genv_t *e);
+neo_gactor_t *neo_item_drop(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t d1,uint16_t kind,uint16_t d3,uint8_t d4,uint16_t d5);   /* 08CD58 (neo_item.c) */
+/* The Mission 6 last enemy (neo_m6boss.c, ~44 KB of code). On the console its tick code, like the other three
+ * mission bosses', is an overlay (src/msx_overlay.h): with it resident the program image left 3307 KB for the scene
+ * cache (floor 3332, ares 16-XI). MSX_M6BOSS=0 leaves it out (the script then stops at 04153E). */
+#ifndef MSX_M6BOSS
+#define MSX_M6BOSS 1
+#endif
+bool neo_m6boss_routine(uint32_t routine);   /* Mission 6 stage 3: the last enemy 04153E (neo_m6boss.c) */
+ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m5enemy_routine(uint32_t routine);
+ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m5train_routine(uint32_t routine);
+ga_result_t neo_m5train_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m5mech_routine(uint32_t routine);
+bool neo_m5sewer_routine(uint32_t routine);
+ga_result_t neo_m5sewer_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m5boss_routine(uint32_t routine);
+ga_result_t neo_m5boss_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_m5mech_tick(neo_gactor_t *a,neo_genv_t *e);
+/* 040846 on a node (04097A, state 040C8E: the soldier death of neo_m3enemy.c). */
+void neo_m3enemy_death_40846(neo_gactor_t *a,neo_genv_t *e);
+int neo_m3enemy_death_406b6(neo_gactor_t *a,neo_genv_t *e);   /* 0406B6: 1 delete, 0 more, -1 stop */
+void neo_m4props_reset(neo_ga_flags_t *flags);   /* 0BA942 */
+ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m3enemy_routine(uint32_t routine);
+ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_m3props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_drone_routine(uint32_t routine);
+ga_result_t neo_drone_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m2traps_routine(uint32_t routine);
+bool neo_m2creature_routine(uint32_t routine);
+ga_result_t neo_m2creature_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_m2traps_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_hostage_routine(uint32_t routine);
+ga_result_t neo_hostage_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Mission 4 ground vehicle 0587C4 with its turret and shots (neo_m4veh.c). */
+bool neo_m4veh_routine(uint32_t routine);
+ga_result_t neo_m4veh_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Layer objects owned by a boss (neo_m3mid.c: 10E8C6; neo_m4boss.c: 10D7B6):
+ * 01AB9C with the scene root as parent + 01ABCC, 0C6F34 (map, block offsets,
+ * column list), 0C6BDE (column table), 0C73CE (d2 x d3 blocks drawn). */
+void neo_layerobj_place(neo_genv_t *e,uint8_t *l,int16_t x,int16_t y);
+void neo_layerobj_map(uint8_t *l,uint32_t map,uint16_t d0,uint16_t d1,uint32_t list);
+bool neo_layerobj_columns(neo_genv_t *e,uint8_t *l,uint16_t d0,uint16_t d2,uint16_t d4);
+void neo_layerobj_blocks(neo_genv_t *e,uint8_t *l,void (*draw)(void *ctx,uint32_t map,const int16_t d[6]),uint16_t d0,uint16_t d1,uint16_t d2,uint16_t d3);
+/* Mission 4 boss 02267E: its parts translated so far (neo_m4boss.c). */
+bool neo_m4boss_routine(uint32_t routine);
+ga_result_t neo_m4boss_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m2boss_routine(uint32_t routine);
+bool neo_m3mid_routine(uint32_t routine);
+bool neo_m3boss_routine(uint32_t routine);
+ga_result_t neo_m3boss_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_m3mid_tick(neo_gactor_t *a,neo_genv_t *e);
+ga_result_t neo_m2boss_tick(neo_gactor_t *a,neo_genv_t *e);
+/* 03C520..03C532: the water ripple 03C62A (+6E = kind) when 019240 has a
+ * palette for the mission; false on an explicit stop. */
+bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);
+/* 019240: the ripple palette of the mission (0: none; the caller stops on missions past 8, 013D1A). */
+uint16_t neo_gate_ripple_palette(const neo_genv_t *e);
+bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);   /* 03C5C6..03C5D8: carry */
+/* 03C55C: the water (class 5) surface under the node: long x, long y (the
+ * cell top less 1) and the terrain tag; false when there is none. */
+bool neo_gate_surface(neo_gactor_t *a,neo_genv_t *e,int32_t *x,int32_t *y,uint32_t *tag);
+/* 019240 D1: the splash palette of the mission (0: none in the table). */
+uint16_t neo_gate_splash_palette(const neo_genv_t *e);
+bool neo_rebel3_routine(uint32_t routine);
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_truck_routine(uint32_t routine);
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e);
+/* 01D51A / 01D54A / 01D578 entered by JMP with the program started (098C0C). */
+ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail);
+ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e);   /* JMP 01D5AA */
 bool neo_effects_routine(uint32_t routine);
 ga_result_t neo_flyer_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_flyer_routine(uint32_t routine);
@@ -28,6 +117,9 @@ bool neo_prisoner_routine(uint32_t routine);
 ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_item_routine(uint32_t routine);
 bool neo_item_pickup(uint32_t routine);
+/* The pickup routine (record +10) of item `a` (kind +6E) served to player p
+ * (host tests; the item's own update calls it on contact). */
+bool neo_item_take(neo_gactor_t *a,neo_genv_t *e,unsigned p);
 void neo_item_add_score(uint8_t score[4],uint32_t value);   /* 057948 */
 ga_result_t neo_heli_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_heli_routine(uint32_t routine);
@@ -38,15 +130,28 @@ bool neo_porter_routine(uint32_t routine);
 ga_result_t neo_civil_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_civil_routine(uint32_t routine);
 ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Mission 3 vehicle 0AC866 and its children (neo_m3veh.c). */
+bool neo_m3veh_routine(uint32_t routine);
+ga_result_t neo_m3veh_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_slug_routine(uint32_t routine);
 ga_result_t neo_tank_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_tank_routine(uint32_t routine);
+ga_result_t neo_slugnoid_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_slugnoid_routine(uint32_t routine);
+uint32_t neo_slug_k14594(neo_gactor_t *a,neo_genv_t *e);   /* 014594 */
+uint32_t neo_slug_k143ee(neo_gactor_t *a,neo_genv_t *e);   /* 0143EE */
 /* neo_tread.c: the SV-001's tread body 014AE8..0153EE. */
 neo_gactor_t *neo_tread_spawn(neo_gactor_t *a,neo_genv_t *e);
 int32_t neo_tread_step(neo_gactor_t *a,neo_genv_t *e,unsigned entry);
+int32_t neo_tread_step_node(neo_gactor_t *a,neo_genv_t *e,unsigned entry,uint32_t node);
 void neo_tread_air_reset(neo_gactor_t *c,uint16_t d0);
 ga_result_t neo_tread_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);
+/* B53 (MSX_DIAG only, read by actor.c): the pistol's 01B782 bullets aimed
+ * up (+6E = 40): built, deleted by 01B882's vertical screen cull (+40
+ * outside 0x100..0x1FF: out through the top) and other ends. */
+typedef struct { unsigned born,top,other; } neo_bullet_up_diag_t;
+extern neo_bullet_up_diag_t neo_bullet_up_diag;
 bool neo_bullet_routine(uint32_t routine);
 ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_armored_routine(uint32_t routine);
@@ -57,7 +162,10 @@ ga_result_t neo_rocket_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_rocket_routine(uint32_t routine);
 ga_result_t neo_chaser_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_chaser_routine(uint32_t routine);
-bool neo_chaser_attacker(uint32_t routine);   /* the C's rows of the player's side (boss hurtboxes) */
+bool neo_chaser_attacker(uint32_t routine);
+ga_result_t neo_pweapon_tick(neo_gactor_t *a,neo_genv_t *e);   /* neo_pweapon.c: the other player weapons */
+bool neo_pweapon_routine(uint32_t routine);
+bool neo_pweapon_attacker(uint32_t routine);   /* the C's rows of the player's side (boss hurtboxes) */
 ga_result_t neo_secret_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_secret_routine(uint32_t routine);   /* the vehicle 087E36 itself (not its children) */
 #endif

@@ -33,7 +33,7 @@ def delta(current,previous):
  out.extend(b'\0\0\0\0');return bytes(out)
 def nanos(s):return int(s.replace('.','').replace(',',''))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--bios',type=Path,required=True);p.add_argument('--first-frame',type=int,default=3830);p.add_argument('--last-frame',type=int,default=4059);p.add_argument('--audio-last-frame',type=int,default=4199);p.add_argument('--name',default='entry',help='Output base name in filesystem/cinematics (entry: the mission-entry handoff is checked)');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--bios',type=Path,required=True);p.add_argument('--first-frame',type=int,default=3830);p.add_argument('--last-frame',type=int,default=4059);p.add_argument('--audio-last-frame',type=int,default=4199);p.add_argument('--wav-compress',choices=('0','1'),default='0',help='0 PCM16 (default, as every boot movie); 1 VADPCM as the game music (the choice movies of Tarma, Eri and Fio: ROM size, docs/PERSONAJES.md), checked with tools/wav64_vadpcm.py');p.add_argument('--name',default='entry',help='Output base name in filesystem/cinematics (entry: the mission-entry handoff is checked)');a=p.parse_args()
  assert a.first_frame<a.last_frame<a.audio_last_frame
  out=ROOT/'filesystem/cinematics';out.mkdir(parents=True,exist_ok=True)
  frames={r['frame']:r for l in (a.capture/'frames.jsonl').read_text().splitlines() if (r:=json.loads(l))};players={r['frame']:r for l in (a.capture/'player.jsonl').read_text().splitlines() if (r:=json.loads(l))}
@@ -61,7 +61,7 @@ if __name__=='__main__':
   assert source.getframerate()==48000 and source.getnchannels()==2 and source.getsampwidth()==2
   first=nanos(frames[a.first_frame]['time'])*48000//10**9;last=nanos(frames[a.audio_last_frame]['time'])*48000//10**9;assert last<=source.getnframes();source.setpos(first);pcm=source.readframes(last-first)
   with wave.open(str(out/f'{a.name}.wav'),'wb') as target:target.setnchannels(2);target.setsampwidth(2);target.setframerate(48000);target.writeframes(pcm)
- cmd=[str(ROOT.parent/'toolchains/package/opt/libdragon/bin/audioconv64'),'--wav-resample','32000','--wav-compress','0','--wav-loop','false','-o',str(out),str(out/f'{a.name}.wav')];subprocess.run(cmd,check=True)
+ cmd=[str(ROOT.parent/'toolchains/package/opt/libdragon/bin/audioconv64'),'--wav-resample','32000','--wav-compress',a.wav_compress,'--wav-loop','false','-o',str(out),str(out/f'{a.name}.wav')];subprocess.run(cmd,check=True)
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  report=dict(status='PACKED_ALL_FRAMES_MATCH',first_frame=a.first_frame,last_frame=a.last_frame,frames=count,maximum_packet=maximum,movie_bytes=len(movie),movie_sha256=sha(out/f'{a.name}.msxc'),audio_sha256=sha(out/f'{a.name}.wav64'),audio_first_sample=first,audio_last_sample=last,handoff=handoff,frame_crc32=checks,visual=visual,provenance={n:sha(a.capture/n) for n in ('capture.json','frames.jsonl','player.jsonl','raster.jsonl','reference.wav')},limits='Only the noninteractive mission-entry segment. Title/tutorial/selection and ongoing gameplay music/effects remain separate work.')
  (out/f'{a.name}.json').write_text(json.dumps(report,indent=2)+'\n')

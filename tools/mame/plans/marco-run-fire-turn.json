@@ -1,0 +1,15 @@
+[
+ {"name":"walk_right","length":32,"inputs":["Right"]},
+ {"name":"rfr1","length":34,"inputs":["Right","fire"]},
+ {"name":"rfl1","length":34,"inputs":["Left","fire"]},
+ {"name":"rfr2","length":35,"inputs":["Right","fire"]},
+ {"name":"rfl2","length":36,"inputs":["Left","fire"]},
+ {"name":"rfr3","length":37,"inputs":["Right","fire"]},
+ {"name":"rfl3","length":38,"inputs":["Left","fire"]},
+ {"name":"rfr4","length":39,"inputs":["Right","fire"]},
+ {"name":"rfl4","length":33,"inputs":["Left","fire"]},
+ {"name":"walk_left","length":32,"inputs":["Left"]},
+ {"name":"sfl","length":36,"inputs":["fire"]},
+ {"name":"rfr5","length":36,"inputs":["Right","fire"]},
+ {"name":"walk_right2","length":32,"inputs":["Right"]}
+]

@@ -253,6 +253,232 @@ derecha e izquierda), el salto y el salto con carrera hasta el aterrizaje;
 arranque dura menos de una actualización a 0x1C1: tampoco se dibuja en el
 original.
 
+## Forma 3: la momia (rama `work-m2mummy`)
+
+Informe de MiSTer: «cuando una momia te echa el aliento, Marco debe
+convertirse en momia». En el port el contacto mataba a Marco.
+
+- **La momia y su aliento ya son nativos.** Son la familia `0613CA/0613D8/
+  0613E6` de `neo_rebel2.c` (documentada como «rebeldes» en
+  MISION2_ACTORES.md): su «disparo» `061E8C` golpea con la fila `E1252`
+  (clase 0, tipo `0x10`). El tipo de la fila es el `+5A` que `004C24`
+  devuelve al jugador (`04DAA`), y `0C36C0` compara ese valor con `0x10`.
+  También dan `0x10` las filas `035AB8/035AC8` de la bomba `0369AC` del dron.
+  Los candidatos `035B66/035C68/035D12` son otra familia (voladores y
+  saltadores con `+96` = 0..3, filas de tipo 7): no transforman.
+- **Contacto** (`gameplay.c`, `msx_game_hurt`): tipo `0x10` sin forma 3 →
+  `+94 = 3`, arma a pistola (`marco_weapons_pistol`), la H se reinicia; en
+  forma 3 → la muerte `0C2956`. Mientras cuenta `+84` (la transformación y
+  después `0x5A` actualizaciones) `+5F` bit 6 descarta todo contacto.
+- **Transformación** medida en MAME (`run_marco_catalog.py --give-mummy`,
+  nuevo: escribe `+94 = 3` en el primer fotograma del plan, solo captura;
+  captura lógica `marco-mz1`, `--logic-only --controller-trace`):
+  `0C17A0` en la actualización siguiente, `0C17F0` espera 17
+  actualizaciones al efecto `C4DD8`, `0C182A` pone `+84 = 0x5A` y `0C18B4`
+  sigue una actualización después: 19 actualizaciones sin control ni
+  movimiento.
+- **Mando de la momia** (`0C18B4`): andar a `+62 = 0x18000` (la mitad de
+  `0x30000`; `neo_walk_step_shift`); salto `0C1A0C` (tres actualizaciones
+  agachado) y `0C1A62` con `+34 = 0x90000` y `+34 += (−14 px − +34) >> 5`
+  (dos pasos medidos exactos); en el aire, el avance horizontal a la mitad
+  es **aproximación declarada** (la captura saltó en vertical). Dispara la
+  pistola (`0C3CE8` solo salta el cuchillo). Ya estaban: la concesión
+  `0C0928` rechaza armas, `knife_ok` excluye la forma 3 y `neo_vslot.c`
+  no deja subir a un vehículo (`0C06E8`).
+- **Cura**: el objeto de tipo `0x32` (registro `E5CCA`, recogida
+  `08B750`): sonido `1121` y `0C0C92`: con el jugador vivo en forma 3,
+  `+94 = 0`, `08B87A` y la etiqueta `08CD10` (externa, contada en
+  `labels`, y `cures`); si no, el valor `08B896` y `08B850`. No hay cura por
+  tiempo en el código de formas (`0C32E4`).
+- **Poses** (captura completa `marco-mz2`: `run_marco_catalog.py
+  --command-trace --paired-trace --controller-trace --give-mummy`, plan por
+  defecto, 2948 fotogramas auditados, 92 descriptores, 1765484 píxeles
+  iguales). Filas `+0x30` de las tablas: cuerpo de la transformación
+  `0BF258` `24EDE0` (los cuerpos de la momia: abajo, «dos cuerpos a la
+  vez»), arma en reposo `0BF858` `25F520` (también las tablas de salto
+  `0BFC58/0BFC98`), andar `0BF8D8` `25F562`, disparo `0BFD18` `25F5CA`,
+  arriba `0BFD58` `25F89E`, abajo en el aire `0BFD98` `25F932`, granada
+  `0BF998` `25F626`, subir/mantener/bajar el arma `0BF9D8` `25F74C`,
+  `0BFA18` `25F8F0`, `0BFA98` `25F7AC` (papeles `B3_*`/`W3_*` de
+  `compile_marco_campaign.py --mummy-capture`, `mummy_step` de
+  `marco_visual.c`). `25F794/25F7A0` (`0BFB58/0BFB98`, el arma en el aire)
+  están en el catálogo pero no se eligen (condición de `0C3A5E` sin
+  traducir). Paletas: las ranuras `+19..+1B` del jugador son `63 64 65`
+  (volcados de actor); en forma 3 la `63` y la `64` tienen las dos paletas
+  de la momia (`--name-palette MUMMY=7FFE,6CB8,3863 MUMMY2=7FFE,3DC9,7986`);
+  `marco_visual.c` pone esas ranuras en `+19..+1C` y `actor.c` dibuja cada
+  parte con la de su byte alto; durante la transformación, las normales
+  (abajo). Los efectos `C4DD8`/`C5286` son nativos desde `work-m2fix2`
+  (abajo, «el humo de la transformación»).
+Prueba: `tools/test_gameplay.c` (`mummy_run`): el aliento pide la forma 3 y
+deja la pistola, 19 actualizaciones quieto, protección `0x5A`, la H
+rechazada, 29,7 px en 20 actualizaciones andando y la muerte con el
+segundo aliento.
+
+### Forma 3: dos cuerpos a la vez (rama `work-m2events`)
+
+Informe del usuario (hardware real, ROM 20): al convertirse en momia el
+sprite normal de Marco sigue visible bajo la momia. **Causa**: lo de arriba
+(«el mando `0C18B4` no elige otro cuerpo: se queda») era falso. El cuerpo
+de la transformación `24EDE0` dibuja `1887E0` y se queda en `1887CC`, que es
+Marco **normal y entero** (29×39, la cara de susto); el port lo dejaba como
+cuerpo de la momia toda la forma 3 y encima ponía el arma de la momia
+(`14ADEE`, 35×26): dos cuerpos. En MAME (`marco-mz2`, `debug.log`:
+`MARCO_INIT`/`MARCO_DRAW` por actualización) la transformación dibuja **solo**
+`1887E0`, `1887CC` ×17 (sin arma: `0C17CA` llama a `0C0F16`) y, desde
+`0C182A`, el mando de la momia arranca sus propios cuerpos con `0C0FB6`
+desde las tablas de cuatro personajes `C0408..` (fila 0 = Marco; no pasan
+por `0C0F32`/`0C0F62`, por eso `controller.json` no las tenía):
+
+| Situación (rutina) | Tabla | Programa | Arma |
+| --- | --- | --- | --- |
+| reposo `0C18B4` (cada actualización) | `C0408` | `25F3B4` (`14AD2E`) | sí (+90 = 0) |
+| andar `0C196A` (+26 = 0x80) | `C0418` | `25F3CC` | sí (+90 = 1; `25F562` elegido cada actualización por +77) |
+| giro `0C1924` (+9A bit 3; +98 = 2 solo voltea) | `C0448` (`C0458` con +92) | `260B1C` | no (`0C0F16`) |
+| despegue `0C19E4` / aire | `C0428` | `25F486` | sí |
+| aterrizaje `0C1AC8` (3 actualizaciones, +62 = 0) | `C0478` | `25F4EE` | sí |
+| agacharse `0C1B14` / agachado `0C1B66` | `C0488` / `C0498` | `260B5E` / `260BE6` | no |
+| disparo agachado `0C1CCC` | `C04B8` | `260C8A` | no |
+| levantarse `0C1882` | `C04D8` | `260BA2` | no |
+
+Cambios: `convert_marco_programs.py` toma también los `MARCO_INIT` de las
+capturas extra (las raíces de `0C0FB6`); `compile_marco_campaign.py` añade
+los papeles `B3_IDLE/WALK/JUMP/TURN/LAND/CROUCH_IN/CROUCH/CROUCH_FIRE/STAND`
+comprobados contra esos `MARCO_INIT` y la tabla de la ROM;
+`marco_visual.c` (`mummy_step`) los elige como el mando: sin arma durante la
+transformación, el giro y agachado; el arma se elige otra vez cuando cambia
++90; el disparo hacia arriba acabado baja el arma (`25F7AC`, 3555); el
+aterrizaje empieza en la actualización siguiente a la que toca el suelo.
+`actor.c` usa las paletas normales durante la transformación (el
+`audit.json` de `marco-mz2` usa el perfil normal en sus 37 primeros
+fotogramas y el de la momia después). `gameplay.c`: el aire de la momia
+`0C1A72..0C1AA6` exacto (objetivo ±0x3E000 con desplazamiento 3 con
+dirección, 0 con 5 sin ella; antes una aproximación declarada), el
+aterrizaje sin andar tres actualizaciones (`0C1ADE`) y el despegue cuenta
+como aire para apuntar abajo (3831: abajo y disparo dibujan `25F932`).
+
+**Prueba** (`make check-marco-campaign`, privada): `tools/extract_mummy_fixture.py`
+saca de `marco-mz2` las 1475 actualizaciones (2101..5049) con la situación
+que el juego del port da a `marco_visual.c` (de la rutina del mando y los
+mandos) y los descriptores que el original dibujó para el cuerpo y el arma
+(`data/marco_mummy_fixture.json`); `test_marco_visual.c` las repite:
+**cuerpo 1474 iguales, 0 distintos; arma 1462 iguales, 12 distintos**
+(conocidos: el disparo de la actualización del aterrizaje apunta abajo en
+el original, 4; el arma subida/bajada en el aire `25F7A0/25F794` sin
+traducir, 2, y 6 de la fase del reposo que le sigue).
+
+```sh
+python3 tools/convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --extra-capture K1 --extra-capture K2 --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
+python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --w6-capture $N/marco-w6 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+python3 tools/extract_mummy_fixture.py $N/marco-mz2 --output data/marco_mummy_fixture.json
+```
+
+(CAP1 = `captures-m1full/marco-cat1`, H2/H3 = `captures/weapons/marco-h2/h3`,
+G1/C1/K1/K2 = `captures-grenade/marco-*`, DSC0/DSC1 = `captures-end/marco-dsc*`;
+el grafo sin el cambio reproduce byte a byte el de `marco-graph-w`.) El
+catálogo de poses no cambia (las 92 poses de `marco-mz2` ya estaban): solo
+`build/marco_campaign.h` (privado) debe regenerarse.
+
+Paradas explícitas (el cuerpo se queda, contador `stops` de
+`marco_visual_t`): bajar de un borde sin saltar (`C0438`, `25F4BC`), el giro
+con +92 (`C0458`), reptar y su giro (`C04A8`/`C0468`; el port no repta) y la
+granada agachada (`C04C8`): no aparecen en `marco-mz2`.
+
+### Forma 3: el humo de la transformación (rama `work-m2fix2`, B28 = B13)
+
+Informe de MiSTer (ROM 22): al convertirse en momia no sale humo. `0C17A0`
+crea tras el jugador (`0040BC`) el efecto `0C4DD8`: paleta `0xB0`
+(`009EA8`), programa `2A97A0` (32 poses), `+60 = 0`, `01AD6E` sobre el
+bloque `+28` del jugador, `+6E = 0x10` y el sonido `1085`; `0C4E1C` copia
+cada actualización el `+1E` del jugador, cuenta `+6E` y, en el préstamo (su
+17.ª actualización), pone `+60 = FF` en el jugador y se borra; si no,
+`01ABC8` y `00427A`. `0C17F0` espera ese `+60` y `0C182A` crea el marcador
+`0C5286` (`0C186E`, el mismo «1P» del aterrizaje). El cambio de paleta a
+mitad (las ranuras `63/64` del jugador pasan a las de la momia en
+`0C182A`) ya lo hacía `actor.c`.
+
+Port: `neo_landing.c` tiene un tercer nodo (`neo_landing_smoke`), que
+`gameplay.c` arranca en la primera actualización de la transformación
+(`mummy_transform` = 18) y cuyo `smoke_done` deja crear el marcador en la
+18.ª (`neo_landing_marker`); sus dibujos van sobre el jugador (su `+1E` y
+detrás de él en la lista) y su sonido a la cola de sonidos del mundo
+(`sfx_1085`, render aislado `OK`, 0,85 s, 11672 bytes residentes).
+
+Captura (MAME 0.264; `MSX_FULL_GIVE_MUMMY=<fotograma>`, nuevo en
+`capture_fullgame.lua`, solo captura: `+94 = 3` como el aliento en
+`0C36C0`):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec01_19391 MSX_FULL_LOAD_FRAME=19391
+MSX_FULL_FAMILY_FROM=19455 MSX_FULL_FAMILY_ROOTS=c4dd8,c5286 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=19455 MSX_FULL_PERIOD=1 \
+  MSX_FULL_GRID_TAP=0 MSX_FULL_IDLE=19455-19530 MSX_FULL_GIVE_MUMMY=19460 MSX_FULL_LAST=19530 sh tools/run_capture_fullgame.sh CAP/mz4
+python3 tools/extract_landing_fixture.py CAP/mz4/boss-trace.txt --output data/smoke_fixture.json.gz
+```
+
+**Prueba** `tools/test_neo_smoke.c` (`make check`; el extractor de
+`landing` reconoce ahora el humo y anota las palabras `10B954/10B95C` que lee
+`012022`): **33 actualizaciones (17 del humo, 16 del marcador), 4544 bytes
+iguales, `smoke_done` en la 17.ª**. Píxeles (`export_rest_sprites.py ...
+mz4@c4dd8-c4f60`, un volcado por fotograma): **33 volcados, 45983 píxeles
+iguales**; los 1514 distintos son los dos volcados tomados en el mismo
+fotograma de la actualización del constructor (la lista de sprites llega al
+fotograma siguiente; 757 + 757).
+
+## Disparo de las armas 02/07 y 04/09 (rama `work-m2mummy`)
+
+Capturas `marco-w2`, `marco-w4` y `marco-w6` (`marco-cgun.json`,
+`run_marco_catalog.py --give-weapon <id> --keep-bombs`, nuevo: concesión
+genérica con las tablas `0C0928`): **1220 fotogramas auditados en cada una,
+120/155/131 descriptores, 917499/870616/916270 píxeles iguales**. Papeles
+(forma 1): `W1S_FIRE` `253896`, `W1S_FIRE_UP` `253962`, `W1S_FIRE_DOWN`
+`256030`, `B1S_CROUCH_FIRE` `256F26` (tablas `0BFFD8..0C0098`, ids
+02/07/0F) y `W1F_*`/`B1F_*` `25391A`, `2539FA`, `256078`, `256FAA`
+(`0C00D8..0C0198`, ids 04/09); `marco_visual.c` los elige por `cgroup`.
+Los programas del rayo (`253594`, `2536FC`, `256132`, `256DE8`) tienen papel
+desde la rama `work-laser` (`W1L_FIRE`, `W1L_FIRE_UP`, `W1L_FIRE_DOWN`,
+`B1L_CROUCH_FIRE`, comprobados contra `marco-w6` con `--w6-capture`;
+`marco_visual.c` los elige con `cgroup` 4; ver ARMAS_VEHICULOS.md, Paso 16). Catálogo:
+**562 poses (las 411 anteriores idénticas), 585 piezas CI4, 436304 bytes,
+7 perfiles**. Grafo con un segundo `UNRECOVERED` (`256CCA`, retrollamada
+`0C53C4` de un cuerpo agachado de `marco-w4` que la campaña no usa).
+`make check-marco-campaign`: **578 pasos iguales, 0 distintos (34 casos)**,
+con los disparos de 02 y 04 y el disparo y la granada de la momia.
+
+```sh
+N=/home/user/captures-weap2   # capturas nuevas; el resto como arriba
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output $N/marco-w2 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-cgun.json --give-weapon 2 --keep-bombs   # y 4, 6
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output $N/marco-mz2 --command-trace --paired-trace --controller-trace --give-mummy
+# auditoría, extract_marco_steps.py y extract_marco_controller.py de cada una
+python3 convert_marco_programs.py CAP1 ... --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
+python3 build_marco_poses.py CAP1 ... --extra-audit DSC1/audit.json --extra-audit $N/marco-w2/audit.json --extra-audit $N/marco-w4/audit.json --extra-audit $N/marco-w6/audit.json --extra-audit $N/marco-mz2/audit.json --extra-profile-min-uses 40 --name-palette BURNT=7FFF,6FF0,4840 --name-palette MUMMY=7FFE,6CB8,3863 --name-palette MUMMY2=7FFE,3DC9,7986 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite
+python3 compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --w6-capture $N/marco-w6 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+```
+
+## Entradas privadas: comprobación por contenido
+
+Informe de MiSTer sobre la ROM de prueba 18: «Marco ha perdido animaciones».
+En ares la 18 escribe `MSX marco part 0: format/size 35x26` y
+`native animation missing: six-state fallback (0 poses)`: el ELF llevaba un
+`marco_renderer.o` compilado con el catálogo anterior (411 poses, parte 0 de
+29x29) y el DFS las 585 piezas del catálogo de 562 poses. Las entradas
+privadas (`build/marco_pose_meta.h`, `build/marco_campaign.h`,
+`romfs/marco`) se habían copiado conservando su fecha (`cp -p`), más antigua
+que el objeto, y `make` no lo recompiló. Sin el renderizador nativo el port
+vuelve a los seis estados: sin agacharse, apuntar arriba, disparo hacia abajo,
+granada, cuchillo, paracaídas, muerte… La ROM 16 (y la 17) cargan el
+catálogo nativo.
+
+- `tools/marco_inputs_sum.sh` (en el análisis del Makefile) escribe
+  `build/marco-inputs.sum` solo si cambia el contenido de esas entradas;
+  `marco_renderer.o`, `marco_visual.o`, `test_marco_render.o` y los sellos de
+  romfs dependen de él.
+- `tools/check_marco_romfs.py` repite las pruebas de `marco_renderer_load`
+  (número, CI4, tamaño, huella de píxeles) al construir `game-romfs` y en
+  `make check-marco-campaign`: un catálogo y unas piezas distintos paran la
+  construcción en lugar de dar una ROM con seis estados.
+- `tools/test_marco_inputs_sum.sh` (`make check`): una copia con fecha antigua
+  y contenido distinto renueva la suma, y las reglas dependen de ella.
+
 ## Pendiente
 
 - Controlador original completo (`0x0C1xxx..0x0C3xxx`, ya traducido en
@@ -265,3 +491,130 @@ original.
   suelo (`2503D4`, sin captura), otras armas y la Camel Slug.
 - Efectos de los eventos de animación (fogonazo, casquillos).
 - Cambio de banco de paleta al reaparecer (perfil 1).
+
+## Victoria al acabar la misión (B46)
+
+Informe de MiSTer (ROM 28): al completar la misión y durante el recuento
+Marco no hace su pose de victoria. En el arcade `018846` pone RAM `10C301`
+y, en la misma actualización, el reposo `0C2016..0C2046` (solo si entró en
+reposo por `0C1F4A`: `+9A` bit 5) comprueba `018F24` y `10C304 >> 2 & +5E`
+(`018FFE`; `10C304` = `+5E` del jefe en `018F92`, 04 en `runK`) y pone la
+rutina `0C1E84`, que en la actualización siguiente elige la tabla `0BF658`
+(`0C0F32`; `0C0F16`: sin hilo de arma) y vuelve a `0C1FA6` con el bit 5
+borrado: el programa sigue hasta el cambio de misión (MAME `runK` 13701,
+`run4` 18648 en la M1 y 117325 en la M2). Forma 0 `24FEDC`, forma 1
+`257F86`; las formas 2/3 no tienen fila (sin victoria).
+
+Port: `msx_game_victory` (`10C301` = el fin de misión ya empezó,
+`ga_flags.end_kind` bit 2), `marco_visual.c` arma la victoria en reposo y
+arranca `B_VICTORY`/`B1_VICTORY` en la actualización siguiente; `actor.c`
+sigue animando a Marco durante el fin de misión (antes se congelaba).
+
+Capturas (solo captura: `--victory N`, escribe `10C304 = 04` y `10C301 =
+FF` N fotogramas después del primero del plan `marco-victory.json`, como
+dejan `018F92`/`018846`): `marco-v0` (pistola) y `marco-v1`
+(`--give-hgun`): **236 fotogramas cada una, 8 y 10 descriptores, 181316 y
+209266 píxeles iguales**. Catálogo: **570 poses (las 562 anteriores
+idénticas: CRC, límites, ancla), 593 piezas CI4, 444008 bytes, 7 perfiles**.
+`make check-marco-campaign`: **786 pasos iguales, 0 distintos (36 casos)**;
+los casos `v_victory`/`vh_victory` (110 y 98 pasos, la victoria en bucle)
+se añadieron a `data/marco_throw_fixture.json`.
+
+Las capturas de `captures-weap2` y `captures-grenade` ya no estaban en el
+disco: `marco-g1`, `marco-c1`, `marco-k1`/`k2` (plan `marco-knife.json`),
+`marco-w2/w4/w6` y `marco-mz2` se repitieron con las mismas órdenes y dieron
+las mismas auditorías (g1 764/79/596066, c1 1208/109/904263, w2/w4/w6
+1220 fotogramas y 120/155/131 descriptores, mz2 2948 fotogramas); el grafo
+nuevo tiene los mismos dos `UNRECOVERED`.
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output V0 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-victory.json --victory 16
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output V1 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-victory.json --give-hgun --victory 40
+# auditoría, extract_marco_steps.py y extract_marco_controller.py de cada una; luego
+# convert_marco_programs.py / build_marco_poses.py de arriba con --extra-capture V0 --extra-capture V1 / --extra-audit V0/audit.json --extra-audit V1/audit.json
+python3 tools/compile_marco_campaign.py CAP1 ... --victory-capture V0 --victory-h-capture V1 --output build/marco_campaign.h
+python3 tools/extract_throw_fixture.py --output /tmp/v.json v_victory=V0:victory:0:24fedc:0:stand vh_victory=V1:victory:0:257f86:1:stand   # añadidos a data/marco_throw_fixture.json
+```
+
+### Forma 2: Marco gordo (`+93 = 2`)
+
+La comida `0C0BF4` suma 0x100 a `10C718+0x10+2·jugador` y, si llega a 0x780,
+pide `+94 = 2` (solo cuando `0C0BAE` acepta la misión: valor `10C2F6` en
+4,5,6,7,9,10); `0C33AE` lo descuenta cada fotograma y a 0 vuelve a `+94 = 0`.
+`run_marco_catalog.py --give-fat` (solo captura: escribe `10C2F6 = 4` y
+`+94 = 2` en el primer fotograma del plan, lo que la comida pide) da
+`marco-f2`: 2952 fotogramas, auditoría 2948/198/2395000, 383 selecciones.
+La transformación es `C04F8` (`25CDEA`, `0C1D70`); las filas de las tablas
+son +0x20 (`0C0F32/0C0F62` con desplazamiento 32). Marco muere a 4423
+(`0C2A06`, cuerpo `C0518` `25CF70`) y desde `idle_long` vuelve a la forma 0:
+solo los 25 casos anteriores son prueba de la forma 2.
+`compile_marco_campaign.py --fat-capture` comprueba `ROLES_FAT` (12 cuerpos,
+10 armas) y `ROLES_FAT_BODY` (2 iniciados directamente). El catálogo pasa a
+720 poses / 745 partes.
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output F2 --command-trace --paired-trace --controller-trace --give-fat
+# auditoría, extract_marco_steps.py, extract_marco_controller.py; luego
+# convert_marco_programs.py / build_marco_poses.py de arriba con --extra-capture F2 / --extra-audit F2/audit.json
+python3 tools/compile_marco_campaign.py CAP1 ... --mummy-capture $N/marco-mz2 --fat-capture F2 --victory-capture V0 --victory-h-capture V1 --output build/marco_campaign.h
+```
+
+En el port (`src/marco_visual.c`, `fat_role`): la forma 2 sigue la misma
+elección de la forma 0 (los mismos estados del mando eligen las mismas
+tablas) y arranca el programa de la fila +0x20; el arma subida se mantiene
+(`0BFA18 25A7FE`) y se baja (`0BFA98 25A73A`) como con la H. Una fila no
+capturada (victoria, cuchillo, colgado, fuego de la H/C) no arranca nada:
+parada explícita (`stops`). `data/marco_throw_fixture.json` añade seis
+casos `g_*` de `marco-f2` (fuego de pie/arriba/abajo en el aire, granada de
+pie, fuego y granada agachado): 66 pasos iguales. La transformación
+(`0C1D70`, 19 actualizaciones sin control, `+84 = 0x5A`) y el contador
+`0C33AE` están en `src/gameplay.c`; la comida `0C0BF4` en `src/neo_item.c`.
+Sin capturar (paradas explícitas): la vuelta a delgado `0C1D82` (`C0508`),
+el bocado del arma `C0528` (`0C3A30`, +9A bit 4) y las poses de `idle_long`.
+
+`marco-f3` (`--give-fat --give-weapon 3 --keep-bombs`, plan
+`marco-cgun.json`; auditoría con `--sparse`: 1220 fotogramas, 115
+descriptores, una sonda alternativa en 2896, sin exclusiones; 136
+selecciones): con la R gorda el disparo usa los mismos programas que la
+pistola gorda (`0C02D8/0C0318/0C0358 + 0x20` = `25A8F4/25A83C/25A898`,
+agachado `0C0398 + 0x20` = `25D10E`), cuyo primer mando es el CALL
+`0C436A`; no hace falta ningún rol nuevo.
+
+## B84: giro corriendo y parada (rama `work-anim-2`)
+
+Capturas MAME 0.264 de `tools/mame/plans/marco-run-turn.json` (nuevo: la
+clave `fire_at` de un caso da los fotogramas de sus pulsaciones de A, y el
+caso puede durar desde 2 fotogramas): `marco-rt0` (pistola), `marco-rt1`
+(`--give-hgun`) y `marco-rtc` (`--give-cgun`), 674 fotogramas cada una
+(auditorías 63/63/67 descriptores, 458962/550712/521876 píxeles). Papeles
+nuevos (`ROLES_TURN`, `--turn-capture`/`--turn-h-capture`):
+`B_TURN_RUN_UP` `24EF24`, `B1_TURN_RUN` `256FF2`, `B1_TURN_RUN_UP`
+`257008`, `B1_TURN` `257034`, `W_AIM_HOLD` `24C65C` y `W_AIM_DOWN`
+`24C6C0`. Catálogo 744 → 746 poses (`18A612`, `18A626`).
+
+Base reconstruida tras perder las capturas: todas las de arriba se repiten
+con las mismas órdenes y dan las mismas auditorías; el grafo y
+`compile_marco_campaign.py` sin las tres nuevas reproducen el
+`marco_campaign.h` de la ROM 52 (2591 órdenes, 107 papeles), y con ellas
+solo se insertan 10 órdenes (los demás iguales tras reindexar). CAP2 y D2
+(plan y lua no conservados) no se repiten: `build_marco_poses.py
+--base-meta` toma los descriptores y las paletas de un catálogo anterior y
+convierte de nuevo todas las poses desde la ROM (con la base sola sale el
+mismo catálogo y el mismo `romfs/marco`, byte a byte).
+
+```sh
+for o in rt0: rt1:--give-hgun rtc:--give-cgun; do python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output ${o%%:*} --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-run-turn.json ${o#*:}; done
+# auditoría (rt1/rtc con --sparse), extract_marco_steps.py y extract_marco_controller.py de cada una
+python3 tools/convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --extra-capture K1 --extra-capture K2 --extra-capture DSC0 --extra-capture DSC1 --extra-capture W2 --extra-capture W4 --extra-capture W6 --extra-capture MZ2 --extra-capture V0 --extra-capture V1 --extra-capture F2 --extra-capture RT0 --extra-capture RT1 --extra-capture RTC --equivalent-calls --output GRAFO
+python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture W2 --w4-capture W4 --w6-capture W6 --mummy-capture MZ2 --fat-capture F2 --victory-capture V0 --victory-h-capture V1 --turn-capture RT0 --turn-h-capture RT1 --output build/marco_campaign.h
+cd tools; python3 build_marco_poses.py CAP1 --base-meta BASE/marco_pose_meta.h --extra-audit RT0/audit.json --extra-audit RT1/audit.json --extra-audit RTC/audit.json --extra-profile-min-uses 40 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite; cd ..
+python3 tools/extract_run_turn_fixture.py RT0 RT1 RTC   # data/run_turn_fixture.json
+```
+
+**Prueba** (`make check-marco-campaign`): `data/run_turn_fixture.json`,
+970 actualizaciones (la H y la C desde la carrera que reinicia tras recibir
+el arma), cada dibujo con su bit de espejo y cada pulsación: la compuerta
+del giro (`marco_turn.h`) la bloquea exactamente cuando el original no
+disparó. **0 diferencias** (antes del arreglo, 589 dibujos y 9 pulsaciones).
+`tools/test_run_turn.c` (`make check`) repite en el juego (`gameplay.c` con
+la compuerta de la capa visual, como `actor.c`) las entradas de `marco-rt0`.

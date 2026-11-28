@@ -18,7 +18,9 @@
  *           kind 4 -> 0C315A, in the air -> 0C3232, else +9A bit 7)
  *   0C30F0  0AA5AC (its 0143EE is the caller's), kind 0 -> death (+5A =
  *           cause, +5F bit 7, 0C2956) unless RAM 10C300 (then 0C3232);
- *           1 and the unknown kinds -> 0C3232; 2, 3, 4, 5 untranslated
+ *           1 and the unknown kinds -> 0C3232; 3 and 5 (+15 bit 0 set)
+ *           -> 0C1F4A (stand; the fat form 2 with +86 >= 20 -> 0C1E94
+ *           untranslated); 2 and 4 untranslated
  *   0C3232  program 0BF618 (0C0F32), 0C0F16, +30 = 0, +34 = 0xB7000,
  *           +00 = 0C3250 and on:
  *   0C3250  0AA4C8, +84 |= 0x1E, 0C0FEA, +34 += (-0x160000 - +34) >> 5,
@@ -36,6 +38,7 @@ typedef enum {
     MARCO_MOUNT_EXIT,       /* 0C30F0 now: call marco_mount_exit */
     MARCO_MOUNT_DIE,        /* 0C2956 with +5A (kind 0) */
     MARCO_MOUNT_EJECT,      /* 0C3232: the eject jump (marco_mount_eject each update) */
+    MARCO_MOUNT_STAND,      /* 0C1F4A (kinds 3 and 5, the sewer crank): standing, +00 = 0C1FA6 (its program 0BF6D8 by 0C0F32 is the caller's) */
     MARCO_MOUNT_STOP        /* untranslated path (`stop` = its ROM label) */
 } marco_mount_result_t;
 typedef struct {
@@ -69,4 +72,13 @@ bool marco_mount_eject_end(uint8_t *m,uint32_t saved34);
  * is clear and 10C71C+p <= 10C71A+p; +5F bits 5/4 from up/down, +9A bit 3
  * for a stick against the facing, +9B |= d0 & +9C. */
 uint16_t marco_mount_input(uint8_t *m,const marco_mount_in_t *in);
+/* B82: the character fields of the player's node record the vehicles read
+ * (0AA760 returns +6E, the Camel's / Slugnoid's / M3 vehicle's +70 and the
+ * SV-001's +82): +6E the character chosen at SOLDIER SELECT (0C961C: 0
+ * Marco, 1 Tarma, 2 Eri, 3 Fio), +70 the player (0 for player 1). MAME
+ * 0.264 RAM 1014C4+6E..+71: 0000 0000, 0001 0000, 0002 0000, 0003 0000
+ * (data/player_ids_fixture.txt, tools/test_player_ids.c). */
+static inline void marco_mount_record_ids(uint8_t *m,unsigned character) {
+    m[0x6e]=0;m[0x6f]=(uint8_t)character;m[0x70]=m[0x71]=0;
+}
 #endif

@@ -4,6 +4,8 @@
 #include "scene_assets.h"
 #include "retro25d.h"
 void scene_renderer_init(void);
+/* After scene_stage_load / scene_mission_unload (docs/MISION2.md). */
+void scene_renderer_stage_changed(void);
 /* display_get() with a watchdog: re-kicks rspq when no framebuffer frees up. */
 surface_t *msx_display_get(void);
 void scene_render_begin(surface_t *surface);
@@ -11,10 +13,39 @@ void scene_render_begin(surface_t *surface);
  * rules); backdrop_after selects the palette loaded at progress 2304. */
 void scene_render_set_collapse(bool collapsed,bool flash);
 void scene_render_set_patch(bool patched);
+/* Map patches 0C70FC applied in the loaded stage ((sub-map, layer object)
+ * pairs, neo_world_t map_patch): drawn from the stage pack (B37). */
+void scene_render_set_map_patches(const uint32_t (*list)[2],const uint16_t *cols,unsigned n);
+/* Mission 2 stage 3 tower (docs/MISION2.md "Fase 2d"): pieces 0..count-1
+ * of the writer 0B7C38, types[k] drawn from the stage's templates (layer-3
+ * cells at x >= SCENE_TOWER_TEMPLATE_X, tools/pack_mission.py) at
+ * (256 + 16 i, SCENE_TOWER_BASE_Y - 48 k + 16 j). */
+enum { SCENE_TOWER_TEMPLATE_X=0x4000, SCENE_TOWER_BASE_Y=-1408, SCENE_TOWER_TYPES=13 };
+void scene_render_set_tower(const uint8_t *types,unsigned count);
+/* Mission packs: layer `layer` drawn at `offset` (its own motion, e.g. the
+ * Mission 3 sky, neo_train.c sky_x) instead of its camera rule. */
+void scene_render_set_layer_offset(unsigned layer,bool on,int offset);
+/* The same for the layer's vertical offset (screen row = map y + rise): a
+ * layer object the camera list moves by its own y factor (Mission 4 sky). */
+void scene_render_set_layer_rise(unsigned layer,bool on,int rise);
+/* Mission packs: layer `layer` drawn by its hardware column ring (the
+ * Mission 3 train 10D7B6, neo_train.c ring): 32 columns of 16 px, column k at
+ * screen x + 16 k in ring slot (first_slot + k) & 31, showing the pack's
+ * column at layer x map_x[k] (INT16_MIN: nothing). Overrides the offset. */
+/* Layer `layer` repeats every 512 px from x `end_x` on (0: off): the tile
+ * ring of 10C72E past its map's end (Mission 4's boss road). */
+void scene_render_set_terrain_wrap(int layer,int end_x);
+void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]);
+/* Column k of the layer at screen x + 16 k shows the pack column at map_x[k]
+ * (INT16_MIN: none) with its own rise, clipped to screen rows [y0[k], y1[k]). */
+void scene_render_set_layer_columns(unsigned layer,bool on,int x,const int16_t map_x[32],const int16_t rise[32],const int16_t y0[32],const int16_t y1[32]);
+/* While the column ring of `layer` is drawn, palette `from` shows palette `to` (from < 0: none). */
+void scene_render_set_ring_palette(int layer,int from,int to);
 void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash);
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
+void scene_render_layers(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first);
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash);
 /* A sprite part with the Neo Geo flips: mirror = attribute bit 0 (H),
  * flip_y = bit 1 (V); the caller places the part (flipped offsets). */
@@ -26,6 +57,11 @@ void scene_render_set_deferrable(bool on);
  * from now on; scene_render_fade_palette returns the converted copy. */
 void scene_render_set_fade(int8_t red,int8_t green,int8_t blue);
 const uint16_t *scene_render_fade_palette(const uint16_t *source);
+/* 009CCE at run time (src/neo_palmix_run.h): the palette id, for this frame, of the palette whose ROM words are
+ * scene_palette(raw_a) blended towards scene_palette(raw_c) by `weight` (1..30) with the ROM table 0051D8 (`table`);
+ * -1 when the frame has no room left (counted) or without the table. An id is SCENE_MIX_BASE or more. */
+enum { SCENE_MIX_BASE=0xf000 };
+int scene_render_mixed_palette(unsigned raw_a,unsigned raw_c,unsigned weight,const uint8_t *table);
 void scene_render_box(int x,int y,int width,int height,color_t color);
 void scene_render_text(int x,int y,const char *text);
 void scene_render_end(void);

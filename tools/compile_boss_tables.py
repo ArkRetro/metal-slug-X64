@@ -15,13 +15,20 @@ for i,r in enumerate(t['regions']):
     L.append('static const uint8_t boss_rom_region_%d[]={%s};'%(i,','.join(map(str,b))))
 L.append('static const boss_rom_table_t boss_rom_tables[]={%s};'%','.join('{0x%xu,%du,boss_rom_region_%d}'%(r['label'],len(r['bytes'])//2,i) for i,r in enumerate(t['regions'])))
 L.append('enum { BOSS_ROM_TABLE_COUNT=%d };'%len(t['regions']))
+def asset24(v):
+    """neo_anim_command_t.asset is a signed 24-bit field (src/neo_animation.h):
+    a 68K address, or a sign-extended 24-bit constant written as negative."""
+    v&=0xffffffff
+    if v<0x800000: return '0x%xu'%v
+    assert v>=0xff800000,'asset %08x does not fit the 24-bit command field'%v
+    return '-0x%x'%(0x100000000-v)
 kinds={k:'NEO_ANIM_'+k for k in ('WAIT','POSE','JUMP','FIELD50','FINISH','FLIP_FACING','UNRECOVERED','SELECT_POSE','SELECT_FIELD_POSE',
     'SET_BYTE','SET_WORD','SET_LONG','DEC_BYTE','COND_JUMP','SWITCH','SOUND','CALL')}
 for i,prog in enumerate(p['programs']):
     L.append('static const neo_anim_command_t boss_program_%d[]={'%i)
     for c in prog['commands']:
         asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
-        L.append('  {%s,0x%xu,%d,%d,%d,%d,%d},'%(kinds[c['kind']],asset,c['target'],c['operand'],c['flags'],c['dx'],c['dy']))
+        L.append('  {%s,%s,%d,%d,%d,%d,%d},'%(kinds[c['kind']],asset24(asset),c['target'],c['operand'],c['flags'],c['dx'],c['dy']))
     L.append('};')
     L.append('static const int32_t boss_program_address_%d[]={%s};'%(i,','.join(str(c['address']) for c in prog['commands'])))
 L.append('typedef struct { uint32_t tag; neo_anim_program_t program; const int32_t *address; } boss_program_t;')

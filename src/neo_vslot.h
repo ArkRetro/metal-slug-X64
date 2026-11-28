@@ -49,6 +49,11 @@ void neo_vslot_exit_place(neo_vslots_t *v,unsigned p,uint8_t *player,uint8_t *ki
  * `rect` (four words, ROM data at A0) around `vehicle`, whose slot is free.
  * `system` = RAM 10C300 (019424), `halted` = 018F24, `rng` = 0029C6 for a
  * tie. Returns the chosen player (carry) or -1. */
+/* 0AA606: 0AA616 with the test 0C069E (the crank 095C98): D1 (`d1`: the
+ * player must face left) and the players' new presses (0CA2CE +0). */
+typedef struct { bool d1; uint16_t fresh[2]; } neo_vslot_grab_t;
+int neo_vslot_select_grab(const neo_vslots_t *v,const uint8_t *vehicle,const neo_vslot_player_t players[2],
+    const int16_t rect[4],bool halted,const neo_vslot_grab_t *grab,uint16_t (*rng)(void *),void *ctx);
 int neo_vslot_select(const neo_vslots_t *v,const uint8_t *vehicle,const neo_vslot_player_t players[2],
     const int16_t rect[4],bool halted,bool system,uint16_t (*rng)(void *),void *ctx);
 /* 0AA760: vehicle node `node` binds player p's slot in this update (+1C =
@@ -82,6 +87,12 @@ void neo_vslot_angle(neo_vslots_t *v,unsigned p,uint16_t angle);
 /* 0AAA88: kind of the ridden vehicle (0 none) and +1F/+20/+18/+14. A slot
  * of kind 0 is the TRAP #F of the original: false (explicit stop). */
 bool neo_vslot_ridden(const neo_vslots_t *v,unsigned p,bool exists,uint8_t *kind,uint8_t *shells,uint8_t *type,uint16_t *health,uint16_t *d4);
+/* 0AAAE0 (0C9B94 with d1 = 0; the gas can 08B710 through 0C0BA8 with d1 =
+ * 0x10): a bound slot (+00 nonzero) of a vehicle kind 1, 3, 4, 8, 9, A or B
+ * has a gauge (carry, true): *health = +18, *max = +14. With d1 != 0 and
+ * health < max, d1 is added to the pending change +16; with health >= max
+ * the carry is clear (false, the item gives its points). */
+bool neo_vslot_gauge(uint8_t *slot,uint16_t d1,uint16_t *health,uint16_t *max);
 /* 0CA1B8: the player's input words (RAM 10E9EC+2 held / +0 new, 10E9F2 for
  * P2; 0CA2CE returns their address) from the BIOS bytes `held`/`pressed`
  * (RAM 10C35C/10C35D): bits 0-3 the stick (held, in both words), bits 4-7

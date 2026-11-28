@@ -12,7 +12,7 @@ arr('uint8_t','soldier_rank_lookup',t['rank_lookup']['values'])
 arr('uint8_t','soldier_group_map',t['group_map']['values'])
 arr('uint16_t','soldier_timer70_table',t['timer70']['values'])
 arr('uint16_t','soldier_timer72_table',t['timer72']['values'])
-for key,name in (('attack_sense','soldier_attack_sense'),('attack_knife','soldier_attack_knife'),('attack_leap','soldier_attack_leap'),('attack_leap_hit','soldier_attack_leap_hit')):
+for key,name in (('attack_sense','soldier_attack_sense'),('attack_knife','soldier_attack_knife'),('attack_leap','soldier_attack_leap'),('attack_leap_hit','soldier_attack_leap_hit'),('attack_wait','soldier_attack_wait')):
     v=t[key];arr('int16_t',name,v['rect']+[v['kind'],v['klass'],v['damage']])
 L.append('static const int16_t soldier_pistol_attacks[16][7]={'+','.join('{%s}'%','.join(str(x) for x in v['rect']+[v['kind'],v['klass'],v['damage']]) for v in t['pistol'])+'};')
 arr('uint16_t','soldier_cull_rect',[v&0xffff for v in t['cull_rect']['values']])
@@ -23,6 +23,9 @@ arr('uint16_t','soldier_variant_cull_rect',[v&0xffff for v in t['variant_cull_re
 L.append('typedef struct { uint32_t tag; int16_t rect[4]; uint8_t type,flags; } soldier_hurtbox_t;')
 L.append('static const soldier_hurtbox_t soldier_hurtboxes[]={'+','.join('{%s,{%s},%d,%d}'%(h['rom'],','.join(map(str,h['rect'])),h['type'],h['flags']) for h in t['hurtboxes'])+'};')
 ph=t['player_hurtbox'];L.append('static const soldier_hurtbox_t soldier_player_hurtbox={%s,{%s},%d,%d};'%(ph['rom'],','.join(map(str,ph['rect'])),ph['type'],ph['flags']))
+# The player's other +50 boxes (B89): crouched 0C2214, standing jump 0C2660.
+for key,name in (('player_crouch_hurtbox','soldier_player_crouch_hurtbox'),('player_jump_hurtbox','soldier_player_jump_hurtbox')):
+    ph=t[key];L.append('static const soldier_hurtbox_t %s={%s,{%s},%d,%d};'%(name,ph['rom'],','.join(map(str,ph['rect'])),ph['type'],ph['flags']))
 arr('uint8_t','soldier_angle_log',t['angle_tables']['log'])
 arr('uint8_t','soldier_angle_atan',t['angle_tables']['atan'])
 arr('uint8_t','mission1_script',t['mission_script']['bytes'])
@@ -32,12 +35,49 @@ arr('uint16_t','soldier_throw_flight_rect',[v&0xffff for v in t['throw_rectangle
 arr('uint16_t','soldier_throw_burst_rect',[v&0xffff for v in t['throw_rectangles']['burst']])
 arr('int16_t','soldier_throw_attack',t['throw_attack']['values'])
 L.append('enum { MISSION1_SCRIPT_BASE=%s, MISSION1_SCRIPT_END=%s, MISSION1_REGION_END=%s };'%(t['mission_script']['rom'],t['mission_script']['end'],t['mission_script']['region_end']))
-L.append('static const uint32_t mission1_spawn_table[][2]={'+','.join('{%s,%s}'%(k,v) for k,v in t['spawn_table']['entries'].items())+'};')
+# The spawn table ROM 0197DC is shared by every mission: Mission 1's
+# entries come from the ROM dump; Missions 2 and 3 from their decoded
+# scripts (data/mission2_script.json, data/mission3_script.json, data/mission4_script.json, data/mission5_script.json, data/mission6_script.json). Bit 31 (not counted in the group) is
+# only read for groups < 9 (neo_script.c), so it is rebuilt from
+# group_counted there and left 0 otherwise.
+spawn=dict(t['spawn_table']['entries'])
+bit_unknown=set()
+def spawn_records(statements):
+    for st in statements:
+        if st.get('name')=='spawn':yield st
+        for key in ('alternatives','body','statements','then'):
+            v=st.get(key)
+            if isinstance(v,dict):v=[v]
+            if isinstance(v,list):yield from spawn_records(v)
+# Mission 3 too (docs/MISION3.md: 8 bytes per offset, ~1 KB of .rodata).
+# The credits (data/ending_script.json: section 22 and the sub-script records of tools/decode_ending_subscripts.py).
+ENDING=json.loads((ROOT/'data/ending_script.json').read_text())
+for sec in [sec for n in (2,3,4,5,6) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]+ENDING['sections']+ENDING.get('sub_scripts',[]):
+    for st in spawn_records(sec['statements']):
+        off=hex(int(st['table_offset'],16));ctor=int(st['constructor'],16)
+        bit=(0 if st['group_counted'] else 1<<31) if st['group']<9 else None
+        if off in spawn:
+            old=int(spawn[off],16)
+            assert old&0xffffff==ctor and (bit is None or off in bit_unknown or old&(1<<31)==bit),(off,spawn[off],st['constructor'])
+            # An entry first met in a group >= 9 record (bit not read there) takes the bit of the first group < 9 record
+            # (Mission 5: offset 0x2FC, the Slugnoid 09692C, group 9 in Mission 2 and group 6 in the sewer; ROM 80 09 69 2C).
+            if bit is not None and off in bit_unknown:spawn[off]='0x%08X'%(ctor|bit);bit_unknown.discard(off)
+        else:
+            spawn[off]='0x%08X'%(ctor|(bit or 0))
+            if bit is None:bit_unknown.add(off)
+L.append('static const uint32_t mission1_spawn_table[][2]={'+','.join('{%s,%s}'%(k,v) for k,v in spawn.items())+'};')
 L.append('static const uint8_t soldier_hit_matrix[8][20]={'+','.join('{%s}'%','.join(map(str,r)) for r in t['hit_matrix']['rows'])+'};')
 L.append('static inline const int16_t *soldier_hurtbox(uint32_t tag) {')
 L.append('    for (size_t i=0;i<sizeof(soldier_hurtboxes)/sizeof(soldier_hurtboxes[0]);i++) if (soldier_hurtboxes[i].tag==tag) return soldier_hurtboxes[i].rect;')
 L.append('    return NULL;\n}')
 # Animation programs
+def asset24(v):
+    """neo_anim_command_t.asset is a signed 24-bit field (src/neo_animation.h):
+    a 68K address, or a sign-extended 24-bit constant written as negative."""
+    v&=0xffffffff
+    if v<0x800000: return '0x%xu'%v
+    assert v>=0xff800000,'asset %08x does not fit the 24-bit command field'%v
+    return '-0x%x'%(0x100000000-v)
 kinds={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIELD50':'NEO_ANIM_FIELD50','FINISH':'NEO_ANIM_FINISH',
     'FLIP_FACING':'NEO_ANIM_FLIP_FACING','UNRECOVERED':'NEO_ANIM_UNRECOVERED','REPLACE_PALETTE':'NEO_ANIM_REPLACE_PALETTE',
     'SPAWN_THROW':'NEO_ANIM_SPAWN_THROW','SELECT_POSE':'NEO_ANIM_SELECT_POSE','SET_BYTE':'NEO_ANIM_SET_BYTE','SET_WORD':'NEO_ANIM_SET_WORD',
@@ -45,15 +85,83 @@ kinds={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIE
     'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL','SELECT_FIELD_POSE':'NEO_ANIM_SELECT_FIELD_POSE'}
 L.append('#ifdef MSX_SOLDIER_PROGRAMS')
 L.append('#include "../src/neo_animation.h"')
+def command_text(c):
+    asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
+    return '{%s,%s,%d,%d,%d,%d,%d}'%(kinds[c['kind']],asset24(asset),c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
+texts=[tuple(command_text(c) for c in prog['commands']) for prog in p['programs']]
+# A program whose commands equal the tail of a longer one points into that
+# one's array (jump targets are relative to the program's own start, and the
+# commands are identical, so the program runs the same): ~1k commands less
+# in the console image (docs/RENDIMIENTO.md, RAM budget).
+storage={}   # program index -> (array program, offset)
+tails={}
+# A program of a mission group (data/soldier_programs.json "group": m2, m3)
+# is left out of the console image (its mission pack carries it, MSXD); tails
+# are shared only inside the same group.
+GUARD={'m2':'!defined(N64)','m3':'!defined(N64)','m4':'!defined(N64)','m5':'!defined(N64)','m6':'!defined(N64)','end':'!defined(N64)'}
+group=[prog.get('group') for prog in p['programs']]
+for i in sorted(range(len(texts)),key=lambda k:(-len(texts[k]),k)):
+    t=texts[i]
+    if t and (group[i],t) in tails: storage[i]=tails[(group[i],t)];continue
+    storage[i]=(i,0)
+    for k in range(len(t)): tails.setdefault((group[i],t[k:]),(i,k))
+# The programs of no group are not in the console image either
+# (docs/MEMORY_OPTIMIZATION.md "Programs on demand"): build/programs.bin, in
+# the cartridge's file system, holds their commands as the 10-byte records of
+# the mission packs ('MSXD', pack_mission.py) and the image keeps one
+# reference per program (tag, offset, count; tags ascending). neo_world.c
+# reads a program the first time it is asked for.
+import re,struct
+_enum=re.sub(r'/\*.*?\*/','',re.search(r'typedef enum \{(.*?)\} neo_anim_kind_t;',(ROOT/'src/neo_animation.h').read_text(),re.S).group(1),flags=re.S)
+KIND_NUMBER={n.strip():k for k,n in enumerate(x for x in _enum.split(',') if x.strip())}
+def command_record(c):
+    asset=(0x1adaa if c['kind']=='FLIP_FACING' else c['asset'])&0xffffffff
+    assert asset<0x800000 or asset>=0xff800000
+    return struct.pack('>B',KIND_NUMBER[kinds[c['kind']]])+(asset&0xffffff).to_bytes(3,'big')+struct.pack('>HBBbb',c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
+file_at={};file_body=bytearray()
 for i,prog in enumerate(p['programs']):
-    L.append('static const neo_anim_command_t soldier_program_%d[]={'%i)
-    for c in prog['commands']:
-        asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
-        L.append('  {%s,0x%xu,%d,%d,%d,%d,%d},'%(kinds[c['kind']],asset,c['target'],c['operand'],c['flags'],c['dx'],c['dy']))
-    L.append('};')
+    if group[i] or storage[i][0]!=i: continue
+    file_at[i]=16+len(file_body)
+    for c in prog['commands']: file_body+=command_record(c)
+refs=sorted((prog['root'],file_at[storage[i][0]]+10*storage[i][1],len(prog['commands'])) for i,prog in enumerate(p['programs']) if not group[i])
+assert len({r[0] for r in refs})==len(refs),'two programs of the image share a tag'
+assert all(r[2] for r in refs)
+(ROOT/'build').mkdir(exist_ok=True)
+(ROOT/'build/programs.bin').write_bytes(b'MSXP'+struct.pack('>HHII',1,0,len(refs),16+len(file_body))+bytes(file_body))
+# 8 bytes a reference (12 before; docs/MEMORY_OPTIMIZATION.md): 24-bit tag and file offset, 16-bit count.
+assert all(r[0]<1<<24 and r[1]<1<<24 and r[2]<1<<16 for r in refs),'program reference out of its fields'
+L.append('typedef struct { uint32_t tag:24,count_lo:8; uint32_t offset:24,count_hi:8; } soldier_program_ref_t;')
+L.append('#define SOLDIER_PROGRAM_REF_COUNT(r) ((uint16_t)((r)->count_lo|(unsigned)(r)->count_hi<<8))')
+L.append('#define SOLDIER_PROGRAM_FILE_BYTES %du'%(16+len(file_body)))
+L.append('static const soldier_program_ref_t soldier_program_refs[]={')
+for r in refs: L.append('{0x%x,%d,%d,%d},'%(r[0],r[2]&255,r[1],r[2]>>8))
+L.append('};')
+L.append('#ifndef N64')
+for i,prog in enumerate(p['programs']):
+    if group[i]: L.append('#if %s'%GUARD[group[i]])
+    if storage[i][0]==i:
+        L.append('static const neo_anim_command_t soldier_program_%d[]={'%i)
+        for t in texts[i]: L.append('  %s,'%t)
+        L.append('};')
+    # ROM address of each command: only host checks (test_neo_family) read
+    # it; the console build leaves it out (115 KB of RAM, docs/RENDIMIENTO.md).
+    L.append('#ifndef N64')
     L.append('static const int32_t soldier_program_address_%d[]={%s};'%(i,','.join(str(c['address']) for c in prog['commands'])))
+    L.append('#endif')
+    if group[i]: L.append('#endif')
+L.append('#ifdef N64')
+L.append('#define SOLDIER_PROGRAM_ADDRESS(i) NULL')
+L.append('#else')
+L.append('#define SOLDIER_PROGRAM_ADDRESS(i) soldier_program_address_##i')
+L.append('#endif')
 L.append('typedef struct { uint32_t tag; neo_anim_program_t program; const int32_t *address; } soldier_program_t;')
-L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d,%d},soldier_program_address_%d}'%(prog['root'],i,len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
+L.append('static const soldier_program_t soldier_programs[]={')
+for i,prog in enumerate(p['programs']):
+    if group[i]: L.append('#if %s'%GUARD[group[i]])
+    L.append('{0x%x,{soldier_program_%d+%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)},'%(prog['root'],storage[i][0],storage[i][1],len(prog['commands']),i))
+    if group[i]: L.append('#endif')
+L.append('};')
+L.append('#endif')
 L.append('#endif')
 L.append('#endif')
 (ROOT/'build').mkdir(exist_ok=True);(ROOT/'build/soldier_ai_tables.h').write_text('\n'.join(L)+'\n')

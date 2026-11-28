@@ -224,7 +224,7 @@ int main(void) {
             for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {c.existed[i]=w.gactors[i].active;c.traced[i]=false;}
             c.gskips=0;
             w.video_phase=t->video;w.scroll_y=t->scroll_y;memcpy(w.view,t->view,sizeof(w.view));
-            neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u),t->unregistered};
+            neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u),t->unregistered,0};
             unsigned before_calls=c.injected;
             w.pickup_input=t->pickup;
             neo_world_tick(&w,t->scroll_x,&p);

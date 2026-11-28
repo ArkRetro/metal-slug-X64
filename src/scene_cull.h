@@ -24,6 +24,9 @@ typedef struct {
 /* Window: a cell passes when (v+size > left, or >= when left_inclusive) and v < right. */
 typedef struct { float scale,offset,size,left,right;bool left_inclusive; } scene_cell_window_t;
 bool scene_cell_index_build(scene_cell_index_t *index,const scene_map_cell_t *cells,unsigned count);
+/* Same index in caller memory (count entries of each): a mission stage's
+ * index lives with its tables (scene_stage_load). */
+bool scene_cell_index_build_into(scene_cell_index_t *index,const scene_map_cell_t *cells,unsigned count,uint16_t *order,scene_cell_run_t *runs);
 static inline float scene_cell_value(const scene_cell_window_t *w,int16_t x) {return x*w->scale+w->offset;}
 static inline bool scene_cell_left_ok(const scene_cell_window_t *w,int16_t x) {
     float v=scene_cell_value(w,x);
@@ -44,5 +47,18 @@ static inline void scene_cell_run_window(const scene_cell_index_t *index,unsigne
         if (scene_cell_right_ok(w,index->cells[index->order[mid]].x)) lo=mid+1; else hi=mid;
     }
     *first=start;*end=lo;
+}
+/* Inside a run, the cells of one column (same x) are contiguous and sorted
+ * by increasing y (scene_cell_index_build). End of the column at k: */
+static inline unsigned scene_cell_column_end(const scene_cell_index_t *index,unsigned k,unsigned end) {
+    int16_t x=index->cells[index->order[k]].x;unsigned lo=k+1,hi=end;
+    while (lo<hi) {unsigned mid=(lo+hi)/2;if (index->cells[index->order[mid]].x==x) lo=mid+1; else hi=mid;}
+    return lo;
+}
+/* First position in [k,end) (one column) whose y is >= y. */
+static inline unsigned scene_cell_column_from(const scene_cell_index_t *index,unsigned k,unsigned end,int y) {
+    unsigned lo=k,hi=end;
+    while (lo<hi) {unsigned mid=(lo+hi)/2;if (index->cells[index->order[mid]].y<y) lo=mid+1; else hi=mid;}
+    return lo;
 }
 #endif

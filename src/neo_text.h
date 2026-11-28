@@ -26,6 +26,8 @@ uint16_t neo_text_glyph(neo_text_t *t,uint16_t d0,uint16_t d1,uint8_t d2,const u
 /* 03D25A with A1 = 03DD96: the string a0 at d0; d1 in/out (the escapes \c
  * and \p change the caller's D1, as in the original). Returns d0. */
 uint16_t neo_text_string(neo_text_t *t,uint16_t d0,uint16_t *d1,const uint8_t *a0);
+/* 03D1B8: the escapes \n \c \p \l (d0, d1, d3 in/out); the next glyph, 0 at the end. */
+uint8_t neo_text_next(neo_text_t *t,const uint8_t **a0,uint16_t *d0,uint16_t *d1,uint16_t *d3);
 /* 03CFBA with A1 = 03DD96: d4 BCD digits from a0 (odd d4: low nibble
  * first), leading zeros blank while d3 is clear. Returns d0. */
 uint16_t neo_text_bcd(neo_text_t *t,uint16_t d0,uint16_t d1,const uint8_t *a0,uint8_t d3,unsigned d4);

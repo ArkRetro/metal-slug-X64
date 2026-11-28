@@ -1,0 +1,15 @@
+{
+ "description": "Render map of the SOLDIER SELECT music only (B44): tools/render_sound_commands.py --map data/select_music_map.json, then tools/pack_select_music.py. Kept apart from data/sound_map.json so that the game audio pack does not carry it.",
+ "sounds": [
+  {
+   "label": "music_select",
+   "word": "0030",
+   "callers": [
+    "0208A2"
+   ],
+   "event": "SOLDIER SELECT music (MAME fight1: 0000 then 0030 from 0208A2 at frame 3453, after 06 at 3449; 06 at 3804 before the mission music 0021). Played by the boot cinematic hold (main.c), not by the game audio",
+   "music": true,
+   "frames": 7200
+  }
+ ]
+}

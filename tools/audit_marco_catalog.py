@@ -4,7 +4,7 @@
 Writes numerical coverage to the requested report. Original image/tile data
 and full observations stay private. An input case is NOT an animation identity.
 """
-import argparse,collections,hashlib,json,re,struct
+import argparse,collections,gzip,hashlib,json,re,struct
 from functools import lru_cache
 from pathlib import Path
 import numpy as np
@@ -13,8 +13,11 @@ from export_marco import reconstruct,top_sprite_pixel,palette_rgb
 from export_vehicle import program
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
+def dump(path):
+ """A frame dump, or its gzip (dumps packed during a long capture: disk)."""
+ return path.read_bytes() if path.exists() else gzip.open(str(path)+'.gz').read()
 
-def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=()):
+def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(),draw_palettes=False):
  plan=json.loads((capture/'plan.json').read_text());states={r['frame']:r for line in (capture/'states.jsonl').read_text().splitlines() if (r:=json.loads(line))}
  text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  rom=program(rom_path);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
@@ -61,7 +64,7 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
       if pen and xx<320 and yy<256:out[yy,xx]=(d['attr']>>8)*16+int(pen)
   return out
  updates={int(v) for v in re.findall(r'MARCO_COMMAND frame=(\d+)',text)}|set(draws)
- last=None;known_palettes={0x63};rows=[];pixels=occluded=0;failures=[];normal_tags=set();visible_frames=0;other_palette_frames=0;profiles={};profile_uses=collections.Counter()
+ last=None;known_palettes=set() if draw_palettes else {0x63};rows=[];pixels=occluded=0;failures=[];normal_tags=set();visible_frames=0;other_palette_frames=0;profiles={};profile_uses=collections.Counter();auto_pixels=0;auto_frames=[]
  fixed=(ROOT/'filesystem/fixed.bin').read_bytes()
  for frame in range(plan['first'],plan['last']+1):
   # A capture at the frame boundary sees commands from the previous buffer.
@@ -70,9 +73,9 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
    last=visible_batches.get(frame)
   elif frame-3 in updates:last=frame-3
   if last is None:continue
-  if sparse and not (capture/f'vram{frame}.bin').exists():continue
+  if sparse and not (capture/f'vram{frame}.bin').exists() and not (capture/f'vram{frame}.bin.gz').exists():continue
   if any(lo<=frame<=hi for lo,hi in exclude):excluded+=1;continue
-  v=struct.unpack('>34304H',(capture/f'vram{frame}.bin').read_bytes());pal=struct.unpack('>4096H',(capture/f'palette{frame}.bin').read_bytes())
+  v=struct.unpack('>34304H',dump(capture/f'vram{frame}.bin'));pal=struct.unpack('>4096H',dump(capture/f'palette{frame}.bin'))
   known_palettes.update(d['attr']>>8 for d in draws[last])
   if sparse:known_palettes.update(d['attr']>>8 for u in range(frame-6,frame) for d in draws.get(u,()))
   active_palettes=known_palettes
@@ -96,7 +99,7 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
   for bank in active_palettes:
    values=pal[bank*16:bank*16+16];key=hashlib.sha256(struct.pack('>16H',*values)).hexdigest()
    profiles[key]=list(values);profile_uses[key]+=1
-  ys,xs=np.nonzero(indices[16:240,8:312]);xs+=8;ys+=16
+  ys,xs=np.nonzero(indices[16:240,8:312]);xs+=8;ys+=16;counters=None
   for y,x in zip(ys,xs):
    rgb=colors[indices[y,x]];ref=reference[y-16,x]
    if np.max(np.abs(rgb-ref.astype(np.int16)))<=1:pixels+=1;continue
@@ -106,8 +109,14 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
    pen=fixed[code*32+(16,24,0,8)[int(x)%8//2]+int(y)%8]>>((int(x)&1)*4)&15
    cover=palette_rgb(pal[(word>>12)*16+pen]) if pen else top[1] if top and top[0] not in active_palettes else None
    if cover is None or max(abs(int(a)-int(b)) for a,b in zip(cover,ref))>1:
-    raise AssertionError(('Unexplained original screenshot mismatch',frame,int(x),int(y),rgb,ref))
+    # A later auto-animated sprite (Mission 6's water): the LSPC counter is
+    # not in the dumps; one value must explain every such pixel of the frame.
+    fits={k for k in range(8) if not pen and (t:=top_sprite_pixel(v,pal,crom,int(x),int(y),k)) and t[0] not in active_palettes and max(abs(int(a)-int(b)) for a,b in zip(t[1],ref))<=1}
+    counters=fits if counters is None else counters&fits
+    if not counters:raise AssertionError(('Unexplained original screenshot mismatch',frame,int(x),int(y),rgb,ref))
+    auto_pixels+=1
    occluded+=1
+  if counters is not None:auto_frames.append([frame,sorted(counters)])
   if len(xs):
    visible_frames+=1;normal_tags.update(d['descriptor'] for d in draws[source_frame])
   if any(d["attr"]>>8!=0x63 for d in draws[last]):other_palette_frames+=1
@@ -118,9 +127,9 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
  for case in plan['cases']:
   frames=[f for f in rows if case['first']<=f<=case['last']]
   cases.append(dict(name=case['name'],input_conditions=case['inputs'],first=case['first'],last=case['last'],verified_frames=len(frames),routines=sorted({f"0x{states[f]['routine']:06X}" for f in frames})))
- report=dict(queue_publication=queue_publication,observed_queue_swaps=queue_swaps,split_updates=split_updates,alternate_probes=alternate_probes,excluded_frames=excluded,exclusions=[list(e) for e in exclude],status='PASS' if not failures else 'FAILED',source='MAME 0.276 euro, controller input only',verified_frames=len(rows),visible_actor_frames=visible_frames,remapped_palette_frames=other_palette_frames,palette_profiles=[dict(sha256=key,words=values,frame_uses=profile_uses[key]) for key,values in profiles.items()],descriptor_addresses=sorted(f'0x{tag:06X}' for tag in normal_tags),other_palette_only_descriptors=sorted({f"0x{d['descriptor']:06X}" for ds in draws.values() for d in ds if d['descriptor'] not in normal_tags}),matched_pixels=pixels,independently_explained_occlusions=occluded,frame_failures=failures,cases=cases,provenance={n:sha(capture/n) for n in ('capture.json','plan.json','debug.log','states.jsonl','program-fixed.bin','program-bank.bin')},limits=[str(len(plan['cases']))+' input conditions, not a complete game-wide Marco animation inventory.','Descriptor data are physical cartridge offsets, never executable native pointers.','Active 304x224 pixels; clipped margins do not establish complete offscreen art.','Input cases do not prove all weapon variants, damage/death paths or transformations. Palette identity is checked per observed draw.'])
+ report=dict(queue_publication=queue_publication,observed_queue_swaps=queue_swaps,split_updates=split_updates,alternate_probes=alternate_probes,excluded_frames=excluded,exclusions=[list(e) for e in exclude],status='PASS' if not failures else 'FAILED',source='MAME 0.276 euro, controller input only',verified_frames=len(rows),visible_actor_frames=visible_frames,remapped_palette_frames=other_palette_frames,palette_profiles=[dict(sha256=key,words=values,frame_uses=profile_uses[key]) for key,values in profiles.items()],descriptor_addresses=sorted(f'0x{tag:06X}' for tag in normal_tags),other_palette_only_descriptors=sorted({f"0x{d['descriptor']:06X}" for ds in draws.values() for d in ds if d['descriptor'] not in normal_tags}),matched_pixels=pixels,independently_explained_occlusions=occluded,**(dict(auto_animation_occlusions=auto_pixels,auto_animation_frames=auto_frames) if auto_frames else {}),frame_failures=failures,cases=cases,provenance={n:sha(capture/n) for n in ('capture.json','plan.json','debug.log','states.jsonl','program-fixed.bin','program-bank.bin')},limits=[str(len(plan['cases']))+' input conditions, not a complete game-wide Marco animation inventory.','Descriptor data are physical cartridge offsets, never executable native pointers.','Active 304x224 pixels; clipped margins do not establish complete offscreen art.','Input cases do not prove all weapon variants, damage/death paths or transformations. Palette identity is checked per observed draw.'])
  output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n');assert not failures,failures[:8]
  print('PASS',len(rows),'frames,',len(report['descriptor_addresses']),'descriptors,',pixels,'pixels')
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--rom',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--queue-publication',action='store_true');p.add_argument('--sparse',action='store_true',help='frames without a VRAM dump (run_marco_catalog.py --dump-routines) are skipped');p.add_argument('--exclude',action='append',default=[],help='lo-hi: frames left out (documented anomalies; listed in the report)');a=p.parse_args();audit(a.capture,a.rom,a.output,a.queue_publication,a.sparse,[tuple(map(int,e.split('-'))) for e in a.exclude])
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--rom',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--queue-publication',action='store_true');p.add_argument('--sparse',action='store_true',help='frames without a VRAM dump (run_marco_catalog.py --dump-routines) are skipped');p.add_argument('--exclude',action='append',default=[],help='lo-hi: frames left out (documented anomalies; listed in the report)');p.add_argument('--draw-palettes',action='store_true',help="the player's palettes are only those of its draws (0x63 is another actor's: Mission 6, w6d2)");a=p.parse_args();audit(a.capture,a.rom,a.output,a.queue_publication,a.sparse,[tuple(map(int,e.split('-'))) for e in a.exclude],a.draw_palettes)

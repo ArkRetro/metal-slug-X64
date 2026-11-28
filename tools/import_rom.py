@@ -50,7 +50,14 @@ def main():
         temporary.replace(target.parent / 'sprites.bin')
     finally:
         temporary.unlink(missing_ok=True)
-    print('13 ROM verificadas (CRC32 y SHA1); FIX y 48 MiB de sprites importados')
+    # The soft-DIP table of the options screen (tools/extract_softdip.py).
+    with zipfile.ZipFile(args.zip) as archive:
+        p1 = archive.read('250-p1.p1')
+    import extract_softdip
+    softdip = target.parent / 'softdip.bin'
+    if not softdip.is_symlink():
+        softdip.write_bytes(extract_softdip.table(p1)[1])
+    print('13 ROM verificadas (CRC32 y SHA1); FIX, 48 MiB de sprites y tabla de soft-DIP importados')
 
 
 if __name__ == '__main__':

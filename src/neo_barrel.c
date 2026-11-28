@@ -47,7 +47,7 @@ static uint16_t rank(neo_gactor_t *a,neo_genv_t *e,uint32_t table) {
 }
 /* 0B68B4: six pieces 08732C inserted after the player node (00411C) with a
  * random offset and velocity; the RNG is drawn whether or not the node was
- * allocated. The pieces are an unported family (external). */
+ * allocated (MAME b51f: two of the six allocated, 8664). */
 static void pieces(neo_gactor_t *a,neo_genv_t *e) {
     if (e->sound) e->sound(e->ctx,0x1142);
     for (unsigned i=0;i<6;i++) {
@@ -144,12 +144,54 @@ static ga_result_t decor_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (ga_cull(a,e,0xb6948)) SL(0,0xb6202);
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
+/* 08732C: a burning figure of the destroyed shop (B51; MAME b51f, family
+ * 8732c: 2 nodes, 86 updates 8664..):
+ *   08732C  +66/+1E = 8820, program 283B7A, 009F88 (palettes released),
+ *           palette 0x852 (009EA8), then 087362 in the same update;
+ *   087362  +30 -= +30 >> 4, 0143DC (gravity 0xFFFFB000 and 0143E4),
+ *           00427A; on the ground (+15 bit 6) 087386: program 283BF8 and
+ *           08739C in the same update; else 087184;
+ *   08739C  +30 -= +30 >> 3, 0143DC, 00427A; the program's end -> 0873C0;
+ *           087184;
+ *   087184  +3C < -0x60 -> 0873C0; 01945C with 087CEE -> 0873C0;
+ *   0873C0  (the cartridge check, then) 004188. */
+static ga_result_t figure_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x8732c:
+        SW(0x66,0x8820);SW(0x1e,0x8820);
+        if (!ga_anim_start(a,e,0x283b7a,0x100)) return GA_UNSUPPORTED;
+        SB(0x1d,0);ga_palette(a,0x852);SL(0,0x87362);
+        /* fall through */
+    case 0x87362:
+        SL(0x30,L(0x30)-(uint32_t)((int32_t)L(0x30)>>4));
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (!(B(0x15)&0x40u)) break;
+        if (!ga_anim_start(a,e,0x283bf8,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x8739c);
+        /* fall through */
+    case 0x8739c:
+        SL(0x30,L(0x30)-(uint32_t)((int32_t)L(0x30)>>3));
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x873c0);
+        break;
+    case 0x873c0: return GA_DELETE;
+    default: ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+    if ((int16_t)W(0x3c)<-0x60) SL(0,0x873c0);                         /* 087184 */
+    if (ga_cull(a,e,0x87cee)) SL(0,0x873c0);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
 bool neo_barrel_routine(uint32_t r) {
+    if (r==0x8732c || r==0x87362 || r==0x8739c || r==0x873c0) return true;
     return r==0xb6298 || r==0xb62c8 || r==0xb6566 || r==0xb6606 || r==0xb66f2 || r==0xb6736 || r==0xb6748 || r==0xb6202 ||
         r==0xb6770 || r==0xb67a6 || r==0xb680e || r==0xb6834;
 }
 ga_result_t neo_barrel_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
+    if (r==0x8732c || r==0x87362 || r==0x8739c || r==0x873c0) return figure_tick(a,e);
     if (r==0xb6770 || r==0xb67a6) return overlay_tick(a,e);
     if (r==0xb680e || r==0xb6834) return roof_tick(a,e);
     if (r==0xb6202) {SB(0x5f,B(0x5f)|0x80u);return GA_DELETE;}       /* 0B6202 -> 004188 */

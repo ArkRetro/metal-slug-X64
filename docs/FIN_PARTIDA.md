@@ -188,7 +188,7 @@ MSX_REST_BOSS_FROM=13600 MSX_REST_FAMILY_ROOTS=308c0 MSX_REST_VRAM_TRACE=1 MSX_R
   MSX_REST_FIRST_DUMP=13600 MSX_REST_PERIOD=8 MSX_REST_LAST=17000 tools/run_capture_rest.sh /ruta/tal1
 python3 tools/extract_tally_fixture.py /ruta/tal1/boss-trace.txt --output data/tally_tal1_fixture.json.gz
 python3 tools/extract_region_rom.py /ruta/captures-soldiers/walk3 --output data/region_rom.json
-python3 tools/extract_soldier_programs.py /ruta/captures-soldiers/walk3 --output data/soldier_programs.json
+python3 tools/extract_soldier_programs.py /home/user/captures-audit/j/k8d1 --output data/soldier_programs.json   # banco P2 sha256 7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc (walk3, borrada el 19-XI, tenía el mismo)
 make check
 ```
 

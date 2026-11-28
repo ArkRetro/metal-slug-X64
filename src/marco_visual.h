@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "marco_animation.h"
+#include "marco_turn.h"
 /* Campaign Marco animation (docs/MARCO_CAMPAIGN.md): the original body and
  * weapon programs (converted graph of an audited catalog capture) stepped
  * by the native animation engine once per logic update, as the original
@@ -19,14 +20,18 @@ typedef struct {
     bool running_jump;     /* takeoff while moving */
     int facing;            /* -1 left, 1 right */
     uint16_t x,y;          /* projected words of the player (+3C/+40) */
-    uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables) */
+    uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables), 2 fat (+0x20), 3 the mummy (+0x30) */
     int hgun_program;      /* H upper body (marco_hgun.c): its program (marco_hgun_program_t), -1 none */
     bool hgun_start;       /* that program started (or restarted) in this update */
     bool thrown;           /* a grenade thrown in this update (0C3BCC / crouched 0C2458) */
-    bool cgun;             /* the C (id 0C, form 1) */
+    bool cgun;             /* a weapon of the general fire state with native programs (gameplay.c fire_kind; form 1) */
     bool cgun_fire;        /* its fire state 0C3CD0 entered in this update */
+    uint8_t cgroup;        /* with cgun, the weapon's fire tables: 1 the C's (C02D8..), 2 0BFFD8.. (ids 02/07), 3 0C00D8.. (ids 04/09), 4 0C01D8.. (ids 06/0B) */
     bool knife;            /* a knife cut 0C3B46 started in this update */
     bool hanging;          /* parachute descent 0C162A (marco_descent.c), before the cut */
+    bool transforming;     /* form 3: the transformation 0C17A0..0C182A; form 2: 0C1D70..0C1DA8 (no control) */
+    bool takeoff;          /* form 3: the takeoff 0C19E4/0C1A0C (crouched before the jump) */
+    bool victory;          /* the mission end: RAM 10C301 set (018846) and 10C304 >> 2 & +5E (018FFE): the idle 0C2022 takes 0BF658 */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;
@@ -35,12 +40,28 @@ typedef struct {
     bool body_done,weapon_done;    /* program finished: its last draws stay */
     bool grounded,crouch,moving,running_jump;
     uint8_t form;                  /* +93 of the previous update */
+    int facing;                    /* facing of the previous update (form 3: the turn 0C1924) */
+    unsigned stops;                /* form 3: situations without a captured body program (the body stays) */
+    uint8_t m90;                   /* form 3: +90, the controller's state for the weapon (0 idle, 1 walk, 3 jump, FF none) */
     uint16_t base_x,base_y;
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */
     unsigned failures,starts;
+    uint8_t m98;                   /* forms 0/1: +98, 2 from a shot or a throw (0C3CE2, 0C3EB2, 0C3BD2) until 0C3D9A sees +76 or the weapon is chosen again (the ground turn 0C28C8) */
+    int8_t m92;                    /* forms 0/1: +92 as the weapon programs leave it (1 up: 0C4100, 0C3D38, 0C3EC4..; the turn reads +92 > 0) */
+    uint16_t m80;                  /* forms 0/1: +80 of the run, 0x3F at its start (0C287C) halved every run update (0C28A2): 0 lets the stop 0C1EFA */
+    bool victory_armed;            /* 0C2046 set the routine 0C1E84: its program starts in the next update */
 } marco_visual_t;
+/* The chosen character's programs (msx_character.h): script = its converted
+ * commands, roles = (Marco's entry, this character's entry) sorted by the
+ * first; every role keeps its MARCO_CAMPAIGN_* name and starts the program
+ * of the character's column of the same table rows. NULL: Marco. */
+void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (*roles)[2],unsigned count);
 void marco_visual_reset(marco_visual_t *v);
+/* B84 (marco_turn.h): the gate of the update after this one. */
+marco_turn_gate_t marco_visual_turn_gate(const marco_visual_t *v);
+/* The body's program: 1 the run's turn (0BEE58/0BEE98), 2 the stop (0BEE18), 0 another. */
+int marco_visual_turn_kind(const marco_visual_t *v);
 /* One logic update. */
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in);
 /* Draws of the current update in emission order (body, then weapon). */

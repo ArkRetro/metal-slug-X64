@@ -7,7 +7,7 @@
 #include "marco_hgun.h"
 #include <string.h>
 
-typedef struct { uint8_t calls; uint8_t at[4]; uint8_t angle[4]; bool c453a; uint8_t flag76_at; uint8_t end; } program_t;
+typedef struct { uint8_t calls; uint8_t at[6]; uint8_t angle[6]; bool c453a; uint8_t flag76_at; uint8_t end; } program_t;
 static const program_t programs[HGUN_PROGRAMS]={
     /* 0BFDD8+10: 2534FE, 0C4372 at 0/2/4/6, +76=1 at 7, END at 12. */
     {4,{0,2,4,6},{0,0,0,0},false,7,12},
@@ -25,7 +25,26 @@ static const program_t programs[HGUN_PROGRAMS]={
     {3,{0,2,4,0},{0xd0,0xe0,0xf0,0},true,0xff,6},
 };
 
-void marco_hgun_reset(marco_hgun_t *h) {memset(h,0,sizeof *h);}
+/* Form 2 (fat Marco, rows +0x20 of the same tables; MAME
+ * capture_fat_weapons.lua, weapon 0A: bullets every 2 updates, sweeps). */
+static const program_t fat_programs[HGUN_PROGRAMS]={
+    /* 0BFDD8+20: 25A072, 0C436A at 0/2/4/6, +76=FF at 7, END at 8. */
+    {4,{0,2,4,6},{0},false,7,8},
+    /* 0BFE18+20: 25A1AE, the same. */
+    {4,{0,2,4,6},{0},false,7,8},
+    /* 0BFE58+20: 25A2EA, 0C436A at 0/2/4/6/8/10, +76=FF at 11, END at 12. */
+    {6,{0,2,4,6,8,10},{0},false,11,12},
+    /* 0BFE98+20: 25A45A, 0C4610 08/18/28/38, END at 8. */
+    {4,{0,2,4,6},{0x08,0x18,0x28,0x38},true,0xff,8},
+    /* 0BFED8+20: 25A522, 0C4610 F8/E8/D8/C8, END at 8. */
+    {4,{0,2,4,6},{0xf8,0xe8,0xd8,0xc8},true,0xff,8},
+    /* 0BFF18+20: 25A4CC, 0C4610 30/20/10, END at 6. */
+    {3,{0,2,4},{0x30,0x20,0x10},true,0xff,6},
+    /* 0BFF58+20: 25A594, 0C4610 D0/E0/F0, END at 6. */
+    {3,{0,2,4},{0xd0,0xe0,0xf0},true,0xff,6},
+};
+
+void marco_hgun_reset(marco_hgun_t *h) {bool fat=h->fat;memset(h,0,sizeof *h);h->fat=fat;}
 void marco_hgun_throw(marco_hgun_t *h) {h->state=MARCO_HGUN_IDLE;h->aim92=0;h->request=false;}
 
 static void start(marco_hgun_t *h,marco_hgun_state_t state,unsigned program) {
@@ -60,20 +79,21 @@ static void fire_state(marco_hgun_t *h,const marco_hgun_input_t *in) {
 /* 0C3778: one update of the program; the callbacks of this update. */
 static unsigned run(marco_hgun_t *h,const marco_hgun_input_t *in,marco_hgun_reserve_t reserve,void *context,
                     marco_hgun_shot_t *out,unsigned max,unsigned n,bool *done) {
-    const program_t *p=&programs[h->program];
+    const program_t *p=h->fat?&fat_programs[h->program]:&programs[h->program];
     for (unsigned i=0;i<p->calls;i++) if (p->at[i]==h->t && n<max) {
         if (!reserve(context)) continue;               /* 0C0D64 refused: no bullet, no +95 */
         uint8_t angle;
         if (p->c453a) {
-            /* 0C453A: the program's angle, mirrored about 0x40 facing left; +95 counts. */
+            /* 0C453A (form 2: 0C4610): the program's angle, mirrored about 0x40 facing left; +95 counts. */
             angle=p->angle[i];if (in->facing_left) angle=(uint8_t)(0x80-angle);
             h->combo95++;out[n++]=(marco_hgun_shot_t){true,true,angle,angle};
         } else {
             /* 0C4372 -> 0C447C: 0C4244 (up 0x40, forward 0, down -0x40; facing
-             * left 0x80 - d7), then 0C44A6: +95 + 1, angle + 2*((+95 mod 3) - 1). */
+             * left 0x80 - d7), then 0C44A6: +95 + 1, angle + 2*((+95 mod 3) - 1)
+             * (form 2, 0C436A -> 0C44E0/0C44FE: 3 times). */
             angle=h->aim92>0?0x40:h->aim92<0?0xc0:0;
             if (in->facing_left) angle=(uint8_t)(0x80-angle);
-            uint8_t base=angle;h->combo95++;angle=(uint8_t)(angle+2*((int)(h->combo95%3u)-1));
+            uint8_t base=angle;h->combo95++;angle=(uint8_t)(angle+(h->fat?3:2)*((int)(h->combo95%3u)-1));
             out[n++]=(marco_hgun_shot_t){true,false,angle,base};
         }
     }

@@ -1,5 +1,6 @@
 #include "neo_region.h"
 #include "neo_blood.h"
+#include "marco_death.h"
 /* Visual effects of the region (ROM 01C6E8..01DF20), manual translation:
  * one-shot effects (01C6EE.. constructors, routine 01C9E6), smoke emitters
  * (01DA40 -> 01D764/01D7B8 with the emission lists) and the vehicle exhaust
@@ -23,6 +24,20 @@ static const fx_t simple[]={
     {0x1c6ee,0x22cdd4,0x1dec0,0x204},{0x1c706,0x22ce6c,0x1deb8,0x204},{0x1c71e,0x22cf2c,0x1dec8,0x204},
     {0x1c736,0x22cf2c,0x1dec8,0x204},{0x1c74e,0x22d264,0x1dec0,0x204},{0x1c766,0x22d27a,0x1dec0,0x204},
     {0x1c77e,0x22d290,0x1dec8,0x204},{0x1c796,0x22e48a,0x1def0,0x204},
+    /* 01C7EA: palette 0x363 (the molotov that hits in flight, 01E7B0). */
+    {0x1c7ea,0x22cf2c,0x1dec8,0x363},
+    /* 01C7AE: palette 0x26C, then 01C7F8 (the treasure 0995EC, neo_m2traps.c). */
+    {0x1c7ae,0x22cf2c,0x1dec8,0x26c},
+    /* 01C8D2: palette 0x20D, rectangle 01DEF8 (the burning engine 0A5D6A of
+     * the Mission 3 mid-boss, list 2A6468; neo_m3mid.c). */
+    {0x1c8d2,0x22e8ae,0x1def8,0x20d},
+    /* 01C82A: palette 0x345, rectangle 01DEC0 (the trail 083B92 of the Mission 4 flyer 08391C). */
+    {0x1c82a,0x22cdd4,0x1dec0,0x345},
+    /* 01C87E: palette 0x175, rectangle 01DEB8 (the shells 042F04 of the Mission 6 last enemy jump to it, neo_m6boss.c). */
+    {0x1c87e,0x22ce6c,0x1deb8,0x175},
+    /* 01C8FC: program 22D2A6, palette 0x36C, rectangle 01DEC0, no random flip (it enters 01C9D6; the bombs 0465FE of the
+     * Mission 6 last enemy's walkers jump to it, neo_m6boss.c). */
+    {0x1c8fc,0x22d2a6,0x1dec0,0x36c},
 };
 static const fx_t *simple_of(uint32_t r) {
     for (unsigned i=0;i<sizeof(simple)/sizeof(simple[0]);i++) if (simple[i].routine==r) return &simple[i];
@@ -41,7 +56,7 @@ static ga_result_t simple_tick(neo_gactor_t *a,neo_genv_t *e) {
     } else if (f) {
         if (!ga_anim_start(a,e,f->program,0x100)) return GA_UNSUPPORTED;
         SL(0x82,f->rect);ga_palette(a,f->palette);
-        if (!(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);   /* 01DEA2 */
+        if (f->routine!=0x1c8fcu && !(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);   /* 01DEA2 (01C8FC enters after it) */
         SB(0x15,B(0x15)&~2u);SL(0x50,0);SL(0,0x1c9e6);
     }
     /* 01C9E6 */
@@ -71,7 +86,8 @@ static void emit_one(neo_gactor_t *a,neo_genv_t *e) {
         routine=(uint32_t)t[0]<<24|(uint32_t)t[1]<<16|(uint32_t)t[2]<<8|t[3];
     }
     #undef LW
-    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    /* 0040BC with its reserve D0 = 2A. */
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,0x2a):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
     if (!c) return;
     ga_sw(c,0x1e,W(0x1e));
     if (B(0x15)&4u) ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|4u));
@@ -213,6 +229,46 @@ static const frag_t *frag_of(uint32_t r) {
     return NULL;
 }
 static uint32_t rom_l(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]:0;}
+/* 01D51A (tail 0) / 01D54A (1) / 01D578 (2) with the program started: +66/+1E
+ * = E0ED, +92/+93 = 1, the angle +8A, then the launch 01D5EC -> 01D6E4. */
+static void frag_1d5ec(neo_gactor_t *a,neo_genv_t *e);
+static void frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {
+    SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
+    uint16_t d0=ga_rand(e);
+    if (tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
+    else if (tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
+    else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
+    frag_1d5ec(a,e);
+}
+static void frag_1d5ec(neo_gactor_t *a,neo_genv_t *e) {
+    uint16_t d0;
+    /* 01D5EC */
+    if (S16(W(0x62))<=0) SW(0x62,0x200);
+    uint16_t d3=ga_rand(e);
+    uint8_t ang=(uint8_t)W(0x8a);
+    int16_t d1=ga_sine(ang),d2=ga_cosine(ang);
+    d3=(uint16_t)((d3&7u)+1u);
+    int16_t m=(int16_t)(uint16_t)((int32_t)d1*(int16_t)d3);     /* muls.w, low word */
+    m=(int16_t)(m>>2);                                           /* asr.w #2 */
+    int32_t vy=(int32_t)m*S16(W(0x62)),vx=(int32_t)d2*S16(W(0x62));
+    SL(0x34,(uint32_t)vy);SL(0x30,(uint32_t)vx);
+    d0=ga_rand(e);
+    if ((int8_t)(uint8_t)d0<=0) {
+        int16_t k=(int16_t)((ga_rand(e)&3u)+2u);
+        uint32_t d1l=(uint32_t)(S32(L(0x30))>>8);                       /* move.l, asr.l #8 */
+        int16_t v=(int16_t)(uint16_t)d1l;
+        int16_t q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x30,(uint16_t)(int16_t)(q>>1));
+        k=(int16_t)((ga_rand(e)&3u)+2u);
+        /* move.w $34(a6),d1 keeps the upper word of D1, asr.l #8 */
+        d1l=(uint32_t)(S32((d1l&0xffff0000u)|W(0x34))>>8);
+        v=(int16_t)(uint16_t)d1l;
+        q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x34,(uint16_t)(int16_t)(q>>1));
+    }
+    int32_t c=S32(L(0x34));if (c>0x100000) c=0x100000;if (c<0) c=0;SL(0x34,(uint32_t)c);
+    c=S32(L(0x30));if (c>0x80000) c=0x80000;if (c<-0x80000) c=-0x80000;SL(0x30,(uint32_t)c);
+    SL(0x7a,L(0x34));SL(0x7e,0xffffb000u);SB(0x15,B(0x15)|0x20u);
+    SL(0,0x1d6e4);
+}
 static ga_result_t frag_tick(neo_gactor_t *a,neo_genv_t *e) {
     const frag_t *f=frag_of(L(0));
     if (f) {
@@ -224,38 +280,7 @@ static ga_result_t frag_tick(neo_gactor_t *a,neo_genv_t *e) {
         else if (!(d0&2u)) {prog=f->prog0;pal=f->pal0;} else {prog=f->prog1;pal=f->pal1;}
         if (!prog || !ga_anim_start(a,e,prog,0x100)) return GA_UNSUPPORTED;
         ga_palette(a,pal);
-        /* 01D51A / 01D54A / 01D578 */
-        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
-        d0=ga_rand(e);
-        if (f->tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
-        else if (f->tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
-        else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
-        /* 01D5EC */
-        if (S16(W(0x62))<=0) SW(0x62,0x200);
-        uint16_t d3=ga_rand(e);
-        uint8_t ang=(uint8_t)W(0x8a);
-        int16_t d1=ga_sine(ang),d2=ga_cosine(ang);
-        d3=(uint16_t)((d3&7u)+1u);
-        int16_t m=(int16_t)(uint16_t)((int32_t)d1*(int16_t)d3);     /* muls.w, low word */
-        m=(int16_t)(m>>2);                                           /* asr.w #2 */
-        int32_t vy=(int32_t)m*S16(W(0x62)),vx=(int32_t)d2*S16(W(0x62));
-        SL(0x34,(uint32_t)vy);SL(0x30,(uint32_t)vx);
-        d0=ga_rand(e);
-        if ((int8_t)(uint8_t)d0<=0) {
-            int16_t k=(int16_t)((ga_rand(e)&3u)+2u);
-            uint32_t d1l=(uint32_t)(S32(L(0x30))>>8);                       /* move.l, asr.l #8 */
-            int16_t v=(int16_t)(uint16_t)d1l;
-            int16_t q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x30,(uint16_t)(int16_t)(q>>1));
-            k=(int16_t)((ga_rand(e)&3u)+2u);
-            /* move.w $34(a6),d1 keeps the upper word of D1, asr.l #8 */
-            d1l=(uint32_t)(S32((d1l&0xffff0000u)|W(0x34))>>8);
-            v=(int16_t)(uint16_t)d1l;
-            q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x34,(uint16_t)(int16_t)(q>>1));
-        }
-        int32_t c=S32(L(0x34));if (c>0x100000) c=0x100000;if (c<0) c=0;SL(0x34,(uint32_t)c);
-        c=S32(L(0x30));if (c>0x80000) c=0x80000;if (c<-0x80000) c=-0x80000;SL(0x30,(uint32_t)c);
-        SL(0x7a,L(0x34));SL(0x7e,0xffffb000u);SB(0x15,B(0x15)|0x20u);
-        SL(0,0x1d6e4);
+        frag_launch(a,e,f->tail);
     }
     /* 01D6E4 */
     ga_air(a,e);
@@ -369,8 +394,8 @@ static uint8_t k2eb4(neo_genv_t *e,int16_t x,int16_t y) {
  * the ground or +5F bit 0 -> 08F1E0 (sound 1025, 08EFDE), +8A = 002EB4 of
  * the velocity >> 3, gravity, 0427A, attack row 08FC46 (08FC56 with +93 bit
  * 5) -> 08EFDE on a hit, outside 08FC74 (019504) -> 08EFD6. 08EFDE: +66/+1E
- * = E0ED, +50 = 0, the explosion 01C706 in place. Translated from the ROM:
- * no capture holds the turret's fire. */
+ * = E0ED, +50 = 0, the explosion 01C706 in place. Proven by the family m5tank
+ * (the Mission 5 street tank 08DCB2 fires the same flash and shell: capture K). */
 static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     switch (L(0)) {
@@ -386,6 +411,15 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r>0) SL(0,0x8efd6);
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     case 0x8efd6: return GA_DELETE_TREE;
+    case 0x8f1a0: {   /* the shell of the +93 bit 5 tanks (the Mission 6 last enemy's 08DD2C): speed C00 along +8A, gravity -vy/32 */
+        uint8_t ang=(uint8_t)((B(0x8a)&15u)<<4);
+        int32_t d1=(int32_t)ga_cosine(ang)*0xc00,d2=(int32_t)ga_sine(ang)*0xc00;
+        SL(0x30,(uint32_t)d1);SL(0x34,(uint32_t)d2);SL(0x76,(uint32_t)-(d2>>5));SB(0x93,B(0x93)|0x20u);
+        ga_palette(a,0x373);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SB(0x15,B(0x15)&~1u);   /* 08F0DE */
+        if (!ga_anim_start(a,e,0x28c32c,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x8f114);
+        goto k8f114;
+    }
     case 0x8f058: {
         uint32_t t=0;const uint8_t *p=ga_rom(0x8fd5cu+(B(0x88)&7u)*4u);
         if (p) t=(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];
@@ -401,7 +435,7 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (!ga_anim_start(a,e,0x28c32c,0x100)) return GA_UNSUPPORTED;
         SL(0,0x8f114);
     }   /* fall through */
-    case 0x8f114: {
+    case 0x8f114: k8f114: {
         ga_air(a,e);
         if (e->unsupported) return GA_UNSUPPORTED;
         if ((B(0x15)&0x40u) || (B(0x5f)&1u)) SL(0,0x8f1e0);
@@ -422,12 +456,71 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
-static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
+static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f1a0 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
+ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {frag_launch(a,e,tail);return frag_tick(a,e);}
+/* 01D5AA (a piece with its creator's program and palettes: the Mission 4
+ * truck's 02A448): +62 = (rand & 700) + 200, layers 1001, +92 / +93 = 3, the
+ * angle (rand & 3E) + 20, then 01D5EC and the flight 01D6E4. */
+ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e) {
+    SW(0x62,(uint16_t)((ga_rand(e)&0x700u)+0x200u));
+    SW(0x66,0x1001);SW(0x1e,0x1001);SB(0x92,3);SB(0x93,3);
+    SW(0x8a,(uint16_t)((ga_rand(e)&0x3eu)+0x20u));
+    frag_1d5ec(a,e);
+    return frag_tick(a,e);
+}
+/* 05A0B4: the child of the callback 05A09E (the player's death of kind 8,
+ * program 25032A): 01AD6E (0, 0) on the creator's +28 block (player 1:
+ * 1014EC), palette 0x204 (009EA8), program 25339C, then 05A0E2: 01ABC8,
+ * 00427A; at the end the cartridge check (10F00A/10F00C, 2FFFE0) ends in
+ * 004188 on genuine hardware: delete. */
+static ga_result_t death_smoke_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x5a0b4) {
+        uint32_t c=L(0x0c);
+        ga_place(a,e,0,0,c==0x1014c4u?0x1014ecu:c==0x101574u?0x10159cu:0);
+        ga_palette(a,0x204);
+        if (!ga_anim_start(a,e,0x25339c,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x5a0e2);
+    }
+    ga_project(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0C4C64: Fio's actor of her deaths (0C4C28: after the player, 01ACF2
+ * (8 forward, 0x20), 01AC94): +15 bit 5, layers E0ED, program 253322 at
+ * speed 0, palette 5, the velocities from the creator (marco_death_cap_*);
+ * 0C4CBA each update: the velocities and +26, 0143E4, 00427A and its end
+ * count; with the projected y word below 0x100 (off the bottom) the
+ * cartridge check, 004188 on genuine hardware: delete. */
+static ga_result_t fio_cap_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0xc4c64) {
+        SB(0x15,B(0x15)|0x20u);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
+        if (!ga_anim_start(a,e,0x253322,0)) return GA_UNSUPPORTED;
+        ga_palette(a,5);
+        neo_gactor_t *p=e->creator?e->creator(e->ctx,a):NULL;
+        if (!p) {ga_fail(e,0xc4c94);return GA_UNSUPPORTED;}
+        int32_t vx,vy;marco_death_cap_start((int32_t)ga_l(p,0x30),(int32_t)ga_l(p,0x34),&vx,&vy);
+        SL(0x30,vx);SL(0x34,vy);SL(0,0xc4cba);
+    }
+    int32_t vx=(int32_t)L(0x30),vy=(int32_t)L(0x34);uint16_t speed=W(0x26);
+    marco_death_cap_velocity(&vx,&vy,&speed,(B(0x15)&0x40u)!=0);
+    SL(0x30,vx);SL(0x34,vy);SW(0x26,speed);
+    ga_air(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    uint16_t count=W(0x80);uint8_t f5f=B(0x5f);
+    if (marco_death_cap_after(r!=0,&count,&f5f)) return GA_DELETE;
+    SW(0x80,count);SB(0x5f,f5f);
+    if ((int16_t)(W(0x40)-0x100u)>=0) return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    return GA_DELETE;                                                   /* cartridge check, 004188 */
+}
 bool neo_effects_routine(uint32_t r) {
-    return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
+    return r==0xc4c64 || r==0xc4cba || r==0x5a0b4 || r==0x5a0e2 || fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
 }
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
+    if (r==0x5a0b4 || r==0x5a0e2) return death_smoke_tick(a,e);
+    if (r==0xc4c64 || r==0xc4cba) return fio_cap_tick(a,e);
     if (fire_routine(r)) return fire_tick(a,e);
     if (simple_of(r) || r==0x1c9e6 || r==0x1c97a) return simple_tick(a,e);
     if (r==0x1d764 || r==0x1d7b8) return smoke_tick(a,e);

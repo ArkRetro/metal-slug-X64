@@ -70,6 +70,12 @@ static bool condition(vm_t *v,uint16_t at) {
         default: return d7==0xffffu;        /* 01A790 */
         }
     }
+    else if (type==0x14u || type==0x15u) {
+        /* 01A7A2 / 01A7C8: a player rides a vehicle (0AAA88 of player 1,
+         * then 2) / none does. */
+        bool any=v->e->players[0].riding || v->e->players[1].riding;
+        return type==0x14u?any:!any;
+    }
     else {halt(v,at);return false;}
     uint16_t value=word(v,at,2);
     switch (cmp) {
@@ -98,6 +104,10 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
     case 7: { /* 01A10A */
         bool found;uint32_t entry=spawn_entry(word(v,pc,4),&found);
         if (!found || len(v,pc)<0xau || (len(v,pc)-0xau)/2u>NEO_SCRIPT_SPAWN_WORDS) return halt(v,pc);
+        if (!(entry&0x80000000u) && op(v,(uint16_t)(pc+2))<9u && v->e->native && !v->e->native(entry)) {
+            if (!v->e->skip_unported) return halt(v,pc);
+            v->s->skipped++;v->s->skipped_entry=entry;v->s->skipped_address=v->s->base+pc;return next(v,pc);
+        }
         mark_spawned(v);
         neo_script_spawn_t sp;memset(&sp,0,sizeof(sp));
         sp.record=v->s->base+pc;sp.constructor=entry;sp.creator=v->creator;
@@ -119,7 +129,19 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         for (i=0;i<NEO_SCRIPT_RUNNERS && v->s->runners[i].active;i++) {}
         if (i==NEO_SCRIPT_RUNNERS) return halt(v,pc);
         neo_script_runner_t *r=&v->s->runners[i];
-        r->active=true;r->record=pc;r->timer72=word(v,pc,2);r->count76=word(v,pc,8);r->spawned74=false;
+        r->active=true;r->record=pc;r->timer72=word(v,pc,2);r->count76=word(v,pc,8);r->spawned74=false;r->group69=0xff;
+        if (v->e->runner) v->e->runner(v->e->context,v->creator,i);
+        return skip(v,next(v,pc));
+    }
+    case 0x11: { /* 01A210: a runner (01A422) of the op 8 record at +4, its
+                  * +69 = the word at +2 when < 9 (10C326 counted now) */
+        unsigned i;
+        for (i=0;i<NEO_SCRIPT_RUNNERS && v->s->runners[i].active;i++) {}
+        if (i==NEO_SCRIPT_RUNNERS || op(v,(uint16_t)(pc+4))!=8u) return halt(v,pc);
+        neo_script_runner_t *r=&v->s->runners[i];uint16_t rec=(uint16_t)(pc+4),group=word(v,pc,2);
+        r->active=true;r->record=rec;r->timer72=word(v,rec,2);r->count76=word(v,rec,8);r->spawned74=false;
+        r->group69=group<9u?(uint8_t)group:0xffu;
+        if (group<9u) v->s->groups[group]++;
         if (v->e->runner) v->e->runner(v->e->context,v->creator,i);
         return skip(v,next(v,pc));
     }
@@ -130,10 +152,13 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         return next(v,pc);
     }
     case 0xa: { /* 01A272 */
-        uint16_t alt[16];unsigned n=0;
+        /* The original pushes every alternative on the stack (no limit);
+         * the scripts have at most 27 (Missions 5 and 6: the sewer drips'
+         * runner 2DE83A). */
+        uint16_t alt[32];unsigned n=0;
         pc=next(v,pc);
         while (ok(v) && op(v,pc)!=4u) {
-            if (!nonblocking(op(v,pc)) || n==16u) return halt(v,pc);
+            if (!nonblocking(op(v,pc)) || n==32u) return halt(v,pc);
             alt[n++]=pc;pc=skip(v,pc);
         }
         if (!ok(v)) return pc;
@@ -167,7 +192,7 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
     case 0x10: /* 01A32E */
         v->s->w4330=word(v,pc,2);v->s->w4332=(uint16_t)(word(v,pc,4)+0x100u);
         return next(v,pc);
-    default: /* 0..5 trap; 11 grouped runner */
+    default: /* 0..5 trap */
         return halt(v,pc);
     }
 }

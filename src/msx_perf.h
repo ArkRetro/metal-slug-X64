@@ -7,7 +7,7 @@
  * and max per phase in microseconds; no per-frame logging. */
 #include <stdint.h>
 enum {
-    MSX_PERF_SIM,        /* scene_clock catch-up: every msx_game_update of the frame */
+    MSX_PERF_SIM,        /* actor_draw up to the last msx_game_update of the frame (input, stage loads, steps) */
     MSX_PERF_PREP,       /* log diffs, animation pick, prefetch requests, effects frame */
     MSX_PERF_BEGIN,      /* scene_render_begin: service, attach/clear, mode */
     MSX_PERF_BG_PREFETCH,/* background cell prefetch requests + service */

@@ -38,6 +38,13 @@
 #ifndef MSX_DEBUG_GIVE_R
 #define MSX_DEBUG_GIVE_R 0
 #endif
+/* Weapons test cartridge only (mslugx-weapons.z64, never a release): once
+ * landed, every 0x100 updates the next weapon id 1..15 granted as an item
+ * would (marco_weapons_grant, 0C0928), for the pose register of each
+ * character with each weapon (B87). */
+#ifndef MSX_DEBUG_GIVE_CYCLE
+#define MSX_DEBUG_GIVE_CYCLE 0
+#endif
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
 static int right_limit(const msx_game_t *g);
@@ -1722,6 +1729,14 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->world_enabled && g->grounded && !g->descent && g->life.phase==MARCO_ALIVE && marco_weapons_id(&g->world.weapons,0)!=3) {
         uint16_t sound=0;marco_weapons_grant(&g->world.weapons,0,3,&g->world.weapon_player,&sound);
     }
+#endif
+#if MSX_DEBUG_GIVE_CYCLE
+    {static unsigned held,next=1;
+     if (g->world_enabled && g->grounded && !g->descent && g->life.phase==MARCO_ALIVE && ++held>=0x100u) {
+        uint16_t sound=0;held=0;
+        if (marco_weapons_grant(&g->world.weapons,0,(uint8_t)next,&g->world.weapon_player,&sound)) debugf("MSX DIAG weapon given id=%u\n",next);
+        next=next>=15u?1u:next+1u;
+     }}
 #endif
     g->descent_fire|=fire && !g->fire_was && g->descent;
     if (!(g->ticks&1) && g->start_letters) {

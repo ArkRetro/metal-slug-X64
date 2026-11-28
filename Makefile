@@ -258,6 +258,17 @@ $(BUILD_DIR)/testpad/actor.o: src/actor.c $(BUILD_DIR)/src/actor.o
 $(BUILD_DIR)/mslugx-testpad.elf: $(filter-out $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS)) $(BUILD_DIR)/testpad/actor.o $(BUILD_DIR)/src/msx_testpad.o $(BUILD_DIR)/ovl-src.externs
 $(BUILD_DIR)/mslugx-testpad.elf: LDFLAGS += --wrap=joypad_poll --wrap=joypad_get_buttons --wrap=joypad_get_inputs
 mslugx-testpad.z64: N64_ROM_TITLE = "MSX TESTPAD"
+# Weapons test cartridge (B87, never a release): the test-pad cartridge with
+# every weapon id granted in turn (MSX_DEBUG_GIVE_CYCLE, gameplay.c).
+$(BUILD_DIR)/weapons/gameplay.o: src/gameplay.c $(BUILD_DIR)/src/gameplay.o
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_DEBUG_GIVE_CYCLE=1 -o $@ $<
+$(BUILD_DIR)/mslugx-weapons.elf: $(filter-out $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o,$(MSLUGX_GAME_OBJS)) $(BUILD_DIR)/testpad/actor.o $(BUILD_DIR)/weapons/gameplay.o $(BUILD_DIR)/src/msx_testpad.o $(BUILD_DIR)/ovl-src.externs
+$(BUILD_DIR)/mslugx-weapons.elf: LDFLAGS += --wrap=joypad_poll --wrap=joypad_get_buttons --wrap=joypad_get_inputs
+mslugx-weapons.z64: N64_ROM_TITLE = "MSX WEAPONS"
+mslugx-weapons.z64: $(BUILD_DIR)/mslugx-weapons.dfs
+$(BUILD_DIR)/mslugx-weapons.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-weapons.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-testpad.z64: $(BUILD_DIR)/mslugx-testpad.dfs
 $(BUILD_DIR)/mslugx-testpad.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-testpad.dfs: $(BUILD_DIR)/game-romfs.stamp
@@ -325,13 +336,14 @@ MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py tools/check_sfx_assets.py src/msx_sfx_policy.h $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/check_character_packs.py tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py tools/check_sfx_assets.py src/msx_sfx_policy.h $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
 	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
+	$(if $(CHARACTER_PACKS),python3 -I tools/check_character_packs.py $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/game-romfs/chars/*.bin)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(SOFTDIP),cp $(SOFTDIP) $(BUILD_DIR)/game-romfs/)

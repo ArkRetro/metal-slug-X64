@@ -22,6 +22,8 @@ p.add_argument('--places',default='0,1,2,3')
 p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-testpad.z64 (no script: the keys of xdotool) or mslugx-diag.z64: after the landing, run and fire, '
     'keep running with the fire over, turn, crouch and fire, with the pistol; no update may draw the parts with two facings '
     '(MSX DIAG marco facing mixed); B84: a run turn, a press dropped in it and a stop (MSX DIAG marco turn / turn press dropped / marco stop)')
+p.add_argument('--weapons',action='store_true',help='B87, with mslugx-weapons.z64: after the landing, every weapon id 1..15 granted in turn '
+    '(MSX DIAG weapon given); run, fire, jump, crouch and aim up with each; no update may draw a weapon role without parts (MSX DIAG marco pose weapon=R/0)')
 a=p.parse_args()
 out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=EMU+'/data146',XDG_CONFIG_HOME=EMU+'/config146',
@@ -101,6 +103,21 @@ for place in [int(x) for x in a.places.split(',')]:
             checks['run turns (0C2746)']='MSX DIAG marco turn' in log()[mark:]
             checks['press in the turn dropped (0C381C)']='MSX DIAG turn press dropped' in log()[mark:]
             checks['run stops (0C1EFA)']='MSX DIAG marco stop' in log()[mark:]
+        if a.weapons:
+            mark=len(log());given=0
+            while given<15:
+                for side in ('Right','Left'):
+                    key('keydown',side);gs(.5);gtap('x');gs(.3);gtap('x');gs(.3);key('keyup',side)
+                    gtap('z');gs(.2);gtap('x');gs(.6)
+                    key('keydown','Down');gs(.3);gtap('x');gs(.4);key('keyup','Down')
+                    key('keydown','Up');gs(.3);gtap('x');gs(.4);key('keyup','Up');gs(.2)
+                given=len(re.findall(r'MSX DIAG weapon given',log()[mark:]))
+                assert process.poll() is None,'ares exited'
+            text=log()[mark:]
+            bare=[l for l in re.findall(r'MSX DIAG marco pose [^\n]*',text) if re.search(r'weapon=\d+/0 ',l)]
+            (d/'bare.txt').write_text('\n'.join(bare)+'\n')
+            checks['15 weapons given']=given>=15
+            checks['no weapon role without parts (%d)'%len(bare)]=not bare
         key('keydown','Right');gs(1.5);gtap('x');gs(.3);gtap('x');gs(.5);gtap('z');gs(.8);key('keyup','Right')
         gs(.3);gtap('x');gs(.5);key('keydown','Down');gs(.6);gtap('x');gs(.6);key('keyup','Down')
         key('keydown','Up');gs(.4);gtap('x');gs(.5);key('keyup','Up');gs(.3)

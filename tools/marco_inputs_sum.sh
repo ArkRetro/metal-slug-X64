@@ -1,7 +1,8 @@
 #!/bin/sh
 # Content stamp of the private Marco inputs: BUILD/marco-inputs.sum holds
 # the digest of BUILD/marco_pose_meta.h, BUILD/marco_campaign.h and
-# romfs/marco/*.sprite and is rewritten only when that content changes.
+# romfs/marco/*.sprite (and romfs/chars/cN.bin, B87: the packs keyed by
+# that catalog) and is rewritten only when that content changes.
 # The Makefile runs it at parse time and the objects that include those
 # headers (and the romfs stamps) depend on it, so inputs copied with their
 # old times (cp -p, rsync -a) still rebuild them. Without it ROM 18 linked a
@@ -17,5 +18,6 @@ new="$b/marco-inputs.sum.new"
         if [ -f "$f" ]; then cksum < "$f"; else echo "none $f"; fi
     done
     if [ -d romfs/marco ]; then ls romfs/marco | LC_ALL=C sort | (cd romfs/marco && xargs cat) | cksum; else echo "none romfs/marco"; fi
+    for n in 1 2 3; do if [ -f romfs/chars/c$n.bin ]; then cksum < romfs/chars/c$n.bin; else echo "none c$n"; fi; done
 } > "$new"
 if cmp -s "$new" "$b/marco-inputs.sum"; then rm -f "$new"; else mv -f "$new" "$b/marco-inputs.sum"; fi

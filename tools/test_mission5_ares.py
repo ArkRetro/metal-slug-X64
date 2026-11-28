@@ -20,7 +20,7 @@ p.add_argument('--up',type=float,default=0,help='every UP seconds, hold up for 1
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--down',action='store_true',help='hold down outside the --back / --up turns: the pistol fires down in the jumps (the boss 0A0C00 below the ledge of the arena, camera 2560)')
 p.add_argument('--bomb',action='store_true',help='a bomb (N64 Z, key z) at the start of each --back turn: the tank on treads 08FF7E below the stairs of the sewer\'s camera 2064 is out of the pistol\'s line')
-p.add_argument('--boss',action='store_true',help='stage 3: PASS needs the boss 0A0C00 beaten (the log\'s mission complete signal 018F92) and the next mission chosen by 01891E (mission end done -> mission 6); stops there')
+p.add_argument('--boss',action='store_true',help='PASS needs (from stage 1 or 2: every later stage started, B91, then) the boss 0A0C00 beaten (the log\'s mission complete signal 018F92) and the next mission chosen by 01891E (mission end done -> mission 6); stops there')
 p.add_argument('--continue',dest='cont',action='store_true',help='tap Start at the CONTINUE? panel (the arcade continue, MSX panel continue): the pad keeps going after its lives')
 import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
@@ -100,6 +100,9 @@ try:
         won='MSX mission complete signal (018F92)' in text;nxt=re.search(r'MSX mission end 018846 done[^\n]*',text)
         print('boss beaten (018F92):',won,'| next mission:',nxt.group(0) if nxt else None)
         ok=maxcam>=a.progress and 'not loaded' not in text and won and bool(nxt) and '-> mission 6' in nxt.group(0)   # the camera of the next mission follows
+        if a.stage<3:   # B91: from the metro (stage 2) the stage exits 0B6ED2 must load every later stage up to the sewer's boss
+            later=[int(x) for x in re.findall(r'MSX mission 5 stage (\d+) start: record',text)]
+            print('later stages started:',later);ok=ok and all(k in later for k in range(a.stage+6,9))   # the log names the sections: stages 1..3 = 6..8
 finally:
     proc.terminate()
     try:proc.wait(5)

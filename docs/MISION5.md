@@ -918,6 +918,21 @@ y los golpes al vehículo llegan con `mount=0`; el jefe muere y empieza la M5 en
 con el agente A (la plataforma del jefe de la M4 lee ahora sus celdas reales de `E006A`; la familia `m4boss` sigue igual
 a MAME).
 
+### B91 (28-XI, carril M): el metro se paraba en la cámara 992
+
+En ares (ROM 53, `--stage 2 --fire --jump 2.5 --up 1.8 --continue --lifebar`) el guion del metro se paraba en el
+registro **`2DE49C`** (`07 0a 03 81 01 0c`: op 7, grupo 3, entrada 0x10C de la tabla = la máquina **`0D3B36`**) con
+`MSX script stopped at 2de49c (records beyond are not ported)` y la cámara quedaba en 992 para siempre: ni máquina, ni
+final `0BBF12`, ni salida, ni alcantarilla. Causa: `neo_region_routine` (`neo_region.c`) no tenía `neo_m5mech_routine`
+(la añadió `aa675093` y se perdió en una fusión posterior; el despacho `neo_region_tick` sí la conservaba), así que
+`neo_world_spawn_native(0D3B36)` daba falso y `neo_script.c` (op 7, `01A10A`) paraba el guion. Las familias `m5mech` y
+`m5door` no pasan por el guion y seguían iguales a MAME. MAME (TAS desde `sec07_u13810`, familia `bbf12,b6ed2`):
+puerta, salida `0B6ED2` en la actualización 79 de la puerta, sección 8 en 16484. Arreglo: la línea de
+`neo_region_routine`. Prueba nueva **`m5full`** (`regression_ares.py`: `--stage 2 ... --boss`; además de la cámara y
+el jefe exige que empiece cada etapa posterior, secciones 7..8 en el registro): metro entero, alcantarilla, jefe
+`0A0C00` vencido y `01891E` → M6. Dibujos ausentes que quedan en ella (ya registrados o de datos): paletas 239
+(granada `0D4D84`, sin captura), 20C (no capturable) y 218 (cámara 688 del metro; también antes del arreglo).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

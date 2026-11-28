@@ -400,10 +400,13 @@ static int slot_step(slot_t *s,uint32_t deadline) {
     if (r==STEP_ERROR) {debugf("MSX CINEMATIC bad movie %s (loaded %u produced %u)\n",s->path,s->load,s->prod);s->failed=true;return STEP_IDLE;}
     return r;
 }
+static void (*wait_hook)(void);
+void msx_cinematic_set_wait_hook(void (*hook)(void)) {wait_hook=hook;}
 /* Frame f of a slot produced now (no time limit: waits on the DMA/RDP). */
 static bool ensure(slot_t *s,unsigned f) {
     while (s->prod<=f) {
         if (s->failed || !s->active) return false;
+        if (wait_hook && !s->opened) wait_hook();   // only while msx_cinematic_open waits
         int r=slot_step(s,0);
         if (r==STEP_IDLE) {
             if (!s->failed) debugf("MSX CINEMATIC %s stalled at frame %u (loaded %u)\n",s->path,s->prod,s->load);

@@ -7,6 +7,10 @@ typedef struct { uint32_t frames,index,read_bytes,max_packet,max_decode_ticks,to
 /* Native noninteractive cutscene data. Pixels are generated offline from ROM
  * graphics; no CPU, VDP or actor emulation runs in this player. */
 bool msx_cinematic_open(const char *path);
+/* B86: called between the steps of a frame produced without a time limit
+ * by msx_cinematic_open (not msx_cinematic_next), so that a synchronous open does
+ * not starve the audio interface (main.c passes msx_audio_idle). */
+void msx_cinematic_set_wait_hook(void (*hook)(void));
 /* Start preparing a preloaded movie in the background (read, validate,
  * prepared frames): msx_cinematic_prepare_idle does one step while it fits
  * before the next vertical blank (pass it as an idle hook) and returns false

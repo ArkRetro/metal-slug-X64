@@ -772,3 +772,28 @@ PCM16 32 kHz, 2,95 s) y `select-music-loop.wav64` (VADPCM 32 kHz, 49,995 s,
 empalme 0,959, comprobado). `main.c` los reproduce en la espera de SOLDIER
 SELECT (`msx_audio_open_loop`); la elección abre el audio de `confirm` como
 antes. ares: `MSX CINE select chosen audio=1` tras 25 s de espera.
+
+### B86: audio cortado al mover el cursor (ROM 53)
+
+Render aislado de `0030` repetido con MAME 0.264 (`render_sound_commands.py
+--map data/select_music_map.json`): el bucle VADPCM del cartucho
+(`select-music-loop.wav64` decodificado) coincide con el render, con error RMS
+230..940 frente a una señal de ≈3000 (el del códec) y un deslizamiento lineal de
+13 muestras en 50 s (el redondeo de la longitud a múltiplo de 16); la cola del
+`head` tras la película, error RMS 32. Los datos son correctos: no falla la
+música ni las voces en sí.
+
+Medida en ares (`MSX CINE select hold audio ... underruns=`, nuevo en el
+registro): 0 `underruns` en la espera sin tocar nada; uno por cada movimiento
+del cursor (3 en 3 movimientos) y uno más en la apertura de `confirm`. La fase
+culpable es `msx_cinematic_open` de `confirm-cN.msxc` (`finish_ms=78..80`,
+`open_us=77725`): abre la película en síncrono sin dar de comer al AI, que
+solo tiene dos búferes (≈80 ms). En MiSTer, con el PI más lento, el hueco es
+mayor y se oye en cada movimiento y al elegir.
+
+Corrección: `msx_cinematic_set_wait_hook(msx_audio_idle)` (`main.c`):
+`ensure` llama al gancho entre pasos mientras la película se abre (no en
+`msx_cinematic_next`), así el AI recibe sus búferes durante la apertura. No
+cambia el contenido del audio ni de los fotogramas (CRC `cab22096` y
+`342b3c8e` iguales). ares tras el cambio: `underruns=0` en la espera con 3
+movimientos y en `confirm`.

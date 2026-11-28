@@ -188,7 +188,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
     debugf("MSX CINE %s setup open_us=%lu prepare_us=%lu check_us=%lu audio_us=%lu\n",label,(unsigned long)TICKS_TO_US(s1-s0),(unsigned long)TICKS_TO_US(s2-s1),(unsigned long)TICKS_TO_US(s3-s2),(unsigned long)TICKS_TO_US(TICKS_READ()-s3));
     unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,previous_a=true,start_skip=false,held=false;uint32_t draw_ticks=0,idle_ticks=0;
     bool choosing=!strcmp(label,"select"),previous_left=true,previous_right=true;
-    uint32_t started=TICKS_READ();
+    uint32_t started=TICKS_READ();msx_audio_stats_t audio0=msx_audio_stats();
     msx_frames_stage(label);
     debugf("MSX CINE %s start frames=%lu audio=%u hold=%d\n",label,(unsigned long)msx_cinematic_stats().frames,audio,hold);
     if (entry) debugf("MSX INTRO start source=3830 frames=%u audio=%u\n",MSX_ENTRY_FRAMES,audio);
@@ -228,7 +228,8 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
                 held=false;hold=-1;debugf("MSX CINE %s chosen audio=%u\n",label,(unsigned)msx_audio_playing(MSX_AUDIO_INTRO));lifebar_choice(buttons.z);
                 if (choosing && soldier_moved) break;   // the picture shown is the choice movie's first frame: it plays next
             }
-            else {surface_t *surface=display_get();msx_audio_service();msx_cinematic_draw(surface);msx_frames_present();rendered++;
+            else {surface_t *surface=display_get();msx_audio_service();
+                if (!(rendered%300)) {msx_audio_stats_t st=msx_audio_stats();debugf("MSX CINE %s hold audio buffers=%lu underruns=%lu\n",label,(unsigned long)(st.buffers-audio0.buffers),(unsigned long)(st.underruns-audio0.underruns));}msx_cinematic_draw(surface);msx_frames_present();rendered++;
                 spare_time();
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
         } else if (target>=30 && press) {
@@ -266,7 +267,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         idle_ticks=TICKS_READ()-i0;
     }
     msx_cinematic_stats_t final=msx_cinematic_stats();
-    debugf("MSX CINE %s cadence unique=%u skipped=%u\n",label,unique,skipped);
+    {msx_audio_stats_t st=msx_audio_stats();debugf("MSX CINE %s cadence unique=%u skipped=%u audio buffers=%lu underruns=%lu\n",label,unique,skipped,(unsigned long)(st.buffers-audio0.buffers),(unsigned long)(st.underruns-audio0.underruns));}
     if (entry) debugf("MSX INTRO cadence unique=%u skipped=%u\n",unique,skipped);
     debugf("MSX CINE %s complete frames=%lu rendered=%u crc=%08lx skipped=%u decode_max_us=%lu t=%lu ms\n",label,(unsigned long)final.frames,rendered,
         (unsigned long)msx_cinematic_pixels_crc(),start_skip,(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)get_ticks_ms());
@@ -344,7 +345,7 @@ int main(void) {
 #endif
     rdpq_init();
 #if !MSX_GRAPHICS_LAB
-    msx_audio_init();
+    msx_audio_init();msx_cinematic_set_wait_hook(msx_audio_idle);
     console_close();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);msx_vi_neogeo();
     joypad_init();

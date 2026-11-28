@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include "msx_vi.h"
 #include <stdio.h>
 #include "scene_renderer.h"
 #include "fixed.h"
@@ -345,7 +346,7 @@ int main(void) {
 #if !MSX_GRAPHICS_LAB
     msx_audio_init();
     console_close();
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);msx_vi_neogeo();
     joypad_init();
     scene_assets_mem("display");
     /* Boot order: NEOGEO logo (docs/LOGO_NEOGEO.md), X64 title and parachute
@@ -415,7 +416,7 @@ int main(void) {
 #else
     actor_init();
     console_close();
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);msx_vi_neogeo();
     joypad_init();
 #endif
 #if !MSX_GRAPHICS_LAB

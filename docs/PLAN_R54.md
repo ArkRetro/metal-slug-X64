@@ -70,7 +70,8 @@ deben medirse ya con el reloj corregido.
 vblanks; `scene_clock` ya no recupera). 3: perfilado, sin optimización
 integrada (el coste está repartido en `run_gactor`). 4: `make check`, caché
 216/216 y matriz PASS, pero `multi` no es 0. 5: medido (VI 59,846 Hz, un
-fotograma sin paso cada ≈ 91), opciones en `docs/RENDIMIENTO.md`.
+fotograma sin paso cada ≈ 91), opciones en `docs/RENDIMIENTO.md`. Opción 3
+hecha: VI a 59,183296 Hz (265 × 3104 relojes, `src/msx_vi.h`), 1 paso por campo.
 
 1. Desensamblar la espera de vblank y el bucle principal del 68K. Decide qué
    pasa en el original cuando un fotograma no llega (ralentiza o recupera).

@@ -4,6 +4,7 @@
 #include "scene_assets.h"
 #include "scene_renderer.h"
 #include "scene_clock.h"
+#include "msx_vi.h"
 #include "visual_config.h"
 #include "neo_collision.h"
 #include "vehicle_renderer.h"
@@ -40,6 +41,12 @@ static scene_clock_t simulation_clock;
 unsigned msx_testpad_steps(unsigned steps,unsigned kind);
 #endif
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run: one original update (003AE0 awaits two vblanks) */
+/* One Neo Geo vblank per VI field where the VI runs at the Neo Geo's refresh (src/msx_vi.h, NTSC); the CPU count
+ * at 59.185606 Hz elsewhere. */
+static unsigned simulation_steps(void) {
+    if (get_tv_type()==TV_NTSC) return scene_clock_rate_steps(&simulation_clock,msx_vi_count(),MSX_VI_STEP_NUM,MSX_VI_STEP_DEN,MSX_FRAME_STEPS);
+    return scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND,MSX_FRAME_STEPS);
+}
 static bool pending_a,pending_b;
 /* The original's pause 015520 (neo_pause.h, docs/PAUSA.md). The N64 START
  * is the Neo Geo SELECT while the game is played. pause_start/pause_a/
@@ -691,7 +698,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     unsigned pause_steps=0;
     if (was_paused) {
         /* A paused turn waits two vblanks (003AE0); the LSPC goes on counting. */
-        pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND,MSX_FRAME_STEPS);
+        pause_steps=simulation_steps();
 #ifdef MSX_TESTPAD
         pause_steps=msx_testpad_steps(pause_steps,2);   /* B78: recorded / replayed (src/msx_testpad.c) */
 #endif
@@ -732,7 +739,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
     }
-    unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND,MSX_FRAME_STEPS):0;
+    unsigned steps=pf.step?simulation_steps():0;
 #ifdef MSX_TESTPAD
     if (pf.step) steps=msx_testpad_steps(steps,1);   /* B78: the host-paced step count, recorded / replayed (src/msx_testpad.c) */
 #endif

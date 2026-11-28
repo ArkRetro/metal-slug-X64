@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include "msx_vi.h"
 #include <stdio.h>
 #include "scene_renderer.h"
 #include "actor.h"
@@ -18,7 +19,7 @@ int main(void) {
     if (dfs_init(DFS_DEFAULT_LOCATION)!=DFS_ESUCCESS) fail("DragonFS");
     if (get_memory_size()<8*1024*1024) fail("Se requiere Expansion Pak (8 MiB)");
     rdpq_init();msx_audio_init();
-    console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);joypad_init();
+    console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);msx_vi_neogeo();joypad_init();
     msx_neogeo_logo();  // 3D NEOGEO boot logo + jingle, then the X64 title (docs/LOGO_NEOGEO.md)
     if (!msx_title_intro("rom:/entry.msxc")) fail("Presentacion inicial");
     if (!msx_cinematic_open("rom:/entry.msxc")) fail("Entrada cinematica");

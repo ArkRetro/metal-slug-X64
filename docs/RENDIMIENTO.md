@@ -1517,7 +1517,7 @@ Medido con sondas temporales (no integradas) en ares:
   cambió la cifra (8,0–8,7 ms): no se integró. Con el fondo (5–10 ms) el
   fotograma pasa de 16,9 ms y sale `multi`.
 
-### 59,19 Hz frente al VI de la N64 (medido, sin decidir)
+### 59,19 Hz frente al VI de la N64 (medido; decidido: opción 3)
 
 Ventanas estables de la matriz `gates4` (124 con `multi=0`): 84 con 297
 pasos y 37 con 296 por 300 fotogramas → 0,98897 pasos por fotograma, es
@@ -1532,6 +1532,59 @@ Opciones:
 3. Programar el VI a la frecuencia de la Neo Geo (registros de sincronismo
    del VI): fluido y exacto, pero fuera de norma NTSC; habría que probar
    televisores, MiSTer y emuladores.
+
+### VI a la frecuencia de la Neo Geo (opción 3, elegida por el usuario)
+
+`src/msx_vi.h` / `src/msx_vi.c`: tras cada `display_init` se reescriben
+`VI_V_SYNC`, `VI_H_SYNC` y `VI_H_SYNC_LEAP` (solo NTSC; PAL y MPAL quedan
+con el preajuste de libdragon y el reloj de CPU).
+
+Derivación (sin valores a ojo):
+- Neo Geo, MAME 0.264 (`neogeo.h`, `set_raw` de `neogeo.cpp`): reloj de
+  píxel 24 MHz / 4, 384 píxeles por línea, 264 líneas por campo →
+  6 000 000 / 101 376 = **59,185606 Hz**.
+- VI NTSC: reloj 48 681 812 Hz; una línea dura `H_SYNC + 1` relojes (el
+  preajuste NTSC de libdragon, 0xC15, da 3094 relojes = 15 734,26 Hz, la
+  línea NTSC) y un campo progresivo `(V_SYNC + 1) / 2` líneas (0x20D → 263
+  líneas, 59,826 Hz).
+- Un campo debe durar 48 681 812 / 59,185606 = 822 527,9 relojes. Buscando
+  todas las combinaciones de 261..270 líneas y 3000..3200 relojes, la más
+  cercana es **265 líneas × 3104 relojes = 822 560**: `V_SYNC = 529`
+  (0x211, dos líneas más de blanking vertical), `H_SYNC = 3103` (0xC1F, diez
+  relojes más de blanking horizontal; anchura de sincronismo y patrón de leap
+  0 como en NTSC), `H_SYNC_LEAP = 0x0C1F0C1F` (las dos longitudes de leap
+  iguales a la línea: ninguna línea del campo es distinta).
+- Resultado: **59,183296 Hz**, 39 ppm (−0,0039 %) más lento que la Neo Geo:
+  un paso doble cada 25 621 campos (≈ 7,2 min). La siguiente candidata,
+  263 líneas (geometría vertical intacta) de 3127 o 3128 relojes, queda a 154
+  o 165 ppm y alarga la línea un 1,1 %. No se puede afinar más: los registros
+  son enteros (líneas enteras, relojes enteros por línea); la única
+  granularidad más fina sería el leap, que el hardware solo aplica a las
+  líneas de sincronismo vertical con un patrón de 5 campos poco documentado
+  y que ares 146 ignora (`vi.cpp` calcula `lineDuration` con el leap pero
+  avanza `quarterLineDuration`), así que no se puede medir ni probar.
+- Ventana visible, escalas, burst y `V_INTR` sin cambio (los de libdragon).
+- `scene_clock_rate_steps` cuenta campos del VI con la razón exacta
+  401 640 625 / 401 624 949 (pasos de la Neo Geo por campo); sigue sin deuda
+  (como 003A48: como máximo 2 pasos, los vblanks de más se tiran).
+  `tools/test_scene_clock.c` comprueba la razón contra los registros y 25 000
+  campos seguidos con exactamente un paso cada uno.
+
+Riesgos: línea a 15 683,6 Hz (−0,32 % frente a NTSC) y campo de 265 líneas
+(la Neo Geo usa 264): dentro de lo que aceptan los televisores de 60 Hz y la
+Neo Geo misma, pero fuera de la norma NTSC; sin probar todavía en MiSTer ni
+en televisores (lo confirma el usuario). ares usa 48 681 818 Hz y `H_SYNC`
+sin el +1: allí el campo es 59,2024 Hz (0,99972 pasos por campo, un
+fotograma sin paso cada ≈ 3530 campos). `src/neogeo_logo.c` (logo con
+`VI_HZ 59.826`) y los bucles de `main.c`/`mission_main.c`/`title_intro.c`
+cuentan tiempo de CPU, no campos: su duración no cambia.
+
+Medida (ares, `:96`, `m5s2`, `pause`, `m6s1`, todas PASS, mismos recuentos
+que la referencia): `m5s2`, 9 ventanas estables con `multi=0` y **300 pasos
+por 300 fotogramas** (antes 295..298: un fotograma sin paso cada ≈ 91);
+`m6s1`, 7 ventanas de 600/300 (cada fotograma dura dos campos; antes
+586..596); `pause`, una ventana estable de 300/300 (antes 297). Caché de
+escena 216 ranuras.
 
 ### Resultados (ares, matriz completa salvo `m4boss`, frente a `gates4`)
 

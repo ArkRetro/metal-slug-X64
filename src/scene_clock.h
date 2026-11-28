@@ -18,12 +18,17 @@
  * (the vblank comes at its fixed time). */
 typedef struct { uint32_t previous; uint64_t phase; bool initialized; } scene_clock_t;
 static inline void scene_clock_reset(scene_clock_t *c) { c->phase=0;c->initialized=false; }
-static inline unsigned scene_clock_steps(scene_clock_t *c,uint32_t now,uint32_t frequency,unsigned limit) {
+/* `now` counts in units of which `rate_den` make `rate_num` Neo Geo vblanks: the VI count with
+ * MSX_VI_STEP_NUM / MSX_VI_STEP_DEN (src/msx_vi.h: the VI programmed to the Neo Geo's refresh, one step per field),
+ * or the CPU count with 59185606 / (TICKS_PER_SECOND * 1000000) where the VI keeps libdragon's timing. */
+static inline unsigned scene_clock_rate_steps(scene_clock_t *c,uint32_t now,uint64_t rate_num,uint64_t rate_den,unsigned limit) {
     if (!c->initialized) { c->previous=now;c->initialized=true;return 0; }
     uint32_t elapsed=now-c->previous;c->previous=now;
-    c->phase+=(uint64_t)elapsed*59185606u;
-    uint64_t threshold=(uint64_t)frequency*1000000u;
-    uint64_t count=c->phase/threshold;c->phase%=threshold;
+    c->phase+=(uint64_t)elapsed*rate_num;
+    uint64_t count=c->phase/rate_den;c->phase%=rate_den;
     return count>limit?limit:(unsigned)count;
+}
+static inline unsigned scene_clock_steps(scene_clock_t *c,uint32_t now,uint32_t frequency,unsigned limit) {
+    return scene_clock_rate_steps(c,now,59185606u,(uint64_t)frequency*1000000u,limit);
 }
 #endif

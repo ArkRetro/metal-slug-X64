@@ -805,6 +805,20 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
              for (unsigned i=1;i<n;i++) mixed+=(d[i].attributes&1u)!=(d[0].attributes&1u);
              if (mixed) debugf("MSX DIAG marco facing mixed body=%d weapon=%d facing=%d %06lx/%u %06lx/%u\n",marco.body_role,marco.weapon_role,(int)mi.facing,
                  (unsigned long)d[0].descriptor,(unsigned)(d[0].attributes&1u),(unsigned long)d[n-1].descriptor,(unsigned)(d[n-1].attributes&1u));}
+            /* B87 (read only; test cartridges): the pose register, one line
+             * whenever the roles or the part counts change: body and weapon
+             * role, their draws, the first descriptor of each and how many
+             * descriptors are in the catalog. */
+            {static int br=-2,wr=-2;static unsigned bc=99,wc=99;
+             unsigned nw=marco.weapon_role>=0?marco.weapon_count:0;
+             if (marco.body_role!=br || marco.weapon_role!=wr || marco.body_count!=bc || nw!=wc) {
+                 neo_anim_draw_t d[2*MARCO_VISUAL_DRAWS];unsigned n=marco_visual_draws(&marco,d,2*MARCO_VISUAL_DRAWS),pose,known=0;
+                 for (unsigned i=0;i<n;i++) known+=marco_renderer_find(d[i].descriptor,&pose);
+                 debugf("MSX DIAG marco pose body=%d/%u %06lx weapon=%d/%u %06lx known=%u/%u\n",marco.body_role,marco.body_count,
+                     marco.body_count?(unsigned long)marco.body_draws[0].descriptor:0ul,marco.weapon_role,nw,nw?(unsigned long)marco.weapon_draws[0].descriptor:0ul,known,n);
+                 br=marco.body_role;wr=marco.weapon_role;bc=marco.body_count;wc=nw;}}
+            /* B89 (read only; test cartridges): the player's +50 box. */
+            {static uint32_t box;if (game.box50!=box) {debugf("MSX DIAG player box %06lx crouching=%d grounded=%d tick=%lu\n",(unsigned long)game.box50,(int)game.crouching,(int)game.grounded,(unsigned long)game.ticks);box=game.box50;}}
 #endif
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;msx_diag_stop(MSX_STOP_MARCO,marco.failures,0);}
         }

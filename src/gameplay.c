@@ -586,7 +586,7 @@ static neo_world_player_t player_frame(const msx_game_t *g) {
     int32_t rx=-(int32_t)((uint32_t)g->camera<<16),ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
     if (g->world.camera_native) {rx=neo_camera_root_x(&g->world.camera);ry=neo_camera_root_y(&g->world.camera);}
     neo_world_player_t p={(uint16_t)((uint32_t)(g->x+rx)>>16),(uint16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16),
-        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
+        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false,0};
     /* Dying: +5F bit 7. The dying player also clears its 10C33C bit and is
      * no actor for the update between its end (0C2F96) and the new life;
      * the soldiers' and items' paths without an active player (the
@@ -594,6 +594,7 @@ static neo_world_player_t player_frame(const msx_game_t *g) {
      * stays clear and `alive` set: explicit deviation (docs/JEFE_MISION1.md). */
     p.dead=g->life.phase==MARCO_DYING || g->life.phase==MARCO_LYING;
     p.unregistered=g->mount==MSX_MOUNT_RIDE;   /* 0C308A: +50 = 0 */
+    p.box50=g->box50;
     return p;
 }
 
@@ -1524,6 +1525,29 @@ void msx_game_resume_inputs(msx_game_t *g,uint8_t held) {
     g->grenade_was_down=(held&0x40u)!=0;g->pad_held=held;
 }
 static void play_update(msx_game_t *g,int direction,bool jump,bool fire);
+/* B89: the player's +50 after one of its updates (pistol and heavy weapon
+ * forms; MAME 0.264, docs/BUG_MATRIX.md B89). The landing update (the jump
+ * state sees the ground, 0C1EBE next) keeps the box; the next one writes
+ * 2D0AA8 (0C1E44..0C1EAC) or, held down, enters the crouch 0C2214 with
+ * 2D0AB4. Leaving the crouch, 0C2236 goes to 0C1FA6 and that to 0C1F4A,
+ * which writes 2D0AA8 (0C1F7C): the crouched box stays two updates. The
+ * crouch entered on the descent's landing (0C14DE -> 0C229C) writes none:
+ * the life's 2D0AA8 (0C10EA) stays until it ends. The fat and mummy forms
+ * set +50 from their own programs: not translated, the standing box. */
+static void box_step(msx_game_t *g) {
+    /* The life's start (0C10EA, then the entrance 0C149E and its landing
+     * 0C14DE) counts as the descent. */
+    if (g->life.phase!=MARCO_ALIVE) {g->box50=0x2d0aa8u;g->box_exit=0;g->box_keep=false;g->box_was_grounded=false;g->box_was_descent=true;return;}
+    if (g->mount!=MSX_MOUNT_NONE || g->world.weapon_player.form93>=2u) {
+        g->box50=0x2d0aa8u;g->box_exit=0;g->box_keep=false;g->box_was_grounded=g->grounded;g->box_was_descent=false;return;
+    }
+    if (!g->grounded) g->box_was_descent|=g->descent!=0;
+    else if (!g->box_was_grounded) {g->box_keep=g->crouching && g->box_was_descent;g->box_was_descent=false;g->box_exit=0;}
+    else if (g->crouching) {if (!g->box_keep) g->box50=0x2d0ab4u;g->box_exit=g->box_keep?0:2;}
+    else if (g->box_exit) g->box_exit--;
+    else {g->box50=0x2d0aa8u;g->box_keep=false;}
+    g->box_was_grounded=g->grounded;
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     neo_lspc_frame(&g->lspc);   /* one call per video frame (G25) */
     if (g->credits) {credits_update(g,direction,jump,fire);return;}
@@ -1547,6 +1571,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         return;
     }
     play_update(g,direction,jump,fire);
+    if (!(g->ticks&1)) box_step(g);
 }
 static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->stage_step) {g->ticks++;if (!(g->ticks&1)) stage_end_step(g);return;}
@@ -1731,6 +1756,10 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         }
         if (g->jump_pending && g->grounded) {
             g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;
+            /* B89: the standing jump 0C2658 writes +50 = 2D0AC0 (0C2660);
+             * the running one 0C271C keeps 2D0AA8 (MAME 0.264: 2D0AC0 from
+             * the takeoff update, 2D0AA8 through a running jump). */
+            if (!g->mummy_takeoff && g->world.weapon_player.form93<2u) g->box50=g->jump_moving?0x2d0aa8u:0x2d0ac0u;
         }
         g->jump_pending=false;
         const bool was_grounded=g->grounded;

@@ -65,6 +65,10 @@ typedef struct {
     bool crouch;   /* input: down held; grounded = crouched in place (the original
                     * crawls: not ported, see docs/MARCO_CAMPAIGN.md) */
     bool crouching,jump_moving;   /* state: crouched this update; takeoff while moving */
+    /* B89: the player's +50 (the box 004C24 registers; neo_world_player_t
+     * box50) and the updates of its crouch exit, the landing and the
+     * crouch entered from the life's descent (kept standing box). */
+    uint32_t box50;uint8_t box_exit;bool box_keep,box_was_grounded,box_was_descent;
     msx_bullet_t bullets[MSX_BULLETS];
     /* Hostile straight projectiles observed by the depth25d event layer.
      * No actor of the native region emits one (rebel soldiers here knife and

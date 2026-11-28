@@ -875,6 +875,28 @@
    28
   ]
  },
+ "player_crouch_hurtbox": {
+  "rom": "0x2d0ab4",
+  "type": 5,
+  "flags": 1,
+  "rect": [
+   -8,
+   0,
+   19,
+   14
+  ]
+ },
+ "player_jump_hurtbox": {
+  "rom": "0x2d0ac0",
+  "type": 5,
+  "flags": 1,
+  "rect": [
+   -10,
+   14,
+   17,
+   24
+  ]
+ },
  "hit_matrix": {
   "rom": "0x004582",
   "rows": [

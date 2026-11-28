@@ -72,6 +72,8 @@ typedef struct {
     bool inactive;             /* RAM 10C33C bit clear: the player is dying (its
                                 * own update clears it before the others run) */
     bool unregistered;         /* +50 clear: no hurtbox registered (004C24) */
+    uint32_t box50;            /* +50, the registered box: 2D0AA8 standing (0 too),
+                                * 2D0AB4 crouched, 2D0AC0 the standing jump (B89) */
 } neo_world_player_t;
 /* Sub-script actors 019E72 created by generic actors (robed swordsman
  * 0A8C46/0A8C62): the same interpreter over another record. */

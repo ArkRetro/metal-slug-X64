@@ -1755,8 +1755,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     t.player_valid=pl && pl->alive;
     t.player_hittable=t.player_valid && !pl->unregistered;
     uint16_t px=pl?pl->px:0,py=pl?pl->py:0;
-    t.player=(neo_hurtbox_t){px,py,pl?pl->flags15:0,soldier_player_hurtbox.type,0,
-        {soldier_player_hurtbox.rect[0],soldier_player_hurtbox.rect[1],soldier_player_hurtbox.rect[2],soldier_player_hurtbox.rect[3]},pl && pl->dead};
+    /* +50 as the player's own update left it (004C24): standing 2D0AA8,
+     * crouched 2D0AB4 (0C2214), standing jump 2D0AC0 (0C2660); B89. */
+    const soldier_hurtbox_t *pb=pl && pl->box50==soldier_player_crouch_hurtbox.tag?&soldier_player_crouch_hurtbox:
+        pl && pl->box50==soldier_player_jump_hurtbox.tag?&soldier_player_jump_hurtbox:&soldier_player_hurtbox;
+    t.player=(neo_hurtbox_t){px,py,pl?pl->flags15:0,pb->type,0,
+        {pb->rect[0],pb->rect[1],pb->rect[2],pb->rect[3]},pl && pl->dead};
     /* ROM 01903A: a player with +7A/+7B clear is replaced by the script's
      * point RAM 69B8/69BA. */
     uint16_t tx=pl && !pl->follow_x?w->script.w69b8:px,ty=pl && !pl->follow_y?w->script.w69ba:py;

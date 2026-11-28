@@ -74,6 +74,13 @@ class Rom:
     def palette(self,n):
         return [0]+[self.w(0x224000+((2*self.w(0x200000+n*32+2*k)+0x8000)&0xffff)-0x8000) for k in range(1,16)]
 
+def unpack_file(f):
+    """The MSXP blob of a pack file (MSXZ, LZ4 blocks; msx_character_unpack)."""
+    assert f[:4]==b'MSXZ';raw,block,blocks=struct.unpack_from('>III',f,8);at=20+4*blocks;out=bytearray()
+    for i in range(blocks):
+        stored=struct.unpack_from('>I',f,20+4*i)[0];n=stored&0x7fffffff;want=min(block,raw-i*block)
+        out+=f[at:at+n] if stored&0x80000000 else lz4_blocks.unblock(f[at:at+n],block)[:want];at+=n
+    assert len(out)==raw;return bytes(out)
 def rgba(words):return [0]+[((r>>3)<<11)|((g>>3)<<6)|((b>>3)<<1)|1 for r,g,b in (palette_rgb(v) for v in words[1:])]
 
 def table_rows(rom,address):
@@ -185,6 +192,8 @@ def main():
     p.add_argument('--campaign',type=Path,default=ROOT/'build/marco_campaign.h')
     p.add_argument('--meta',type=Path,default=ROOT/'build/marco_pose_meta.h')
     p.add_argument('--mummy-capture',type=Path,help="audited --give-mummy capture of this character: its second mummy palette (slot 0x64, not a ROM palette)")
+    p.add_argument('--mummy-pack',type=Path,help="an earlier pack of this character exported with --mummy-capture: its MUMMY2 palette "
+        "(the capture's words; for a new role table when the capture itself is not at hand)")
     p.add_argument('--verify',type=Path,action='append',default=[],help='audited capture of this character')
     p.add_argument('--output',type=Path);p.add_argument('--report',type=Path)
     a=p.parse_args();c=a.character
@@ -255,8 +264,14 @@ def main():
         second=[x for x in profiles if x['frame_uses']==first[0]['frame_uses'] and tuple(x['words'][1:]) not in rom_words]
         assert len(second)==1,second
         palettes[named['MUMMY2']]=rgba(second[0]['words']);mummy2='capture %s: %s'%(a.mummy_capture.name,','.join('%04X'%w for w in second[0]['words'][1:]))
+    if a.mummy_pack and not a.mummy_capture:
+        old=unpack_file(a.mummy_pack.read_bytes());assert old[:4]==b'MSXP' and struct.unpack_from('>H',old,6)[0]==c
+        count,at=struct.unpack_from('>H',old,16)[0],struct.unpack_from('>I',old,44)[0];assert count==len(palettes)
+        words=list(struct.unpack_from('>16H',old,at+32*named['MUMMY2']))
+        assert words!=list(struct.unpack_from('>16H',old,at+32*named['MUMMY'])),'the earlier pack has a second mummy palette of its own'
+        palettes[named['MUMMY2']]=words;mummy2='earlier pack %s: %s'%(a.mummy_pack.name,','.join('%04X'%w for w in words[1:]))
     if c==0:
-        for k in tuple(numbers)+(('MUMMY2',) if a.mummy_capture else ()):
+        for k in tuple(numbers)+(('MUMMY2',) if a.mummy_capture or a.mummy_pack else ()):
             i=0 if k=='NORMAL' else named[k];assert palettes[i]==marco_palettes[i],('palette differs from the built-in catalog',k)
     # Evidence from audited captures of this character.
     verified=[]

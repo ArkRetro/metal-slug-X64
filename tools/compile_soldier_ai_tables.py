@@ -23,6 +23,9 @@ arr('uint16_t','soldier_variant_cull_rect',[v&0xffff for v in t['variant_cull_re
 L.append('typedef struct { uint32_t tag; int16_t rect[4]; uint8_t type,flags; } soldier_hurtbox_t;')
 L.append('static const soldier_hurtbox_t soldier_hurtboxes[]={'+','.join('{%s,{%s},%d,%d}'%(h['rom'],','.join(map(str,h['rect'])),h['type'],h['flags']) for h in t['hurtboxes'])+'};')
 ph=t['player_hurtbox'];L.append('static const soldier_hurtbox_t soldier_player_hurtbox={%s,{%s},%d,%d};'%(ph['rom'],','.join(map(str,ph['rect'])),ph['type'],ph['flags']))
+# The player's other +50 boxes (B89): crouched 0C2214, standing jump 0C2660.
+for key,name in (('player_crouch_hurtbox','soldier_player_crouch_hurtbox'),('player_jump_hurtbox','soldier_player_jump_hurtbox')):
+    ph=t[key];L.append('static const soldier_hurtbox_t %s={%s,{%s},%d,%d};'%(name,ph['rom'],','.join(map(str,ph['rect'])),ph['type'],ph['flags']))
 arr('uint8_t','soldier_angle_log',t['angle_tables']['log'])
 arr('uint8_t','soldier_angle_atan',t['angle_tables']['atan'])
 arr('uint8_t','mission1_script',t['mission_script']['bytes'])
